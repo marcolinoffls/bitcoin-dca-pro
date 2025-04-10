@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,16 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				bitcoin: {
+					DEFAULT: '#F7931A',
+					dark: '#E67E17',
+					light: '#FFA940'
+				},
+				btcblue: {
+					DEFAULT: '#1A3064',
+					dark: '#142550',
+					light: '#254080'
 				}
 			},
 			borderRadius: {
