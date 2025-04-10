@@ -13,6 +13,7 @@ export function useBitcoinEntries() {
     timestamp: new Date(),
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [editingEntry, setEditingEntry] = useState<BitcoinEntry | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -70,25 +71,63 @@ export function useBitcoinEntries() {
     amountInvested: number,
     btcAmount: number,
     exchangeRate: number,
-    currency: 'BRL' | 'USD'
+    currency: 'BRL' | 'USD',
+    date: Date
   ) => {
-    const newEntry: BitcoinEntry = {
-      id: uuidv4(),
-      date: new Date(),
-      amountInvested,
-      btcAmount,
-      exchangeRate,
-      currency,
-    };
+    if (editingEntry) {
+      // Update existing entry
+      const updatedEntries = entries.map(entry => 
+        entry.id === editingEntry.id 
+          ? {
+              ...entry,
+              amountInvested,
+              btcAmount,
+              exchangeRate,
+              currency,
+              date
+            }
+          : entry
+      );
+      
+      setEntries(updatedEntries);
+      saveEntriesToLocalStorage(updatedEntries);
+      setEditingEntry(null);
+      
+      toast({
+        title: 'Aporte atualizado',
+        description: 'Seu aporte de Bitcoin foi atualizado com sucesso.',
+      });
+    } else {
+      // Add new entry
+      const newEntry: BitcoinEntry = {
+        id: uuidv4(),
+        date,
+        amountInvested,
+        btcAmount,
+        exchangeRate,
+        currency,
+      };
 
-    const updatedEntries = [...entries, newEntry];
-    setEntries(updatedEntries);
-    saveEntriesToLocalStorage(updatedEntries);
+      const updatedEntries = [...entries, newEntry];
+      setEntries(updatedEntries);
+      saveEntriesToLocalStorage(updatedEntries);
 
-    toast({
-      title: 'Aporte registrado',
-      description: 'Seu aporte de Bitcoin foi registrado com sucesso.',
-    });
+      toast({
+        title: 'Aporte registrado',
+        description: 'Seu aporte de Bitcoin foi registrado com sucesso.',
+      });
+    }
+  };
+
+  const editEntry = (id: string) => {
+    const entry = entries.find(entry => entry.id === id);
+    if (entry) {
+      setEditingEntry(entry);
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingEntry(null);
   };
 
   const deleteEntry = (id: string) => {
@@ -110,7 +149,10 @@ export function useBitcoinEntries() {
     entries,
     currentRate,
     isLoading,
+    editingEntry,
     addEntry,
+    editEntry,
+    cancelEdit,
     deleteEntry,
     updateCurrentRate,
   };

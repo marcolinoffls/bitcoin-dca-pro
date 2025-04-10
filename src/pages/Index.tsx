@@ -8,7 +8,17 @@ import CurrentRateCard from '@/components/CurrentRateCard';
 import { Bitcoin } from 'lucide-react';
 
 const Index = () => {
-  const { entries, currentRate, isLoading, addEntry, deleteEntry, updateCurrentRate } = useBitcoinEntries();
+  const { 
+    entries, 
+    currentRate, 
+    isLoading, 
+    editingEntry,
+    addEntry, 
+    editEntry,
+    cancelEdit,
+    deleteEntry, 
+    updateCurrentRate 
+  } = useBitcoinEntries();
   const [selectedCurrency, setSelectedCurrency] = useState<'BRL' | 'USD'>('BRL');
 
   return (
@@ -48,6 +58,8 @@ const Index = () => {
           <EntryForm 
             onAddEntry={addEntry} 
             currentRate={currentRate}
+            editingEntry={editingEntry || undefined}
+            onCancelEdit={cancelEdit}
           />
         </div>
         
@@ -56,6 +68,7 @@ const Index = () => {
             entries={entries} 
             currentRate={currentRate} 
             onDelete={deleteEntry}
+            onEdit={editEntry}
             selectedCurrency={selectedCurrency}
           />
         </div>

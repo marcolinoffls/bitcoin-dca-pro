@@ -4,26 +4,57 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import CurrencySelector from '@/components/CurrencySelector';
-import { Bitcoin } from 'lucide-react';
+import { Bitcoin, CalendarIcon, CalendarCheck } from 'lucide-react';
 import { formatNumber } from '@/lib/utils';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 interface EntryFormProps {
   onAddEntry: (
     amountInvested: number,
     btcAmount: number,
     exchangeRate: number,
-    currency: 'BRL' | 'USD'
+    currency: 'BRL' | 'USD',
+    date: Date
   ) => void;
   currentRate: { usd: number; brl: number };
+  editingEntry?: {
+    id: string;
+    date: Date;
+    amountInvested: number;
+    btcAmount: number;
+    exchangeRate: number;
+    currency: 'BRL' | 'USD';
+  };
+  onCancelEdit?: () => void;
 }
 
-const EntryForm: React.FC<EntryFormProps> = ({ onAddEntry, currentRate }) => {
-  const [amountInvested, setAmountInvested] = useState('');
-  const [btcAmount, setBtcAmount] = useState('');
-  const [exchangeRate, setExchangeRate] = useState('');
-  const [currency, setCurrency] = useState<'BRL' | 'USD'>('BRL');
+const EntryForm: React.FC<EntryFormProps> = ({ 
+  onAddEntry, 
+  currentRate, 
+  editingEntry, 
+  onCancelEdit 
+}) => {
+  const [amountInvested, setAmountInvested] = useState(
+    editingEntry ? formatNumber(editingEntry.amountInvested) : ''
+  );
+  const [btcAmount, setBtcAmount] = useState(
+    editingEntry ? formatNumber(editingEntry.btcAmount, 8) : ''
+  );
+  const [exchangeRate, setExchangeRate] = useState(
+    editingEntry ? formatNumber(editingEntry.exchangeRate) : ''
+  );
+  const [currency, setCurrency] = useState<'BRL' | 'USD'>(
+    editingEntry ? editingEntry.currency : 'BRL'
+  );
   const [formMode, setFormMode] = useState<'amount' | 'rate'>('amount');
+  const [date, setDate] = useState<Date>(
+    editingEntry ? editingEntry.date : new Date()
+  );
 
   // Função para converter string com vírgula para número
   const parseLocalNumber = (value: string): number => {
@@ -41,6 +72,16 @@ const EntryForm: React.FC<EntryFormProps> = ({ onAddEntry, currentRate }) => {
     }
   };
 
+  const resetForm = () => {
+    setAmountInvested('');
+    setBtcAmount('');
+    setExchangeRate('');
+    setDate(new Date());
+    if (onCancelEdit) {
+      onCancelEdit();
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -52,12 +93,10 @@ const EntryForm: React.FC<EntryFormProps> = ({ onAddEntry, currentRate }) => {
       return;
     }
     
-    onAddEntry(parsedAmount, parsedBtc, parsedRate, currency);
+    onAddEntry(parsedAmount, parsedBtc, parsedRate, currency, date);
     
     // Limpar o formulário
-    setAmountInvested('');
-    setBtcAmount('');
-    setExchangeRate('');
+    resetForm();
   };
 
   const calculateFromAmount = () => {
@@ -87,16 +126,59 @@ const EntryForm: React.FC<EntryFormProps> = ({ onAddEntry, currentRate }) => {
     }
   };
 
+  const setToday = () => {
+    setDate(new Date());
+  };
+
   return (
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-xl flex items-center gap-2">
           <Bitcoin className="h-6 w-6 text-bitcoin" />
-          Registrar Novo Aporte
+          {editingEntry ? 'Editar Aporte' : 'Registrar Novo Aporte'}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="flex flex-col space-y-1.5">
+            <Label htmlFor="purchaseDate">Data do Aporte</Label>
+            <div className="flex gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !date && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {date ? format(date, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecione uma data</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={(date) => date && setDate(date)}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={setToday}
+                className="shrink-0"
+              >
+                <CalendarCheck className="h-4 w-4 mr-2" />
+                Hoje
+              </Button>
+            </div>
+          </div>
+          
           <div className="flex flex-col space-y-1.5">
             <Label htmlFor="currency">Moeda</Label>
             <CurrencySelector
@@ -173,28 +255,57 @@ const EntryForm: React.FC<EntryFormProps> = ({ onAddEntry, currentRate }) => {
           </div>
           
           <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={calculateFromAmount}
-              className="col-span-1"
-            >
-              Calcular BTC a partir do valor
-            </Button>
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={calculateFromBtc}
-              className="col-span-1"
-            >
-              Calcular valor a partir do BTC
-            </Button>
-            <Button 
-              type="submit" 
-              className="col-span-1 bg-bitcoin hover:bg-bitcoin-dark"
-            >
-              Registrar
-            </Button>
+            {!editingEntry ? (
+              <>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={calculateFromAmount}
+                  className="col-span-1"
+                >
+                  Calcular BTC a partir do valor
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={calculateFromBtc}
+                  className="col-span-1"
+                >
+                  Calcular valor a partir do BTC
+                </Button>
+                <Button 
+                  type="submit" 
+                  className="col-span-1 bg-bitcoin hover:bg-bitcoin-dark"
+                >
+                  Registrar
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={calculateFromAmount}
+                  className="col-span-1"
+                >
+                  Calcular BTC
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline"
+                  onClick={resetForm}
+                  className="col-span-1"
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  type="submit" 
+                  className="col-span-1 bg-bitcoin hover:bg-bitcoin-dark"
+                >
+                  Atualizar
+                </Button>
+              </>
+            )}
           </div>
         </form>
       </CardContent>

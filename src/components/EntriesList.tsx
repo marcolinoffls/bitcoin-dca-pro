@@ -7,13 +7,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { TrendingDown, TrendingUp, Trash2 } from 'lucide-react';
+import { TrendingDown, TrendingUp, Trash2, Edit } from 'lucide-react';
 import { formatNumber } from '@/lib/utils';
 
 interface EntriesListProps {
   entries: BitcoinEntry[];
   currentRate: CurrentRate;
   onDelete: (id: string) => void;
+  onEdit: (id: string) => void;
   selectedCurrency: 'BRL' | 'USD';
 }
 
@@ -21,6 +22,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
   entries,
   currentRate,
   onDelete,
+  onEdit,
   selectedCurrency,
 }) => {
   if (entries.length === 0) {
@@ -105,13 +107,23 @@ const EntriesList: React.FC<EntriesListProps> = ({
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onDelete(entry.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex justify-end">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onEdit(entry.id)}
+                          className="mr-1"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onDelete(entry.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
