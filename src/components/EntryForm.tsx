@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import CurrencySelector from '@/components/CurrencySelector';
-import { Bitcoin, CalendarIcon, CalendarCheck } from 'lucide-react';
+import { Bitcoin, CalendarIcon, CalendarCheck, Check } from 'lucide-react';
 import { formatNumber } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -55,6 +55,9 @@ const EntryForm: React.FC<EntryFormProps> = ({
   const [date, setDate] = useState<Date>(
     editingEntry ? editingEntry.date : new Date()
   );
+  const [tempDate, setTempDate] = useState<Date>(date);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const calendarPopoverRef = useRef<HTMLButtonElement>(null);
 
   // Função para converter string com vírgula para número
   const parseLocalNumber = (value: string): number => {
@@ -77,6 +80,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
     setBtcAmount('');
     setExchangeRate('');
     setDate(new Date());
+    setTempDate(new Date());
     if (onCancelEdit) {
       onCancelEdit();
     }
@@ -127,7 +131,21 @@ const EntryForm: React.FC<EntryFormProps> = ({
   };
 
   const setToday = () => {
-    setDate(new Date());
+    setTempDate(new Date());
+    confirmDateSelection();
+  };
+
+  const confirmDateSelection = () => {
+    setDate(tempDate);
+    setIsCalendarOpen(false);
+  };
+
+  const handleCalendarToggle = (open: boolean) => {
+    setIsCalendarOpen(open);
+    if (open) {
+      // Quando o calendário abre, inicialize tempDate com a data atual selecionada
+      setTempDate(date);
+    }
   };
 
   return (
@@ -143,9 +161,10 @@ const EntryForm: React.FC<EntryFormProps> = ({
           <div className="flex flex-col space-y-1.5">
             <Label htmlFor="purchaseDate">Data do Aporte</Label>
             <div className="flex gap-2">
-              <Popover>
+              <Popover open={isCalendarOpen} onOpenChange={handleCalendarToggle}>
                 <PopoverTrigger asChild>
                   <Button
+                    ref={calendarPopoverRef}
                     variant="outline"
                     className={cn(
                       "w-full justify-start text-left font-normal",
@@ -156,15 +175,35 @@ const EntryForm: React.FC<EntryFormProps> = ({
                     {date ? format(date, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecione uma data</span>}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={(date) => date && setDate(date)}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                    locale={ptBR}
-                  />
+                <PopoverContent className="w-auto p-0" align="start">
+                  <div className="p-2">
+                    <Calendar
+                      mode="single"
+                      selected={tempDate}
+                      onSelect={(newDate) => newDate && setTempDate(newDate)}
+                      initialFocus
+                      defaultMonth={tempDate}
+                      locale={ptBR}
+                    />
+                    <div className="flex justify-end mt-2 gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setIsCalendarOpen(false)}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button 
+                        variant="default" 
+                        size="sm" 
+                        onClick={confirmDateSelection}
+                        className="bg-bitcoin hover:bg-bitcoin-dark"
+                      >
+                        <Check className="h-4 w-4 mr-1" />
+                        Confirmar
+                      </Button>
+                    </div>
+                  </div>
                 </PopoverContent>
               </Popover>
               <Button

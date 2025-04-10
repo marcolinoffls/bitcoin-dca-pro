@@ -56,6 +56,9 @@ function Calendar({
         IconLeft: ({ ..._props }) => <ChevronLeft className="h-4 w-4" />,
         IconRight: ({ ..._props }) => <ChevronRight className="h-4 w-4" />,
       }}
+      fromDate={new Date(2000, 0, 1)}
+      toDate={new Date(2100, 11, 31)}
+      captionLayout="dropdown-buttons"
       {...props}
     />
   );
