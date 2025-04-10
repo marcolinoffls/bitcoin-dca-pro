@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import CurrencySelector from '@/components/CurrencySelector';
 import { Bitcoin } from 'lucide-react';
+import { formatNumber } from '@/lib/utils';
 
 interface EntryFormProps {
   onAddEntry: (
@@ -24,15 +25,18 @@ const EntryForm: React.FC<EntryFormProps> = ({ onAddEntry, currentRate }) => {
   const [currency, setCurrency] = useState<'BRL' | 'USD'>('BRL');
   const [formMode, setFormMode] = useState<'amount' | 'rate'>('amount');
 
+  // Função para converter string com vírgula para número
+  const parseLocalNumber = (value: string): number => {
+    return parseFloat(value.replace(',', '.'));
+  };
+
   const handleCurrencyChange = (newCurrency: 'BRL' | 'USD') => {
     setCurrency(newCurrency);
     
     // Atualizar a taxa de câmbio com base na moeda selecionada
     if (formMode === 'rate' && currentRate) {
       setExchangeRate(
-        newCurrency === 'USD' 
-          ? currentRate.usd.toString() 
-          : currentRate.brl.toString()
+        formatNumber(newCurrency === 'USD' ? currentRate.usd : currentRate.brl)
       );
     }
   };
@@ -40,9 +44,9 @@ const EntryForm: React.FC<EntryFormProps> = ({ onAddEntry, currentRate }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const parsedAmount = parseFloat(amountInvested);
-    const parsedBtc = parseFloat(btcAmount);
-    const parsedRate = parseFloat(exchangeRate);
+    const parsedAmount = parseLocalNumber(amountInvested);
+    const parsedBtc = parseLocalNumber(btcAmount);
+    const parsedRate = parseLocalNumber(exchangeRate);
     
     if (isNaN(parsedAmount) || isNaN(parsedBtc) || isNaN(parsedRate)) {
       return;
@@ -57,29 +61,29 @@ const EntryForm: React.FC<EntryFormProps> = ({ onAddEntry, currentRate }) => {
   };
 
   const calculateFromAmount = () => {
-    const amount = parseFloat(amountInvested);
-    const rate = parseFloat(exchangeRate);
+    const amount = parseLocalNumber(amountInvested);
+    const rate = parseLocalNumber(exchangeRate);
     
     if (!isNaN(amount) && !isNaN(rate) && rate > 0) {
       const btc = amount / rate;
-      setBtcAmount(btc.toFixed(8));
+      setBtcAmount(formatNumber(btc, 8));
     }
   };
 
   const calculateFromBtc = () => {
-    const btc = parseFloat(btcAmount);
-    const rate = parseFloat(exchangeRate);
+    const btc = parseLocalNumber(btcAmount);
+    const rate = parseLocalNumber(exchangeRate);
     
     if (!isNaN(btc) && !isNaN(rate)) {
       const amount = btc * rate;
-      setAmountInvested(amount.toFixed(2));
+      setAmountInvested(formatNumber(amount));
     }
   };
 
   const useCurrentRate = () => {
     if (currentRate) {
       const rate = currency === 'USD' ? currentRate.usd : currentRate.brl;
-      setExchangeRate(rate.toString());
+      setExchangeRate(formatNumber(rate));
     }
   };
 
@@ -110,13 +114,11 @@ const EntryForm: React.FC<EntryFormProps> = ({ onAddEntry, currentRate }) => {
                 </span>
                 <Input
                   id="amount"
-                  placeholder="0.00"
+                  placeholder="0,00"
                   value={amountInvested}
                   onChange={(e) => setAmountInvested(e.target.value)}
                   className="pl-8"
-                  type="number"
-                  step="0.01"
-                  min="0"
+                  type="text"
                   required
                 />
               </div>
@@ -130,13 +132,11 @@ const EntryForm: React.FC<EntryFormProps> = ({ onAddEntry, currentRate }) => {
                 </span>
                 <Input
                   id="btcAmount"
-                  placeholder="0.00000000"
+                  placeholder="0,00000000"
                   value={btcAmount}
                   onChange={(e) => setBtcAmount(e.target.value)}
                   className="pl-8"
-                  type="number"
-                  step="0.00000001"
-                  min="0"
+                  type="text"
                   required
                 />
               </div>
@@ -162,13 +162,11 @@ const EntryForm: React.FC<EntryFormProps> = ({ onAddEntry, currentRate }) => {
               </span>
               <Input
                 id="exchangeRate"
-                placeholder="0.00"
+                placeholder="0,00"
                 value={exchangeRate}
                 onChange={(e) => setExchangeRate(e.target.value)}
                 className="pl-8"
-                type="number"
-                step="0.01"
-                min="0"
+                type="text"
                 required
               />
             </div>

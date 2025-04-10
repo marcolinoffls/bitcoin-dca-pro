@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw, Bitcoin } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { formatNumber } from '@/lib/utils';
 
 interface CurrentRateCardProps {
   currentRate: CurrentRate;
@@ -39,7 +40,7 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
             onClick={() => onChangeCurrency('USD')}
           >
             <span className="text-sm font-medium">USD</span>
-            <span className="text-2xl font-bold">$ {currentRate.usd.toFixed(2)}</span>
+            <span className="text-2xl font-bold">$ {formatNumber(currentRate.usd)}</span>
           </div>
           
           <div 
@@ -51,7 +52,7 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
             onClick={() => onChangeCurrency('BRL')}
           >
             <span className="text-sm font-medium">BRL</span>
-            <span className="text-2xl font-bold">R$ {currentRate.brl.toFixed(2)}</span>
+            <span className="text-2xl font-bold">R$ {formatNumber(currentRate.brl)}</span>
           </div>
         </div>
         

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BitcoinEntry, CurrentRate } from '@/types';
 import { calculateTotalBitcoin, calculateAverageByPeriod } from '@/services/bitcoinService';
 import { Bitcoin, DollarSign, Repeat, Calendar } from 'lucide-react';
+import { formatNumber } from '@/lib/utils';
 
 interface StatisticsCardsProps {
   entries: BitcoinEntry[];
@@ -35,9 +36,9 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
           <Bitcoin className="h-4 w-4 text-bitcoin" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{totalBitcoin.toFixed(8)} BTC</div>
+          <div className="text-2xl font-bold">{formatNumber(totalBitcoin, 8)} BTC</div>
           <p className="text-xs text-muted-foreground">
-            Valor atual: {currencySymbol} {totalValueCurrent.toFixed(2)}
+            Valor atual: {currencySymbol} {formatNumber(totalValueCurrent)}
           </p>
         </CardContent>
       </Card>
@@ -50,7 +51,7 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
         <CardContent>
           <div className="text-2xl font-bold">
             {avgPriceMonth > 0 
-              ? `${currencySymbol} ${avgPriceMonth.toFixed(2)}` 
+              ? `${currencySymbol} ${formatNumber(avgPriceMonth)}` 
               : "Sem aportes"}
           </div>
           <p className="text-xs text-muted-foreground">
@@ -67,7 +68,7 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
         <CardContent>
           <div className="text-2xl font-bold">
             {avgPriceYear > 0 
-              ? `${currencySymbol} ${avgPriceYear.toFixed(2)}` 
+              ? `${currencySymbol} ${formatNumber(avgPriceYear)}` 
               : "Sem aportes"}
           </div>
           <p className="text-xs text-muted-foreground">
@@ -84,7 +85,7 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
         <CardContent>
           <div className="text-2xl font-bold">
             {avgPriceAll > 0 
-              ? `${currencySymbol} ${avgPriceAll.toFixed(2)}` 
+              ? `${currencySymbol} ${formatNumber(avgPriceAll)}` 
               : "Sem aportes"}
           </div>
           <p className="text-xs text-muted-foreground">

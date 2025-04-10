@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { TrendingDown, TrendingUp, Trash2 } from 'lucide-react';
+import { formatNumber } from '@/lib/utils';
 
 interface EntriesListProps {
   entries: BitcoinEntry[];
@@ -81,11 +82,11 @@ const EntriesList: React.FC<EntriesListProps> = ({
                       {format(entry.date, 'dd/MM/yyyy', { locale: ptBR })}
                     </TableCell>
                     <TableCell>
-                      {entry.currency === 'USD' ? '$' : 'R$'} {entry.amountInvested.toFixed(2)}
+                      {entry.currency === 'USD' ? '$' : 'R$'} {formatNumber(entry.amountInvested)}
                     </TableCell>
-                    <TableCell>{entry.btcAmount.toFixed(8)}</TableCell>
+                    <TableCell>{formatNumber(entry.btcAmount, 8)}</TableCell>
                     <TableCell>
-                      {entry.currency === 'USD' ? '$' : 'R$'} {entry.exchangeRate.toFixed(2)}
+                      {entry.currency === 'USD' ? '$' : 'R$'} {formatNumber(entry.exchangeRate)}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center">
@@ -99,7 +100,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
                             percentChange > 0 ? 'text-green-500' : 'text-red-500'
                           }
                         >
-                          {percentChange.toFixed(2)}%
+                          {formatNumber(percentChange)}%
                         </span>
                       </div>
                     </TableCell>
