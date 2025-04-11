@@ -19,7 +19,7 @@ const ExchangeRateField: React.FC<ExchangeRateFieldProps> = ({
   onUseCurrentRate 
 }) => {
   return (
-    <div className="flex flex-col space-y-3">
+    <div className="flex flex-col space-y-3 mt-6">
       <div className="flex justify-between items-center">
         <Label htmlFor="exchangeRate">Cotação no momento da compra</Label>
         <Button 
@@ -42,7 +42,7 @@ const ExchangeRateField: React.FC<ExchangeRateFieldProps> = ({
           placeholder="0,00"
           value={exchangeRate}
           onChange={(e) => onExchangeRateChange(e.target.value)}
-          className="pl-8 rounded-xl"
+          className="pl-8 rounded-xl focus-visible:ring-bitcoin focus-visible:border-bitcoin transition-all"
           type="text"
           required
         />

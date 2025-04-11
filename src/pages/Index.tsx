@@ -37,7 +37,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto py-6 px-4">
-        <header className="mb-4 text-center">
+        <header className="mb-6 text-center">
           <div className="flex items-center justify-center gap-3 mb-3">
             <Bitcoin size={isMobile ? 28 : 40} className="text-bitcoin" />
             <h1 className={`${isMobile ? "text-xl" : "text-3xl"} font-bold`}>Bitcoin DCA Pro</h1>
@@ -47,23 +47,14 @@ const Index = () => {
           </p>
         </header>
 
-        <div className="grid grid-cols-2 gap-5 mb-5">
-          <div className="flex justify-start">
-            <ToggleDisplayUnit 
-              displayUnit={displayUnit} 
-              onToggle={toggleDisplayUnit} 
-            />
-          </div>
-          <div className="flex justify-start">
-            <ToggleCurrency
-              selectedCurrency={selectedCurrency}
-              onToggle={toggleCurrency}
-            />
-          </div>
-        </div>
-
-        <div className="grid gap-5 grid-cols-1 md:grid-cols-2 mb-6">
-          <div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+          <div className="md:col-span-1">
+            <div className="mb-5">
+              <ToggleDisplayUnit 
+                displayUnit={displayUnit} 
+                onToggle={toggleDisplayUnit} 
+              />
+            </div>
             <StatisticsCards 
               entries={entries} 
               currentRate={currentRate}
@@ -72,23 +63,30 @@ const Index = () => {
             />
           </div>
           
-          <div>
-            <CurrentRateCard 
-              currentRate={currentRate} 
-              isLoading={isLoading} 
-              onRefresh={updateCurrentRate}
-            />
+          <div className="md:col-span-2">
+            <div className="mb-5">
+              <ToggleCurrency
+                selectedCurrency={selectedCurrency}
+                onToggle={toggleCurrency}
+              />
+            </div>
+            <div className="mb-5">
+              <CurrentRateCard 
+                currentRate={currentRate} 
+                isLoading={isLoading} 
+                onRefresh={updateCurrentRate}
+              />
+            </div>
+            <div>
+              <EntryForm 
+                onAddEntry={addEntry} 
+                currentRate={currentRate}
+                editingEntry={editingEntry || undefined}
+                onCancelEdit={cancelEdit}
+                displayUnit={displayUnit}
+              />
+            </div>
           </div>
-        </div>
-        
-        <div className="mb-6">
-          <EntryForm 
-            onAddEntry={addEntry} 
-            currentRate={currentRate}
-            editingEntry={editingEntry || undefined}
-            onCancelEdit={cancelEdit}
-            displayUnit={displayUnit}
-          />
         </div>
         
         <div>

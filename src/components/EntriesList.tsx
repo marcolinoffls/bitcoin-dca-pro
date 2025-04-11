@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { BitcoinEntry, CurrentRate } from '@/types';
 import { calculatePercentageChange } from '@/services/bitcoinService';
@@ -74,7 +73,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
     );
   }
 
-  // Ordenar os aportes por data (mais recente primeiro)
   const sortedEntries = [...entries].sort(
     (a, b) => b.date.getTime() - a.date.getTime()
   );
@@ -85,7 +83,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
 
   const formatBitcoinAmount = (amount: number) => {
     if (displayUnit === 'SATS') {
-      // Convert to satoshis (1 BTC = 100,000,000 satoshis)
       const satoshis = amount * 100000000;
       return formatNumber(satoshis, 0);
     }
@@ -111,10 +108,8 @@ const EntriesList: React.FC<EntriesListProps> = ({
             {sortedEntries.map((entry) => {
               const currentRateValue = currencyView === 'USD' ? currentRate.usd : currentRate.brl;
               
-              // Calculate entry rate in the current view currency
               let entryRateInViewCurrency = entry.exchangeRate;
               
-              // If entry currency doesn't match the view currency, convert it
               if (entry.currency !== currencyView) {
                 entryRateInViewCurrency = entry.currency === 'USD' 
                   ? entry.exchangeRate * (currentRate.brl / currentRate.usd) // USD to BRL
@@ -126,7 +121,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
                 currentRateValue
               );
               
-              // Convert invested amount to the view currency if needed
               let investedValue = entry.amountInvested;
               if (entry.currency !== currencyView) {
                 investedValue = entry.currency === 'USD'
@@ -134,7 +128,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
                   : entry.amountInvested / (currentRate.brl / currentRate.usd); // BRL to USD
               }
               
-              // Calculate current value based on invested amount and percentage change
               const currentValue = investedValue * (1 + percentChange / 100);
               
               return (
@@ -225,7 +218,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
         </CardContent>
       </Card>
 
-      {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -245,9 +237,8 @@ const EntriesList: React.FC<EntriesListProps> = ({
         </DialogContent>
       </Dialog>
       
-      {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md rounded-xl px-6">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-red-500" />
@@ -261,7 +252,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
             <Button 
               variant="outline" 
               onClick={() => setIsDeleteDialogOpen(false)}
-              className="flex-1"
+              className="flex-1 rounded-full"
             >
               Cancelar
             </Button>
