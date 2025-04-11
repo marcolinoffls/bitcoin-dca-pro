@@ -2,7 +2,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 type AuthContextType = {
   session: Session | null;
@@ -27,6 +27,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       (event, newSession) => {
         setSession(newSession);
         setUser(newSession?.user ?? null);
+        
+        if (event === 'SIGNED_IN') {
+          toast({
+            title: "Login bem-sucedido",
+            description: "Bem-vindo de volta!",
+          });
+        } else if (event === 'SIGNED_OUT') {
+          toast({
+            title: "Logout efetuado",
+            description: "Você saiu com sucesso.",
+          });
+        } else if (event === 'PASSWORD_RECOVERY') {
+          // This event is triggered when a user clicks the password reset link
+          toast({
+            title: "Redefinição de senha",
+            description: "Por favor, defina sua nova senha.",
+          });
+        } else if (event === 'USER_UPDATED') {
+          // This event is triggered when a user updates their profile
+          toast({
+            title: "Perfil atualizado",
+            description: "Suas informações foram atualizadas com sucesso.",
+          });
+        }
       }
     );
 
@@ -38,7 +62,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [toast]);
 
   const signIn = async (email: string, password: string) => {
     try {
