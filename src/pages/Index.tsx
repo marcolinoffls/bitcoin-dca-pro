@@ -5,9 +5,9 @@ import EntryForm from '@/components/EntryForm';
 import EntriesList from '@/components/EntriesList';
 import StatisticsCards from '@/components/StatisticsCards';
 import CurrentRateCard from '@/components/CurrentRateCard';
-import { Bitcoin, SwitchCamera } from 'lucide-react';
+import { Bitcoin } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Button } from '@/components/ui/button';
+import ToggleDisplayUnit from '@/components/ToggleDisplayUnit';
 
 const Index = () => {
   const { 
@@ -25,8 +25,8 @@ const Index = () => {
   const [displayUnit, setDisplayUnit] = useState<'BTC' | 'SATS'>('BTC');
   const isMobile = useIsMobile();
 
-  const toggleDisplayUnit = () => {
-    setDisplayUnit(prev => prev === 'BTC' ? 'SATS' : 'BTC');
+  const toggleDisplayUnit = (value: 'BTC' | 'SATS') => {
+    setDisplayUnit(value);
   };
 
   return (
@@ -41,15 +41,10 @@ const Index = () => {
             Acompanhe seus investimentos em Bitcoin e monitore seu desempenho ao longo do tempo
           </p>
           <div className="mt-3 flex justify-center">
-            <Button 
-              variant="outline"
-              size={isMobile ? "sm" : "default"}
-              onClick={toggleDisplayUnit}
-              className="flex items-center gap-2"
-            >
-              <SwitchCamera className="h-4 w-4" />
-              Exibir em {displayUnit === 'BTC' ? 'Satoshis' : 'Bitcoin'}
-            </Button>
+            <ToggleDisplayUnit 
+              displayUnit={displayUnit} 
+              onToggle={toggleDisplayUnit} 
+            />
           </div>
         </header>
 

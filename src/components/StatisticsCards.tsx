@@ -85,11 +85,13 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
             <CardTitle className="text-sm text-gray-500">Total em {displayUnit === 'SATS' ? 'Satoshis' : 'Bitcoin'}</CardTitle>
           </div>
         </CardHeader>
-        <CardContent className="p-5 pt-0 text-center">
-          <div className="text-2xl font-bold">{formattedTotalBitcoin}</div>
-          <p className="text-xs mt-1 text-muted-foreground">
-            Valor atual: {currencySymbol} {formatNumber(totalValueCurrent)}
-          </p>
+        <CardContent className="p-5 pt-0">
+          <div className="flex flex-col items-center justify-center h-24">
+            <div className="text-2xl font-bold">{formattedTotalBitcoin}</div>
+            <p className="text-xs mt-1 text-muted-foreground">
+              Valor atual: {currencySymbol} {formatNumber(totalValueCurrent)}
+            </p>
+          </div>
         </CardContent>
       </Card>
       
@@ -99,8 +101,10 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/20">
               <PeriodIcon className="h-6 w-6 text-purple-600 dark:text-purple-400" />
             </div>
-            <CardTitle className="text-sm text-gray-500">
-              Preço Médio
+            <div className="flex items-center">
+              <CardTitle className="text-sm text-gray-500">
+                Preço Médio
+              </CardTitle>
               <Popover>
                 <PopoverTrigger asChild>
                   <button className="ml-2 px-2 py-1 text-xs rounded-md bg-muted hover:bg-muted/80 transition-colors">
@@ -133,18 +137,20 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
                   </div>
                 </PopoverContent>
               </Popover>
-            </CardTitle>
+            </div>
           </div>
         </CardHeader>
-        <CardContent className="p-5 pt-0 text-center">
-          <div className="text-2xl font-bold animate-in fade-in-0 duration-300">
-            {currentAvgPrice > 0 
-              ? `${currencySymbol} ${formatNumber(currentAvgPrice)}` 
-              : "Sem aportes"}
+        <CardContent className="p-5 pt-0">
+          <div className="flex flex-col items-center justify-center h-24">
+            <div className="text-2xl font-bold animate-in fade-in-0 duration-300">
+              {currentAvgPrice > 0 
+                ? `${currencySymbol} ${formatNumber(currentAvgPrice)}` 
+                : "Sem aportes"}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {getPeriodText()}
+            </p>
           </div>
-          <p className="text-xs text-muted-foreground">
-            {getPeriodText()}
-          </p>
         </CardContent>
       </Card>
     </div>
