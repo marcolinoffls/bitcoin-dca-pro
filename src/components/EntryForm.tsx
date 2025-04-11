@@ -183,7 +183,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
         <form onSubmit={handleSubmit} className={`space-y-${isMobile ? "3" : "4"}`}>
           <div className="flex flex-col space-y-1.5">
             <Label htmlFor="purchaseDate">Data do Aporte</Label>
-            <div className="flex gap-2">
+            <div className="flex gap-4">
               <Popover open={isCalendarOpen} onOpenChange={handleCalendarToggle}>
                 <PopoverTrigger asChild>
                   <Button
@@ -194,7 +194,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
                       !date && "text-muted-foreground",
                       isMobile && "text-sm"
                     )}
-                    type="button" // Add type="button" to prevent form submission
+                    type="button"
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {date ? format(date, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecione uma data</span>}
@@ -209,14 +209,14 @@ const EntryForm: React.FC<EntryFormProps> = ({
                       initialFocus
                       defaultMonth={tempDate}
                       locale={ptBR}
-                      className="rounded-md border"
+                      className="rounded-md border pointer-events-auto"
                     />
                     <div className="flex justify-end mt-2 gap-2">
                       <Button 
                         variant="outline" 
                         size="sm" 
                         onClick={() => setIsCalendarOpen(false)}
-                        type="button" // Add type="button" to prevent form submission
+                        type="button"
                       >
                         Cancelar
                       </Button>
@@ -225,7 +225,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
                         size="sm" 
                         onClick={confirmDateSelection}
                         className="bg-[#F97316] hover:bg-[#E85D04]"
-                        type="button" // Add type="button" to prevent form submission
+                        type="button"
                       >
                         <Check className="h-4 w-4 mr-1" />
                         Confirmar
@@ -252,7 +252,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
             <CurrencySelector
               selectedCurrency={currency}
               onChange={handleCurrencyChange}
-              buttonType="button" // Add buttonType="button" to prevent form submission
+              buttonType="button"
             />
           </div>
           
@@ -294,7 +294,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
             </div>
           </div>
           
-          <div className="flex flex-col space-y-1.5">
+          <div className="flex flex-col space-y-3">
             <div className="flex justify-between">
               <Label htmlFor="exchangeRate">Cotação no momento da compra</Label>
               <Button 
@@ -323,7 +323,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
             </div>
           </div>
           
-          <div className={`grid grid-cols-1 gap-2 ${isMobile ? "grid-cols-2" : "md:grid-cols-3"}`}>
+          <div className={`grid grid-cols-1 gap-2 mt-6 ${isMobile ? "grid-cols-2" : "md:grid-cols-3"}`}>
             {!editingEntry ? (
               <>
                 <Button 
