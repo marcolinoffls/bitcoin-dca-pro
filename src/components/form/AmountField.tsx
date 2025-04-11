@@ -22,7 +22,7 @@ const AmountField: React.FC<AmountFieldProps> = ({ currency, amount, onAmountCha
           placeholder="0,00"
           value={amount}
           onChange={(e) => onAmountChange(e.target.value)}
-          className="pl-8"
+          className="pl-8 rounded-xl"
           type="text"
           required
         />

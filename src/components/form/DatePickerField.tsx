@@ -36,14 +36,14 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange })
   return (
     <div className="flex flex-col space-y-1.5">
       <Label htmlFor="purchaseDate">Data do Aporte</Label>
-      <div className="flex gap-4">
+      <div className="flex items-center gap-2">
         <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
           <PopoverTrigger asChild>
             <Button
               ref={calendarPopoverRef}
               variant="outline"
               className={cn(
-                "w-full justify-start text-left font-normal",
+                "flex-1 justify-start text-left font-normal rounded-xl border-input hover:border-bitcoin hover:bg-transparent",
                 !date && "text-muted-foreground",
                 isMobile && "text-sm"
               )}
@@ -61,7 +61,7 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange })
                 onSelect={handleDateSelect}
                 initialFocus
                 locale={ptBR}
-                className="rounded-md border-0 shadow-none"
+                className="rounded-md border-0 shadow-none pointer-events-auto"
               />
             </div>
           </PopoverContent>
@@ -70,7 +70,7 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange })
           type="button"
           variant="outline"
           onClick={setToday}
-          className="shrink-0"
+          className="shrink-0 rounded-xl hover:border-bitcoin hover:text-bitcoin hover:bg-transparent transition-colors"
           size={isMobile ? "sm" : "default"}
         >
           <CalendarCheck className="h-4 w-4 mr-2" />

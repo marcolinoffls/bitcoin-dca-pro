@@ -3,6 +3,7 @@ import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
 
 interface ExchangeRateFieldProps {
   currency: 'BRL' | 'USD';
@@ -19,15 +20,16 @@ const ExchangeRateField: React.FC<ExchangeRateFieldProps> = ({
 }) => {
   return (
     <div className="flex flex-col space-y-3">
-      <div className="flex justify-between">
+      <div className="flex justify-between items-center">
         <Label htmlFor="exchangeRate">Cotação no momento da compra</Label>
         <Button 
           type="button" 
-          variant="ghost" 
+          variant="outline" 
           size="sm" 
           onClick={onUseCurrentRate} 
-          className="h-6 text-xs"
+          className="h-8 text-xs rounded-full border border-muted hover:border-bitcoin hover:text-bitcoin transition-colors"
         >
+          <RefreshCw className="h-3.5 w-3.5 mr-1" />
           Usar cotação atual
         </Button>
       </div>
@@ -40,7 +42,7 @@ const ExchangeRateField: React.FC<ExchangeRateFieldProps> = ({
           placeholder="0,00"
           value={exchangeRate}
           onChange={(e) => onExchangeRateChange(e.target.value)}
-          className="pl-8"
+          className="pl-8 rounded-xl"
           type="text"
           required
         />

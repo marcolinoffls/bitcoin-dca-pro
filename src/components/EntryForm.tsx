@@ -87,7 +87,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
   };
 
   return (
-    <Card>
+    <Card className="rounded-xl shadow-md hover:shadow-lg transition-all duration-200">
       <CardHeader className={`${isMobile ? "pb-2" : "pb-3"}`}>
         <CardTitle className={`${isMobile ? "text-lg" : "text-xl"} flex items-center gap-2`}>
           <Bitcoin className={`${isMobile ? "h-5 w-5" : "h-6 w-6"} text-bitcoin`} />

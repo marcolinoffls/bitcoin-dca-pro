@@ -29,7 +29,7 @@ const FormActions: React.FC<FormActionsProps> = ({
             type="button" 
             variant="outline" 
             onClick={onCalculateFromAmount}
-            className={`${isMobile ? "col-span-1 text-xs px-2" : "col-span-1"}`}
+            className={`${isMobile ? "col-span-1 text-xs px-2" : "col-span-1"} rounded-xl hover:border-bitcoin hover:text-bitcoin hover:bg-transparent transition-colors`}
           >
             <Calculator className="h-4 w-4 mr-1" />
             {isMobile ? "" : "Calcular "}{displayUnit === 'SATS' ? 'Satoshis' : 'BTC'}
@@ -38,14 +38,14 @@ const FormActions: React.FC<FormActionsProps> = ({
             type="button" 
             variant="outline" 
             onClick={onCalculateFromBtc}
-            className={`${isMobile ? "col-span-1 text-xs px-2" : "col-span-1"}`}
+            className={`${isMobile ? "col-span-1 text-xs px-2" : "col-span-1"} rounded-xl hover:border-bitcoin hover:text-bitcoin hover:bg-transparent transition-colors`}
           >
             <Calculator className="h-4 w-4 mr-1" />
             {isMobile ? "" : "Calcular "}Valor
           </Button>
           <Button 
             type="submit" 
-            className={`${isMobile ? "col-span-2" : "col-span-1"} bg-bitcoin hover:bg-bitcoin-dark`}
+            className={`${isMobile ? "col-span-2" : "col-span-1"} bg-bitcoin hover:bg-bitcoin-dark rounded-full px-6 py-3 h-auto font-medium transition-all duration-200`}
           >
             Registrar
           </Button>
@@ -56,7 +56,7 @@ const FormActions: React.FC<FormActionsProps> = ({
             type="button" 
             variant="outline" 
             onClick={onCalculateFromAmount}
-            className={`${isMobile ? "col-span-1 text-xs px-2" : "col-span-1"}`}
+            className={`${isMobile ? "col-span-1 text-xs px-2" : "col-span-1"} rounded-xl hover:border-bitcoin hover:text-bitcoin hover:bg-transparent transition-colors`}
           >
             <Calculator className="h-4 w-4 mr-1" />
             Calcular {displayUnit === 'SATS' ? 'Satoshis' : 'BTC'}
@@ -65,13 +65,13 @@ const FormActions: React.FC<FormActionsProps> = ({
             type="button" 
             variant="outline"
             onClick={onReset}
-            className={`${isMobile ? "col-span-1 text-xs px-2" : "col-span-1"}`}
+            className={`${isMobile ? "col-span-1 text-xs px-2" : "col-span-1"} rounded-xl hover:border-bitcoin hover:text-bitcoin hover:bg-transparent transition-colors`}
           >
             Cancelar
           </Button>
           <Button 
             type="submit" 
-            className={`${isMobile ? "col-span-2" : "col-span-1"} bg-bitcoin hover:bg-bitcoin-dark`}
+            className={`${isMobile ? "col-span-2" : "col-span-1"} bg-bitcoin hover:bg-bitcoin-dark rounded-full px-6 py-3 h-auto font-medium transition-all duration-200`}
           >
             Atualizar
           </Button>
