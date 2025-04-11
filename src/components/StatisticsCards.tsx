@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BitcoinEntry, CurrentRate } from '@/types';
 import { calculateTotalBitcoin, calculateAverageByPeriod } from '@/services/bitcoinService';
-import { Bitcoin, DollarSign, Repeat, Calendar } from 'lucide-react';
+import { Bitcoin, DollarSign, Calendar } from 'lucide-react';
 import { formatNumber } from '@/lib/utils';
 
 interface StatisticsCardsProps {

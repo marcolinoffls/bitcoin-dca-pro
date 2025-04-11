@@ -7,7 +7,7 @@ interface CurrencySelectorProps {
   selectedCurrency: 'BRL' | 'USD';
   onChange: (currency: 'BRL' | 'USD') => void;
   className?: string;
-  buttonType?: "button" | "submit" | "reset"; // Add buttonType prop
+  buttonType?: "button" | "submit" | "reset";
 }
 
 const CurrencySelector: React.FC<CurrencySelectorProps> = ({
@@ -26,7 +26,7 @@ const CurrencySelector: React.FC<CurrencySelectorProps> = ({
           'flex-1 text-xs font-normal',
           selectedCurrency === 'USD' && 'bg-white shadow-sm dark:bg-btcblue'
         )}
-        type={buttonType} // Add type attribute
+        type={buttonType}
       >
         USD ($)
       </Button>
@@ -38,7 +38,7 @@ const CurrencySelector: React.FC<CurrencySelectorProps> = ({
           'flex-1 text-xs font-normal',
           selectedCurrency === 'BRL' && 'bg-white shadow-sm dark:bg-btcblue'
         )}
-        type={buttonType} // Add type attribute
+        type={buttonType}
       >
         BRL (R$)
       </Button>

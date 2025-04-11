@@ -41,7 +41,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
   );
   const [currency, setCurrency] = useState<'BRL' | 'USD'>(entry.currency);
   const [date, setDate] = useState<Date>(entry.date);
-  const [tempDate, setTempDate] = useState<Date>(date);
+  const [tempDate, setTempDate] = useState<Date>(entry.date);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const calendarPopoverRef = useRef<HTMLButtonElement>(null);
   const { toast } = useToast();
@@ -96,31 +96,40 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
     // Find and update entry directly in localStorage to avoid the issue with the hook
     const savedEntries = localStorage.getItem('bitcoin-entries');
     if (savedEntries) {
-      const entries = JSON.parse(savedEntries);
-      const updatedEntries = entries.map((savedEntry: any) => {
-        if (savedEntry.id === entry.id) {
-          return {
-            ...savedEntry,
-            amountInvested: parsedAmount,
-            btcAmount: parsedBtc,
-            exchangeRate: parsedRate,
-            currency,
-            date: date.toISOString()
-          };
-        }
-        return savedEntry;
-      });
-      
-      localStorage.setItem('bitcoin-entries', JSON.stringify(updatedEntries));
-      
-      // Reload the page to refresh the data
-      window.location.reload();
+      try {
+        const entries = JSON.parse(savedEntries);
+        const updatedEntries = entries.map((savedEntry: any) => {
+          if (savedEntry.id === entry.id) {
+            return {
+              ...savedEntry,
+              amountInvested: parsedAmount,
+              btcAmount: parsedBtc,
+              exchangeRate: parsedRate,
+              currency,
+              date: date.toISOString() // Use the selected date
+            };
+          }
+          return savedEntry;
+        });
+        
+        localStorage.setItem('bitcoin-entries', JSON.stringify(updatedEntries));
+        
+        // Reload the page to refresh the data
+        window.location.reload();
+        
+        toast({
+          title: "Aporte atualizado",
+          description: "Os dados do aporte foram atualizados com sucesso."
+        });
+      } catch (error) {
+        console.error("Error updating entry:", error);
+        toast({
+          title: "Erro ao atualizar",
+          description: "Ocorreu um erro ao atualizar o aporte.",
+          variant: "destructive"
+        });
+      }
     }
-    
-    toast({
-      title: "Aporte atualizado",
-      description: "Os dados do aporte foram atualizados com sucesso."
-    });
     
     onClose();
   };
@@ -155,6 +164,21 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
     }
   };
 
+  const calculateFromExchange = () => {
+    const amount = parseLocalNumber(amountInvested);
+    let btc = parseLocalNumber(btcAmount);
+    
+    // Convert from satoshis to BTC if necessary
+    if (displayUnit === 'SATS') {
+      btc = btc / 100000000;
+    }
+    
+    if (!isNaN(amount) && !isNaN(btc) && btc > 0) {
+      const rate = amount / btc;
+      setExchangeRate(formatNumber(rate));
+    }
+  };
+
   const useCurrentRate = () => {
     if (currentRate) {
       const rate = currency === 'USD' ? currentRate.usd : currentRate.brl;
@@ -163,8 +187,10 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
   };
 
   const setToday = () => {
-    setTempDate(new Date());
-    confirmDateSelection();
+    const today = new Date();
+    setDate(today);
+    setTempDate(today);
+    setIsCalendarOpen(false);
   };
 
   const confirmDateSelection = () => {
@@ -208,7 +234,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
                   initialFocus
                   defaultMonth={tempDate}
                   locale={ptBR}
-                  className="rounded-md border"
+                  className="rounded-md border pointer-events-auto"
                 />
                 <div className="flex justify-end mt-2 gap-2">
                   <Button 

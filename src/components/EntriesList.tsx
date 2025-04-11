@@ -12,6 +12,7 @@ import { formatNumber } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import EntryEditForm from '@/components/EntryEditForm';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface EntriesListProps {
   entries: BitcoinEntry[];
@@ -32,6 +33,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
 }) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
+  const [viewCurrency, setViewCurrency] = useState<'BRL' | 'USD'>(selectedCurrency);
   const isMobile = useIsMobile();
 
   const handleEditClick = (id: string) => {
@@ -77,6 +79,127 @@ const EntriesList: React.FC<EntriesListProps> = ({
     return formatNumber(amount, 8);
   };
 
+  const renderEntriesTable = (currencyView: 'BRL' | 'USD') => {
+    return (
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className={isMobile ? "text-xs" : ""}>Data</TableHead>
+              <TableHead className={isMobile ? "text-xs" : ""}>Valor Investido</TableHead>
+              <TableHead className={isMobile ? "text-xs" : ""}>{displayUnit === 'SATS' ? 'Satoshis' : 'Bitcoin'}</TableHead>
+              <TableHead className={isMobile ? "text-xs" : ""}>Cotação</TableHead>
+              <TableHead className={isMobile ? "text-xs" : ""}>Variação</TableHead>
+              <TableHead className={isMobile ? "text-xs" : ""}>Valor Atual</TableHead>
+              <TableHead className={`text-right ${isMobile ? "text-xs" : ""}`}>Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sortedEntries.map((entry) => {
+              const currentRateValue = currencyView === 'USD' ? currentRate.usd : currentRate.brl;
+              
+              // Calculate entry rate in the current view currency
+              let entryRateInViewCurrency = entry.exchangeRate;
+              
+              // If entry currency doesn't match the view currency, convert it
+              if (entry.currency !== currencyView) {
+                entryRateInViewCurrency = entry.currency === 'USD' 
+                  ? entry.exchangeRate * (currentRate.brl / currentRate.usd) // USD to BRL
+                  : entry.exchangeRate / (currentRate.brl / currentRate.usd); // BRL to USD
+              }
+              
+              const percentChange = calculatePercentageChange(
+                entryRateInViewCurrency,
+                currentRateValue
+              );
+              
+              // Calculate current value based on BTC amount and current rate
+              const currentValue = entry.btcAmount * currentRateValue;
+              
+              // Convert invested amount to the view currency if needed
+              let investedValue = entry.amountInvested;
+              if (entry.currency !== currencyView) {
+                investedValue = entry.currency === 'USD'
+                  ? entry.amountInvested * (currentRate.brl / currentRate.usd) // USD to BRL
+                  : entry.amountInvested / (currentRate.brl / currentRate.usd); // BRL to USD
+              }
+              
+              return (
+                <TableRow key={entry.id}>
+                  <TableCell className={isMobile ? "text-xs py-2" : ""}>
+                    {format(entry.date, 'dd/MM/yyyy', { locale: ptBR })}
+                  </TableCell>
+                  <TableCell className={isMobile ? "text-xs py-2" : ""}>
+                    {entry.currency === 'USD' ? '$' : 'R$'} {formatNumber(entry.amountInvested)}
+                    {entry.currency !== currencyView && (
+                      <div className="text-xs text-muted-foreground">
+                        {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(investedValue)}
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell className={isMobile ? "text-xs py-2" : ""}>
+                    {formatBitcoinAmount(entry.btcAmount)}
+                  </TableCell>
+                  <TableCell className={isMobile ? "text-xs py-2" : ""}>
+                    {entry.currency === 'USD' ? '$' : 'R$'} {formatNumber(entry.exchangeRate)}
+                    {entry.currency !== currencyView && (
+                      <div className="text-xs text-muted-foreground">
+                        {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(entryRateInViewCurrency)}
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell className={isMobile ? "text-xs py-2" : ""}>
+                    <div className="flex items-center">
+                      {percentChange > 0 ? (
+                        <TrendingUp className="h-4 w-4 mr-1 text-green-500" />
+                      ) : (
+                        <TrendingDown className="h-4 w-4 mr-1 text-red-500" />
+                      )}
+                      <span
+                        className={
+                          percentChange > 0 ? 'text-green-500' : 'text-red-500'
+                        }
+                      >
+                        {formatNumber(percentChange)}%
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell className={isMobile ? "text-xs py-2" : ""}>
+                    <div className={percentChange > 0 ? 'text-green-500' : 'text-red-500'}>
+                      {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(currentValue)}
+                      <div className="text-xs text-muted-foreground">
+                        {percentChange > 0 ? '+' : ''}{formatNumber(currentValue - investedValue)}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className={`text-right ${isMobile ? "text-xs py-2" : ""}`}>
+                    <div className="flex justify-end">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditClick(entry.id)}
+                        className="mr-1"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onDelete(entry.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+    );
+  };
+
   return (
     <>
       <Card className="mt-6">
@@ -84,106 +207,18 @@ const EntriesList: React.FC<EntriesListProps> = ({
           <CardTitle className={isMobile ? "text-lg" : "text-xl"}>Aportes Registrados</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className={isMobile ? "text-xs" : ""}>Data</TableHead>
-                  <TableHead className={isMobile ? "text-xs" : ""}>Valor Investido</TableHead>
-                  <TableHead className={isMobile ? "text-xs" : ""}>{displayUnit === 'SATS' ? 'Satoshis' : 'Bitcoin'}</TableHead>
-                  <TableHead className={isMobile ? "text-xs" : ""}>Cotação</TableHead>
-                  <TableHead className={isMobile ? "text-xs" : ""}>Variação</TableHead>
-                  <TableHead className={isMobile ? "text-xs" : ""}>Valor Atual</TableHead>
-                  <TableHead className={`text-right ${isMobile ? "text-xs" : ""}`}>Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sortedEntries.map((entry) => {
-                  const currentRateValue = selectedCurrency === 'USD' ? currentRate.usd : currentRate.brl;
-                  const entryRateInSelectedCurrency = 
-                    entry.currency === selectedCurrency 
-                      ? entry.exchangeRate
-                      : entry.currency === 'USD'
-                        ? entry.exchangeRate * (currentRate.brl / currentRate.usd)
-                        : entry.exchangeRate / (currentRate.brl / currentRate.usd);
-                  
-                  const percentChange = calculatePercentageChange(
-                    entryRateInSelectedCurrency,
-                    currentRateValue
-                  );
-                  
-                  // Calculate current value based on BTC amount and current rate
-                  const currentValue = entry.btcAmount * currentRateValue;
-                  const investedValue = 
-                    entry.currency === selectedCurrency
-                      ? entry.amountInvested 
-                      : entry.currency === 'USD'
-                        ? entry.amountInvested * (currentRate.brl / currentRate.usd)
-                        : entry.amountInvested / (currentRate.brl / currentRate.usd);
-                  
-                  return (
-                    <TableRow key={entry.id}>
-                      <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                        {format(entry.date, 'dd/MM/yyyy', { locale: ptBR })}
-                      </TableCell>
-                      <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                        {entry.currency === 'USD' ? '$' : 'R$'} {formatNumber(entry.amountInvested)}
-                      </TableCell>
-                      <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                        {formatBitcoinAmount(entry.btcAmount)}
-                      </TableCell>
-                      <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                        {entry.currency === 'USD' ? '$' : 'R$'} {formatNumber(entry.exchangeRate)}
-                      </TableCell>
-                      <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                        <div className="flex items-center">
-                          {percentChange > 0 ? (
-                            <TrendingUp className="h-4 w-4 mr-1 text-green-500" />
-                          ) : (
-                            <TrendingDown className="h-4 w-4 mr-1 text-red-500" />
-                          )}
-                          <span
-                            className={
-                              percentChange > 0 ? 'text-green-500' : 'text-red-500'
-                            }
-                          >
-                            {formatNumber(percentChange)}%
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                        <div className={percentChange > 0 ? 'text-green-500' : 'text-red-500'}>
-                          {selectedCurrency === 'USD' ? '$' : 'R$'} {formatNumber(currentValue)}
-                          <div className="text-xs text-muted-foreground">
-                            {percentChange > 0 ? '+' : ''}{formatNumber(currentValue - investedValue)}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className={`text-right ${isMobile ? "text-xs py-2" : ""}`}>
-                        <div className="flex justify-end">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditClick(entry.id)}
-                            className="mr-1"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => onDelete(entry.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
+          <Tabs defaultValue="brl" className="w-full" onValueChange={(value) => setViewCurrency(value as 'BRL' | 'USD')}>
+            <TabsList className="mb-4 grid w-full grid-cols-2">
+              <TabsTrigger value="brl">Exibir em BRL (R$)</TabsTrigger>
+              <TabsTrigger value="usd">Exibir em USD ($)</TabsTrigger>
+            </TabsList>
+            <TabsContent value="brl">
+              {renderEntriesTable('BRL')}
+            </TabsContent>
+            <TabsContent value="usd">
+              {renderEntriesTable('USD')}
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
 
