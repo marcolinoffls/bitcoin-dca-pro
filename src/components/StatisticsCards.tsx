@@ -61,9 +61,9 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
   // Get period display text
   const getPeriodText = () => {
     switch (selectedPeriod) {
-      case 'month': return 'Mês atual';
-      case 'year': return 'Ano atual';
-      case 'all': return 'Todos os períodos';
+      case 'month': return 'Período selecionado: Mês atual';
+      case 'year': return 'Período selecionado: Ano atual';
+      case 'all': return 'Período selecionado: Todos os períodos';
     }
   };
   
@@ -101,43 +101,9 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/20">
               <PeriodIcon className="h-6 w-6 text-purple-600 dark:text-purple-400" />
             </div>
-            <div className="flex items-center">
-              <CardTitle className="text-sm text-gray-500">
-                Preço Médio
-              </CardTitle>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button className="ml-2 px-2 py-1 text-xs rounded-md bg-muted hover:bg-muted/80 transition-colors">
-                    {selectedPeriod === 'month' ? 'Mês' : selectedPeriod === 'year' ? 'Ano' : 'Total'}
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-2 animate-in fade-in-0 zoom-in-95 duration-200" align="start">
-                  <div className="flex flex-col space-y-1">
-                    <button 
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm ${selectedPeriod === 'month' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' : 'hover:bg-muted'}`}
-                      onClick={() => setSelectedPeriod('month')}
-                    >
-                      <Calendar className="h-4 w-4" />
-                      <span>Mês</span>
-                    </button>
-                    <button 
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm ${selectedPeriod === 'year' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' : 'hover:bg-muted'}`}
-                      onClick={() => setSelectedPeriod('year')}
-                    >
-                      <CalendarDays className="h-4 w-4" />
-                      <span>Ano</span>
-                    </button>
-                    <button 
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm ${selectedPeriod === 'all' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' : 'hover:bg-muted'}`}
-                      onClick={() => setSelectedPeriod('all')}
-                    >
-                      <CalendarClock className="h-4 w-4" />
-                      <span>Total</span>
-                    </button>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
+            <CardTitle className="text-sm text-gray-500">
+              Preço Médio
+            </CardTitle>
           </div>
         </CardHeader>
         <CardContent className="p-5 pt-0">
@@ -147,7 +113,41 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
                 ? `${currencySymbol} ${formatNumber(currentAvgPrice)}` 
                 : "Sem aportes"}
             </div>
-            <p className="text-xs text-muted-foreground">
+            
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="mt-2 px-3 py-1 text-xs rounded-md bg-muted hover:bg-muted/80 transition-colors">
+                  {selectedPeriod === 'month' ? 'Mês' : selectedPeriod === 'year' ? 'Ano' : 'Total'}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-2 animate-in fade-in-0 zoom-in-95 duration-200" align="center">
+                <div className="flex flex-col space-y-1">
+                  <button 
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm ${selectedPeriod === 'month' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' : 'hover:bg-muted'}`}
+                    onClick={() => setSelectedPeriod('month')}
+                  >
+                    <Calendar className="h-4 w-4" />
+                    <span>Mês</span>
+                  </button>
+                  <button 
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm ${selectedPeriod === 'year' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' : 'hover:bg-muted'}`}
+                    onClick={() => setSelectedPeriod('year')}
+                  >
+                    <CalendarDays className="h-4 w-4" />
+                    <span>Ano</span>
+                  </button>
+                  <button 
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm ${selectedPeriod === 'all' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' : 'hover:bg-muted'}`}
+                    onClick={() => setSelectedPeriod('all')}
+                  >
+                    <CalendarClock className="h-4 w-4" />
+                    <span>Total</span>
+                  </button>
+                </div>
+              </PopoverContent>
+            </Popover>
+            
+            <p className="text-xs mt-1 text-muted-foreground">
               {getPeriodText()}
             </p>
           </div>

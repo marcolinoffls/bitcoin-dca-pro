@@ -12,16 +12,12 @@ interface CurrentRateCardProps {
   currentRate: CurrentRate;
   isLoading: boolean;
   onRefresh: () => void;
-  selectedCurrency: 'BRL' | 'USD';
-  onChangeCurrency: (currency: 'BRL' | 'USD') => void;
 }
 
 const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
   currentRate,
   isLoading,
   onRefresh,
-  selectedCurrency,
-  onChangeCurrency,
 }) => {
   return (
     <Card className="rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-200">
@@ -35,26 +31,12 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
       </CardHeader>
       <CardContent className="p-5 pt-0">
         <div className="grid gap-4 grid-cols-2">
-          <div 
-            className={`flex flex-col p-3 rounded-md cursor-pointer transition-colors ${
-              selectedCurrency === 'USD' 
-                ? 'bg-bitcoin/10 border border-bitcoin' 
-                : 'hover:bg-muted'
-            }`}
-            onClick={() => onChangeCurrency('USD')}
-          >
+          <div className="flex flex-col p-3 rounded-md">
             <span className="text-sm font-medium">USD</span>
             <span className="text-xl font-bold text-center">$ {formatNumber(currentRate.usd)}</span>
           </div>
           
-          <div 
-            className={`flex flex-col p-3 rounded-md cursor-pointer transition-colors ${
-              selectedCurrency === 'BRL' 
-                ? 'bg-bitcoin/10 border border-bitcoin' 
-                : 'hover:bg-muted'
-            }`}
-            onClick={() => onChangeCurrency('BRL')}
-          >
+          <div className="flex flex-col p-3 rounded-md">
             <span className="text-sm font-medium">BRL</span>
             <span className="text-xl font-bold text-center">R$ {formatNumber(currentRate.brl)}</span>
           </div>

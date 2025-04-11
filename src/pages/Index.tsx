@@ -8,6 +8,7 @@ import CurrentRateCard from '@/components/CurrentRateCard';
 import { Bitcoin } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import ToggleDisplayUnit from '@/components/ToggleDisplayUnit';
+import ToggleCurrency from '@/components/ToggleCurrency';
 
 const Index = () => {
   const { 
@@ -29,6 +30,10 @@ const Index = () => {
     setDisplayUnit(value);
   };
 
+  const toggleCurrency = (value: 'BRL' | 'USD') => {
+    setSelectedCurrency(value);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto py-6 px-4">
@@ -40,10 +45,14 @@ const Index = () => {
           <p className={`text-muted-foreground ${isMobile ? "text-xs" : ""}`}>
             Acompanhe seus investimentos em Bitcoin e monitore seu desempenho ao longo do tempo
           </p>
-          <div className="mt-3 flex justify-center">
+          <div className="mt-3 flex justify-center gap-4">
             <ToggleDisplayUnit 
               displayUnit={displayUnit} 
               onToggle={toggleDisplayUnit} 
+            />
+            <ToggleCurrency
+              selectedCurrency={selectedCurrency}
+              onToggle={toggleCurrency}
             />
           </div>
         </header>
@@ -63,8 +72,6 @@ const Index = () => {
               currentRate={currentRate} 
               isLoading={isLoading} 
               onRefresh={updateCurrentRate}
-              selectedCurrency={selectedCurrency}
-              onChangeCurrency={setSelectedCurrency}
             />
           </div>
         </div>
