@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -98,4 +99,18 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Customização do calendário */
+.rdp-month {
+  background-color: white;
+  border-radius: 0.5rem;
+}
+
+.rdp-caption {
+  padding: 0.5rem 0;
+}
+
+.rdp-day:focus-visible {
+  outline: none !important;
 }

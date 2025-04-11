@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -66,7 +65,6 @@ const EntryForm: React.FC<EntryFormProps> = ({
   const calendarPopoverRef = useRef<HTMLButtonElement>(null);
   const isMobile = useIsMobile();
 
-  // Função para converter string com vírgula para número
   const parseLocalNumber = (value: string): number => {
     return parseFloat(value.replace(',', '.'));
   };
@@ -74,7 +72,6 @@ const EntryForm: React.FC<EntryFormProps> = ({
   const handleCurrencyChange = (newCurrency: 'BRL' | 'USD') => {
     setCurrency(newCurrency);
     
-    // Atualizar a taxa de câmbio com base na moeda selecionada
     if (currentRate) {
       setExchangeRate(
         formatNumber(newCurrency === 'USD' ? currentRate.usd : currentRate.brl)
@@ -99,7 +96,6 @@ const EntryForm: React.FC<EntryFormProps> = ({
     let parsedAmount = parseLocalNumber(amountInvested);
     let parsedBtc = parseLocalNumber(btcAmount);
     
-    // Convert from satoshis to BTC if necessary
     if (displayUnit === 'SATS') {
       parsedBtc = parsedBtc / 100000000;
     }
@@ -112,7 +108,6 @@ const EntryForm: React.FC<EntryFormProps> = ({
     
     onAddEntry(parsedAmount, parsedBtc, parsedRate, currency, date);
     
-    // Limpar o formulário
     resetForm();
   };
 
@@ -133,7 +128,6 @@ const EntryForm: React.FC<EntryFormProps> = ({
   const calculateFromBtc = () => {
     let btc = parseLocalNumber(btcAmount);
     
-    // Convert from satoshis to BTC if necessary
     if (displayUnit === 'SATS') {
       btc = btc / 100000000;
     }
@@ -154,20 +148,15 @@ const EntryForm: React.FC<EntryFormProps> = ({
   };
 
   const setToday = () => {
-    setTempDate(new Date());
-    confirmDateSelection();
-  };
-
-  const confirmDateSelection = () => {
-    setDate(tempDate);
+    const today = new Date();
+    setDate(today);
     setIsCalendarOpen(false);
   };
 
-  const handleCalendarToggle = (open: boolean) => {
-    setIsCalendarOpen(open);
-    if (open) {
-      // Quando o calendário abre, inicialize tempDate com a data atual selecionada
-      setTempDate(date);
+  const handleDateSelect = (newDate: Date | undefined) => {
+    if (newDate) {
+      setDate(newDate);
+      setIsCalendarOpen(false);
     }
   };
 
@@ -184,7 +173,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
           <div className="flex flex-col space-y-1.5">
             <Label htmlFor="purchaseDate">Data do Aporte</Label>
             <div className="flex gap-4">
-              <Popover open={isCalendarOpen} onOpenChange={handleCalendarToggle}>
+              <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     ref={calendarPopoverRef}
@@ -201,36 +190,15 @@ const EntryForm: React.FC<EntryFormProps> = ({
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <div className="p-2">
+                  <div className="p-3 rounded-md shadow-sm">
                     <Calendar
                       mode="single"
-                      selected={tempDate}
-                      onSelect={(newDate) => newDate && setTempDate(newDate)}
+                      selected={date}
+                      onSelect={handleDateSelect}
                       initialFocus
-                      defaultMonth={tempDate}
                       locale={ptBR}
-                      className="rounded-md border pointer-events-auto"
+                      className="rounded-md border-0 shadow-none"
                     />
-                    <div className="flex justify-end mt-2 gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => setIsCalendarOpen(false)}
-                        type="button"
-                      >
-                        Cancelar
-                      </Button>
-                      <Button 
-                        variant="default" 
-                        size="sm" 
-                        onClick={confirmDateSelection}
-                        className="bg-[#F97316] hover:bg-[#E85D04]"
-                        type="button"
-                      >
-                        <Check className="h-4 w-4 mr-1" />
-                        Confirmar
-                      </Button>
-                    </div>
                   </div>
                 </PopoverContent>
               </Popover>

@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,7 +46,6 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
-  // Track if component is mounted to prevent state updates after unmounting
   const isMounted = useRef(true);
   useEffect(() => {
     return () => {
@@ -55,7 +53,6 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
     };
   }, []);
 
-  // Função para converter string com vírgula para número
   const parseLocalNumber = (value: string): number => {
     return parseFloat(value.replace(',', '.'));
   };
@@ -63,7 +60,6 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
   const handleCurrencyChange = (newCurrency: 'BRL' | 'USD') => {
     setCurrency(newCurrency);
     
-    // Atualizar a taxa de câmbio com base na moeda selecionada
     if (currentRate) {
       setExchangeRate(
         formatNumber(newCurrency === 'USD' ? currentRate.usd : currentRate.brl)
@@ -77,7 +73,6 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
     let parsedAmount = parseLocalNumber(amountInvested);
     let parsedBtc = parseLocalNumber(btcAmount);
     
-    // Convert from satoshis to BTC if necessary
     if (displayUnit === 'SATS') {
       parsedBtc = parsedBtc / 100000000;
     }
@@ -93,7 +88,6 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
       return;
     }
     
-    // Find and update entry directly in localStorage to avoid the issue with the hook
     const savedEntries = localStorage.getItem('bitcoin-entries');
     if (savedEntries) {
       try {
@@ -106,7 +100,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
               btcAmount: parsedBtc,
               exchangeRate: parsedRate,
               currency,
-              date: date.toISOString() // Use the selected date
+              date: date.toISOString()
             };
           }
           return savedEntry;
@@ -114,7 +108,6 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
         
         localStorage.setItem('bitcoin-entries', JSON.stringify(updatedEntries));
         
-        // Reload the page to refresh the data
         window.location.reload();
         
         toast({
@@ -151,7 +144,6 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
   const calculateFromBtc = () => {
     let btc = parseLocalNumber(btcAmount);
     
-    // Convert from satoshis to BTC if necessary
     if (displayUnit === 'SATS') {
       btc = btc / 100000000;
     }
@@ -168,7 +160,6 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
     const amount = parseLocalNumber(amountInvested);
     let btc = parseLocalNumber(btcAmount);
     
-    // Convert from satoshis to BTC if necessary
     if (displayUnit === 'SATS') {
       btc = btc / 100000000;
     }
@@ -189,13 +180,14 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
   const setToday = () => {
     const today = new Date();
     setDate(today);
-    setTempDate(today);
     setIsCalendarOpen(false);
   };
 
-  const confirmDateSelection = () => {
-    setDate(tempDate);
-    setIsCalendarOpen(false);
+  const handleDateSelect = (newDate: Date | undefined) => {
+    if (newDate) {
+      setDate(newDate);
+      setIsCalendarOpen(false);
+    }
   };
 
   const handleCalendarToggle = (open: boolean) => {
@@ -209,8 +201,8 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="flex flex-col space-y-1.5">
         <Label htmlFor="editPurchaseDate">Data do Aporte</Label>
-        <div className="flex gap-2">
-          <Popover open={isCalendarOpen} onOpenChange={handleCalendarToggle}>
+        <div className="flex gap-4">
+          <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
             <PopoverTrigger asChild>
               <Button
                 ref={calendarPopoverRef}
@@ -219,43 +211,22 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
                   "w-full justify-start text-left font-normal",
                   !date && "text-muted-foreground"
                 )}
-                type="button" // Add type="button" to prevent form submission
+                type="button"
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {date ? format(date, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecione uma data</span>}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
-              <div className="p-2">
+              <div className="p-3 rounded-md shadow-sm">
                 <Calendar
                   mode="single"
-                  selected={tempDate}
-                  onSelect={(newDate) => newDate && setTempDate(newDate)}
+                  selected={date}
+                  onSelect={handleDateSelect}
                   initialFocus
-                  defaultMonth={tempDate}
                   locale={ptBR}
-                  className="rounded-md border pointer-events-auto"
+                  className="rounded-md border-0 shadow-none"
                 />
-                <div className="flex justify-end mt-2 gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => setIsCalendarOpen(false)}
-                    type="button" // Add type="button" to prevent form submission
-                  >
-                    Cancelar
-                  </Button>
-                  <Button 
-                    variant="default" 
-                    size="sm" 
-                    onClick={confirmDateSelection}
-                    className="bg-[#F97316] hover:bg-[#E85D04]"
-                    type="button" // Add type="button" to prevent form submission
-                  >
-                    <Check className="h-4 w-4 mr-1" />
-                    Confirmar
-                  </Button>
-                </div>
               </div>
             </PopoverContent>
           </Popover>
@@ -276,7 +247,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
         <CurrencySelector
           selectedCurrency={currency}
           onChange={handleCurrencyChange}
-          buttonType="button" // Add buttonType="button" to prevent form submission
+          buttonType="button"
         />
       </div>
       
