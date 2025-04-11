@@ -1,17 +1,15 @@
-import React, { useState, useRef } from 'react';
+
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import CurrencySelector from '@/components/CurrencySelector';
-import { Bitcoin, CalendarIcon, CalendarCheck, Check, Calculator } from 'lucide-react';
-import { formatNumber } from '@/lib/utils';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
+import { Bitcoin } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import DatePickerField from '@/components/form/DatePickerField';
+import CurrencyField from '@/components/form/CurrencyField';
+import AmountField from '@/components/form/AmountField';
+import BtcAmountField from '@/components/form/BtcAmountField';
+import ExchangeRateField from '@/components/form/ExchangeRateField';
+import FormActions from '@/components/form/FormActions';
+import { useEntryFormLogic } from '@/components/form/EntryFormLogic';
 
 interface EntryFormProps {
   onAddEntry: (
@@ -41,50 +39,27 @@ const EntryForm: React.FC<EntryFormProps> = ({
   onCancelEdit,
   displayUnit = 'BTC'
 }) => {
-  const [amountInvested, setAmountInvested] = useState(
-    editingEntry ? formatNumber(editingEntry.amountInvested) : ''
-  );
-  const [btcAmount, setBtcAmount] = useState(
-    editingEntry 
-      ? (displayUnit === 'SATS' 
-          ? formatNumber(editingEntry.btcAmount * 100000000, 0) 
-          : formatNumber(editingEntry.btcAmount, 8))
-      : ''
-  );
-  const [exchangeRate, setExchangeRate] = useState(
-    editingEntry ? formatNumber(editingEntry.exchangeRate) : ''
-  );
-  const [currency, setCurrency] = useState<'BRL' | 'USD'>(
-    editingEntry ? editingEntry.currency : 'BRL'
-  );
-  const [date, setDate] = useState<Date>(
-    editingEntry ? editingEntry.date : new Date()
-  );
-  const [tempDate, setTempDate] = useState<Date>(date);
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const calendarPopoverRef = useRef<HTMLButtonElement>(null);
   const isMobile = useIsMobile();
-
-  const parseLocalNumber = (value: string): number => {
-    return parseFloat(value.replace(',', '.'));
-  };
-
-  const handleCurrencyChange = (newCurrency: 'BRL' | 'USD') => {
-    setCurrency(newCurrency);
-    
-    if (currentRate) {
-      setExchangeRate(
-        formatNumber(newCurrency === 'USD' ? currentRate.usd : currentRate.brl)
-      );
-    }
-  };
+  const {
+    amountInvested,
+    setAmountInvested,
+    btcAmount,
+    setBtcAmount,
+    exchangeRate,
+    setExchangeRate,
+    currency,
+    date,
+    setDate,
+    parseLocalNumber,
+    handleCurrencyChange,
+    calculateFromAmount,
+    calculateFromBtc,
+    useCurrentRate,
+    reset
+  } = useEntryFormLogic(editingEntry, currentRate, displayUnit);
 
   const resetForm = () => {
-    setAmountInvested('');
-    setBtcAmount('');
-    setExchangeRate('');
-    setDate(new Date());
-    setTempDate(new Date());
+    reset();
     if (onCancelEdit) {
       onCancelEdit();
     }
@@ -111,55 +86,6 @@ const EntryForm: React.FC<EntryFormProps> = ({
     resetForm();
   };
 
-  const calculateFromAmount = () => {
-    const amount = parseLocalNumber(amountInvested);
-    const rate = parseLocalNumber(exchangeRate);
-    
-    if (!isNaN(amount) && !isNaN(rate) && rate > 0) {
-      const btc = amount / rate;
-      if (displayUnit === 'SATS') {
-        setBtcAmount(formatNumber(btc * 100000000, 0));
-      } else {
-        setBtcAmount(formatNumber(btc, 8));
-      }
-    }
-  };
-
-  const calculateFromBtc = () => {
-    let btc = parseLocalNumber(btcAmount);
-    
-    if (displayUnit === 'SATS') {
-      btc = btc / 100000000;
-    }
-    
-    const rate = parseLocalNumber(exchangeRate);
-    
-    if (!isNaN(btc) && !isNaN(rate)) {
-      const amount = btc * rate;
-      setAmountInvested(formatNumber(amount));
-    }
-  };
-
-  const useCurrentRate = () => {
-    if (currentRate) {
-      const rate = currency === 'USD' ? currentRate.usd : currentRate.brl;
-      setExchangeRate(formatNumber(rate));
-    }
-  };
-
-  const setToday = () => {
-    const today = new Date();
-    setDate(today);
-    setIsCalendarOpen(false);
-  };
-
-  const handleDateSelect = (newDate: Date | undefined) => {
-    if (newDate) {
-      setDate(newDate);
-      setIsCalendarOpen(false);
-    }
-  };
-
   return (
     <Card>
       <CardHeader className={`${isMobile ? "pb-2" : "pb-3"}`}>
@@ -170,183 +96,44 @@ const EntryForm: React.FC<EntryFormProps> = ({
       </CardHeader>
       <CardContent className={isMobile ? "pb-3" : ""}>
         <form onSubmit={handleSubmit} className={`space-y-${isMobile ? "3" : "4"}`}>
-          <div className="flex flex-col space-y-1.5">
-            <Label htmlFor="purchaseDate">Data do Aporte</Label>
-            <div className="flex gap-4">
-              <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    ref={calendarPopoverRef}
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !date && "text-muted-foreground",
-                      isMobile && "text-sm"
-                    )}
-                    type="button"
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecione uma data</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <div className="p-3 rounded-md shadow-sm">
-                    <Calendar
-                      mode="single"
-                      selected={date}
-                      onSelect={handleDateSelect}
-                      initialFocus
-                      locale={ptBR}
-                      className="rounded-md border-0 shadow-none"
-                    />
-                  </div>
-                </PopoverContent>
-              </Popover>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={setToday}
-                className="shrink-0"
-                size={isMobile ? "sm" : "default"}
-              >
-                <CalendarCheck className="h-4 w-4 mr-2" />
-                Hoje
-              </Button>
-            </div>
-          </div>
+          <DatePickerField 
+            date={date} 
+            onDateChange={setDate} 
+          />
           
-          <div className="flex flex-col space-y-1.5">
-            <Label htmlFor="currency">Moeda</Label>
-            <CurrencySelector
-              selectedCurrency={currency}
-              onChange={handleCurrencyChange}
-              buttonType="button"
+          <CurrencyField 
+            currency={currency} 
+            onCurrencyChange={handleCurrencyChange} 
+          />
+          
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <AmountField 
+              currency={currency} 
+              amount={amountInvested} 
+              onAmountChange={setAmountInvested} 
+            />
+            
+            <BtcAmountField 
+              btcAmount={btcAmount} 
+              onBtcAmountChange={setBtcAmount} 
+              displayUnit={displayUnit} 
             />
           </div>
           
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="amount">Valor Investido</Label>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-muted-foreground">
-                  {currency === 'USD' ? '$' : 'R$'}
-                </span>
-                <Input
-                  id="amount"
-                  placeholder="0,00"
-                  value={amountInvested}
-                  onChange={(e) => setAmountInvested(e.target.value)}
-                  className="pl-8"
-                  type="text"
-                  required
-                />
-              </div>
-            </div>
-            
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="btcAmount">{displayUnit === 'SATS' ? 'Satoshis' : 'Bitcoin'}</Label>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-muted-foreground">
-                  <Bitcoin className="h-4 w-4" />
-                </span>
-                <Input
-                  id="btcAmount"
-                  placeholder={displayUnit === 'SATS' ? "0" : "0,00000000"}
-                  value={btcAmount}
-                  onChange={(e) => setBtcAmount(e.target.value)}
-                  className="pl-8"
-                  type="text"
-                  required
-                />
-              </div>
-            </div>
-          </div>
+          <ExchangeRateField 
+            currency={currency} 
+            exchangeRate={exchangeRate} 
+            onExchangeRateChange={setExchangeRate} 
+            onUseCurrentRate={useCurrentRate} 
+          />
           
-          <div className="flex flex-col space-y-3">
-            <div className="flex justify-between">
-              <Label htmlFor="exchangeRate">Cotação no momento da compra</Label>
-              <Button 
-                type="button" 
-                variant="ghost" 
-                size="sm" 
-                onClick={useCurrentRate} 
-                className="h-6 text-xs"
-              >
-                Usar cotação atual
-              </Button>
-            </div>
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-muted-foreground">
-                {currency === 'USD' ? '$' : 'R$'}
-              </span>
-              <Input
-                id="exchangeRate"
-                placeholder="0,00"
-                value={exchangeRate}
-                onChange={(e) => setExchangeRate(e.target.value)}
-                className="pl-8"
-                type="text"
-                required
-              />
-            </div>
-          </div>
-          
-          <div className={`grid grid-cols-1 gap-2 mt-6 ${isMobile ? "grid-cols-2" : "md:grid-cols-3"}`}>
-            {!editingEntry ? (
-              <>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={calculateFromAmount}
-                  className={`${isMobile ? "col-span-1 text-xs px-2" : "col-span-1"}`}
-                >
-                  <Calculator className="h-4 w-4 mr-1" />
-                  {isMobile ? "" : "Calcular "}{displayUnit === 'SATS' ? 'Satoshis' : 'BTC'}
-                </Button>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={calculateFromBtc}
-                  className={`${isMobile ? "col-span-1 text-xs px-2" : "col-span-1"}`}
-                >
-                  <Calculator className="h-4 w-4 mr-1" />
-                  {isMobile ? "" : "Calcular "}Valor
-                </Button>
-                <Button 
-                  type="submit" 
-                  className={`${isMobile ? "col-span-2" : "col-span-1"} bg-bitcoin hover:bg-bitcoin-dark`}
-                >
-                  Registrar
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={calculateFromAmount}
-                  className={`${isMobile ? "col-span-1 text-xs px-2" : "col-span-1"}`}
-                >
-                  <Calculator className="h-4 w-4 mr-1" />
-                  Calcular {displayUnit === 'SATS' ? 'Satoshis' : 'BTC'}
-                </Button>
-                <Button 
-                  type="button" 
-                  variant="outline"
-                  onClick={resetForm}
-                  className={`${isMobile ? "col-span-1 text-xs px-2" : "col-span-1"}`}
-                >
-                  Cancelar
-                </Button>
-                <Button 
-                  type="submit" 
-                  className={`${isMobile ? "col-span-2" : "col-span-1"} bg-bitcoin hover:bg-bitcoin-dark`}
-                >
-                  Atualizar
-                </Button>
-              </>
-            )}
-          </div>
+          <FormActions 
+            isEditing={!!editingEntry} 
+            displayUnit={displayUnit} 
+            onCalculateFromAmount={calculateFromAmount} 
+            onCalculateFromBtc={calculateFromBtc} 
+            onReset={resetForm} 
+          />
         </form>
       </CardContent>
     </Card>
