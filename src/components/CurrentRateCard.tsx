@@ -21,34 +21,34 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
 }) => {
   return (
     <Card className="rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-200 h-full">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 p-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-bitcoin/10">
-            <Bitcoin className="h-6 w-6 text-bitcoin" />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-bitcoin/10">
+            <Bitcoin className="h-5 w-5 text-bitcoin" />
           </div>
           <CardTitle className="text-sm text-gray-500">Cotação Atual do Bitcoin</CardTitle>
         </div>
       </CardHeader>
-      <CardContent className="p-4 pt-0">
-        <div className="grid gap-4 grid-cols-2">
+      <CardContent className="p-3 pt-0">
+        <div className="grid gap-3 grid-cols-2">
           <div className="flex flex-col">
             <span className="text-sm font-medium mb-1">USD</span>
             <div className="flex items-start">
-              <span className="text-lg font-medium mr-1">$</span>
-              <span className="text-xl font-bold">{formatNumber(currentRate.usd)}</span>
+              <span className="text-sm font-medium">$</span>
+              <span className="text-xl font-bold ml-1">{formatNumber(currentRate.usd)}</span>
             </div>
           </div>
           
           <div className="flex flex-col">
             <span className="text-sm font-medium mb-1">BRL</span>
             <div className="flex items-start">
-              <span className="text-lg font-medium mr-1">R$</span>
-              <span className="text-xl font-bold">{formatNumber(currentRate.brl)}</span>
+              <span className="text-sm font-medium">R$</span>
+              <span className="text-xl font-bold ml-1">{formatNumber(currentRate.brl)}</span>
             </div>
           </div>
         </div>
         
-        <div className="flex items-center justify-between mt-3">
+        <div className="flex items-center justify-between mt-2">
           <p className="text-xs text-muted-foreground">
             Atualizado: {format(currentRate.timestamp, 'dd/MM/yyyy HH:mm', { locale: ptBR })}
           </p>

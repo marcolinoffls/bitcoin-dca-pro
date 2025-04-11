@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
-import { CalendarIcon, CalendarCheck } from 'lucide-react';
+import { CalendarIcon, CalendarCheck, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -17,18 +17,26 @@ interface DatePickerFieldProps {
 
 const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange }) => {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [tempDate, setTempDate] = useState<Date | undefined>(date);
   const calendarPopoverRef = useRef<HTMLButtonElement>(null);
   const isMobile = useIsMobile();
 
   const setToday = () => {
     const today = new Date();
     onDateChange(today);
+    setTempDate(today);
     setIsCalendarOpen(false);
   };
 
   const handleDateSelect = (newDate: Date | undefined) => {
     if (newDate) {
-      onDateChange(newDate);
+      setTempDate(newDate);
+    }
+  };
+
+  const handleConfirm = () => {
+    if (tempDate) {
+      onDateChange(tempDate);
       setIsCalendarOpen(false);
     }
   };
@@ -57,12 +65,22 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange })
             <div className="p-3 rounded-md shadow-sm">
               <Calendar
                 mode="single"
-                selected={date}
+                selected={tempDate}
                 onSelect={handleDateSelect}
                 initialFocus
                 locale={ptBR}
                 className="rounded-md border-0 shadow-none pointer-events-auto"
               />
+              <div className="flex justify-center p-2 mt-2">
+                <Button 
+                  type="button" 
+                  onClick={handleConfirm}
+                  className="rounded-full bg-bitcoin hover:bg-bitcoin/90 text-white w-full"
+                >
+                  <Check className="h-4 w-4 mr-2" />
+                  Confirmar
+                </Button>
+              </div>
             </div>
           </PopoverContent>
         </Popover>

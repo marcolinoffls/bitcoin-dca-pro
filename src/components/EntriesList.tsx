@@ -7,9 +7,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { TrendingDown, TrendingUp, Trash2, Edit } from 'lucide-react';
+import { TrendingDown, TrendingUp, Trash2, Edit, AlertCircle } from 'lucide-react';
 import { formatNumber } from '@/lib/utils';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import EntryEditForm from '@/components/EntryEditForm';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -32,6 +32,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
   displayUnit,
 }) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
   const [viewCurrency, setViewCurrency] = useState<'BRL' | 'USD'>(selectedCurrency);
   const isMobile = useIsMobile();
@@ -40,6 +41,18 @@ const EntriesList: React.FC<EntriesListProps> = ({
     setSelectedEntryId(id);
     onEdit(id);
     setIsEditDialogOpen(true);
+  };
+
+  const handleDeleteClick = (id: string) => {
+    setSelectedEntryId(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (selectedEntryId) {
+      onDelete(selectedEntryId);
+      setIsDeleteDialogOpen(false);
+    }
   };
 
   const handleEditClose = () => {
@@ -113,9 +126,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
                 currentRateValue
               );
               
-              // Calculate current value based on BTC amount and current rate
-              const currentValue = entry.btcAmount * currentRateValue;
-              
               // Convert invested amount to the view currency if needed
               let investedValue = entry.amountInvested;
               if (entry.currency !== currencyView) {
@@ -124,29 +134,22 @@ const EntriesList: React.FC<EntriesListProps> = ({
                   : entry.amountInvested / (currentRate.brl / currentRate.usd); // BRL to USD
               }
               
+              // Calculate current value based on invested amount and percentage change
+              const currentValue = investedValue * (1 + percentChange / 100);
+              
               return (
                 <TableRow key={entry.id}>
                   <TableCell className={isMobile ? "text-xs py-2" : ""}>
                     {format(entry.date, 'dd/MM/yyyy', { locale: ptBR })}
                   </TableCell>
                   <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                    {entry.currency === 'USD' ? '$' : 'R$'} {formatNumber(entry.amountInvested)}
-                    {entry.currency !== currencyView && (
-                      <div className="text-xs text-muted-foreground">
-                        {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(investedValue)}
-                      </div>
-                    )}
+                    {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(investedValue)}
                   </TableCell>
                   <TableCell className={isMobile ? "text-xs py-2" : ""}>
                     {formatBitcoinAmount(entry.btcAmount)}
                   </TableCell>
                   <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                    {entry.currency === 'USD' ? '$' : 'R$'} {formatNumber(entry.exchangeRate)}
-                    {entry.currency !== currencyView && (
-                      <div className="text-xs text-muted-foreground">
-                        {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(entryRateInViewCurrency)}
-                      </div>
-                    )}
+                    {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(entryRateInViewCurrency)}
                   </TableCell>
                   <TableCell className={isMobile ? "text-xs py-2" : ""}>
                     <div className="flex items-center">
@@ -185,7 +188,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => onDelete(entry.id)}
+                        onClick={() => handleDeleteClick(entry.id)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -222,6 +225,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
         </CardContent>
       </Card>
 
+      {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -238,6 +242,36 @@ const EntriesList: React.FC<EntriesListProps> = ({
               displayUnit={displayUnit}
             />
           )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-red-500" />
+              Confirmar Exclusão
+            </DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir este aporte? Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4 flex justify-between gap-3">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsDeleteDialogOpen(false)}
+              className="flex-1"
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleConfirmDelete}
+              className="flex-1 bg-bitcoin hover:bg-bitcoin/90 text-white rounded-full"
+            >
+              Confirmar exclusão
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

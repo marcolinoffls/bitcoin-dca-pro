@@ -87,7 +87,10 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
         </CardHeader>
         <CardContent className="p-4 pt-0">
           <div className="flex flex-col h-full">
-            <div className="text-2xl font-bold mb-2">{formattedTotalBitcoin}</div>
+            <div className="text-sm text-muted-foreground mb-1">
+              {displayUnit === 'SATS' ? 'SATS' : 'BTC'}
+            </div>
+            <div className="text-2xl font-bold mb-2">{formattedTotalBitcoin.split(' ')[0]}</div>
             <p className="text-xs text-muted-foreground">
               Valor atual: {currencySymbol} {formatNumber(totalValueCurrent)}
             </p>
@@ -108,6 +111,9 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
         </CardHeader>
         <CardContent className="p-4 pt-0">
           <div className="flex flex-col h-full">
+            <div className="text-sm text-muted-foreground mb-1">
+              {selectedCurrency}
+            </div>
             <div className="text-2xl font-bold mb-2 animate-in fade-in-0 duration-300">
               {currentAvgPrice > 0 
                 ? `${currencySymbol} ${formatNumber(currentAvgPrice)}` 

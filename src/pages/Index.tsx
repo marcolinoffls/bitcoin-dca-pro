@@ -45,21 +45,22 @@ const Index = () => {
           <p className={`text-muted-foreground ${isMobile ? "text-xs" : ""}`}>
             Stay Humble and Stack Sats
           </p>
-          <div className="mt-3 grid grid-cols-2 gap-4">
-            <div className="flex justify-start">
-              <ToggleDisplayUnit 
-                displayUnit={displayUnit} 
-                onToggle={toggleDisplayUnit} 
-              />
-            </div>
-            <div className="flex justify-start">
-              <ToggleCurrency
-                selectedCurrency={selectedCurrency}
-                onToggle={toggleCurrency}
-              />
-            </div>
-          </div>
         </header>
+
+        <div className="grid grid-cols-2 gap-5 mb-5">
+          <div className="flex justify-start">
+            <ToggleDisplayUnit 
+              displayUnit={displayUnit} 
+              onToggle={toggleDisplayUnit} 
+            />
+          </div>
+          <div className="flex justify-start">
+            <ToggleCurrency
+              selectedCurrency={selectedCurrency}
+              onToggle={toggleCurrency}
+            />
+          </div>
+        </div>
 
         <div className="grid gap-5 grid-cols-1 md:grid-cols-2 mb-6">
           <div>
