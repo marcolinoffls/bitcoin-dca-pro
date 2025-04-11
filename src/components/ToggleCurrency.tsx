@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { DollarSign, BrazilianReal } from 'lucide-react';
+import { DollarSign } from 'lucide-react';
 
 interface ToggleCurrencyProps {
   selectedCurrency: 'BRL' | 'USD';

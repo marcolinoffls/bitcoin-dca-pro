@@ -40,25 +40,29 @@ const Index = () => {
         <header className="mb-4 text-center">
           <div className="flex items-center justify-center gap-3 mb-3">
             <Bitcoin size={isMobile ? 28 : 40} className="text-bitcoin" />
-            <h1 className={`${isMobile ? "text-xl" : "text-3xl"} font-bold`}>Bitcoin Stash Tracker Pro</h1>
+            <h1 className={`${isMobile ? "text-xl" : "text-3xl"} font-bold`}>Bitcoin DCA Pro</h1>
           </div>
           <p className={`text-muted-foreground ${isMobile ? "text-xs" : ""}`}>
-            Acompanhe seus investimentos em Bitcoin e monitore seu desempenho ao longo do tempo
+            Stay Humble and Stack Sats
           </p>
-          <div className="mt-3 flex justify-center gap-4">
-            <ToggleDisplayUnit 
-              displayUnit={displayUnit} 
-              onToggle={toggleDisplayUnit} 
-            />
-            <ToggleCurrency
-              selectedCurrency={selectedCurrency}
-              onToggle={toggleCurrency}
-            />
+          <div className="mt-3 grid grid-cols-2 gap-4">
+            <div className="flex justify-start">
+              <ToggleDisplayUnit 
+                displayUnit={displayUnit} 
+                onToggle={toggleDisplayUnit} 
+              />
+            </div>
+            <div className="flex justify-start">
+              <ToggleCurrency
+                selectedCurrency={selectedCurrency}
+                onToggle={toggleCurrency}
+              />
+            </div>
           </div>
         </header>
 
-        <div className="grid gap-5 grid-cols-1 md:grid-cols-3 mb-6">
-          <div className="md:col-span-2">
+        <div className="grid gap-5 grid-cols-1 md:grid-cols-2 mb-6">
+          <div>
             <StatisticsCards 
               entries={entries} 
               currentRate={currentRate}
@@ -67,7 +71,7 @@ const Index = () => {
             />
           </div>
           
-          <div className="md:col-span-1">
+          <div>
             <CurrentRateCard 
               currentRate={currentRate} 
               isLoading={isLoading} 

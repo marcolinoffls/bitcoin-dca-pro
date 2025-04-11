@@ -20,8 +20,8 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
   onRefresh,
 }) => {
   return (
-    <Card className="rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-200">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-5">
+    <Card className="rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-200 h-full">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-bitcoin/10">
             <Bitcoin className="h-6 w-6 text-bitcoin" />
@@ -29,20 +29,26 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
           <CardTitle className="text-sm text-gray-500">Cotação Atual do Bitcoin</CardTitle>
         </div>
       </CardHeader>
-      <CardContent className="p-5 pt-0">
+      <CardContent className="p-4 pt-0">
         <div className="grid gap-4 grid-cols-2">
-          <div className="flex flex-col p-3 rounded-md">
-            <span className="text-sm font-medium">USD</span>
-            <span className="text-xl font-bold text-center">$ {formatNumber(currentRate.usd)}</span>
+          <div className="flex flex-col">
+            <span className="text-sm font-medium mb-1">USD</span>
+            <div className="flex items-start">
+              <span className="text-lg font-medium mr-1">$</span>
+              <span className="text-xl font-bold">{formatNumber(currentRate.usd)}</span>
+            </div>
           </div>
           
-          <div className="flex flex-col p-3 rounded-md">
-            <span className="text-sm font-medium">BRL</span>
-            <span className="text-xl font-bold text-center">R$ {formatNumber(currentRate.brl)}</span>
+          <div className="flex flex-col">
+            <span className="text-sm font-medium mb-1">BRL</span>
+            <div className="flex items-start">
+              <span className="text-lg font-medium mr-1">R$</span>
+              <span className="text-xl font-bold">{formatNumber(currentRate.brl)}</span>
+            </div>
           </div>
         </div>
         
-        <div className="flex items-center justify-between mt-4">
+        <div className="flex items-center justify-between mt-3">
           <p className="text-xs text-muted-foreground">
             Atualizado: {format(currentRate.timestamp, 'dd/MM/yyyy HH:mm', { locale: ptBR })}
           </p>
@@ -51,7 +57,7 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
             size="sm" 
             onClick={onRefresh}
             disabled={isLoading}
-            className="h-8 px-2"
+            className="h-7 px-2"
           >
             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
           </Button>

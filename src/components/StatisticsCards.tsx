@@ -75,9 +75,9 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
       : CalendarClock;
 
   return (
-    <div className="grid gap-5 grid-cols-2 md:grid-cols-2 lg:grid-cols-2">
-      <Card className="overflow-hidden rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-200">
-        <CardHeader className="flex flex-row items-center justify-between pb-2 p-5">
+    <div className="grid gap-5 grid-cols-2">
+      <Card className="overflow-hidden rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-200 h-full">
+        <CardHeader className="flex flex-row items-center justify-between pb-2 p-4">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-bitcoin/10">
               <Bitcoin className="h-6 w-6 text-bitcoin" />
@@ -85,18 +85,18 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
             <CardTitle className="text-sm text-gray-500">Total em {displayUnit === 'SATS' ? 'Satoshis' : 'Bitcoin'}</CardTitle>
           </div>
         </CardHeader>
-        <CardContent className="p-5 pt-0">
-          <div className="flex flex-col items-center justify-center h-24">
-            <div className="text-2xl font-bold">{formattedTotalBitcoin}</div>
-            <p className="text-xs mt-1 text-muted-foreground">
+        <CardContent className="p-4 pt-0">
+          <div className="flex flex-col h-full">
+            <div className="text-2xl font-bold mb-2">{formattedTotalBitcoin}</div>
+            <p className="text-xs text-muted-foreground">
               Valor atual: {currencySymbol} {formatNumber(totalValueCurrent)}
             </p>
           </div>
         </CardContent>
       </Card>
       
-      <Card className="overflow-hidden rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-200">
-        <CardHeader className="flex flex-row items-center justify-between pb-2 p-5">
+      <Card className="overflow-hidden rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-200 h-full">
+        <CardHeader className="flex flex-row items-center justify-between pb-2 p-4">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/20">
               <PeriodIcon className="h-6 w-6 text-purple-600 dark:text-purple-400" />
@@ -106,9 +106,9 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
             </CardTitle>
           </div>
         </CardHeader>
-        <CardContent className="p-5 pt-0">
-          <div className="flex flex-col items-center justify-center h-24">
-            <div className="text-2xl font-bold animate-in fade-in-0 duration-300">
+        <CardContent className="p-4 pt-0">
+          <div className="flex flex-col h-full">
+            <div className="text-2xl font-bold mb-2 animate-in fade-in-0 duration-300">
               {currentAvgPrice > 0 
                 ? `${currencySymbol} ${formatNumber(currentAvgPrice)}` 
                 : "Sem aportes"}
@@ -116,7 +116,7 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
             
             <Popover>
               <PopoverTrigger asChild>
-                <button className="mt-2 px-3 py-1 text-xs rounded-md bg-muted hover:bg-muted/80 transition-colors">
+                <button className="self-start px-3 py-1 text-xs rounded-md bg-muted hover:bg-muted/80 transition-colors">
                   {selectedPeriod === 'month' ? 'Mês' : selectedPeriod === 'year' ? 'Ano' : 'Total'}
                 </button>
               </PopoverTrigger>
