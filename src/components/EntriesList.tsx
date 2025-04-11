@@ -11,6 +11,7 @@ import { TrendingDown, TrendingUp, Trash2, Edit } from 'lucide-react';
 import { formatNumber } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import EntryEditForm from '@/components/EntryEditForm';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface EntriesListProps {
   entries: BitcoinEntry[];
@@ -18,6 +19,7 @@ interface EntriesListProps {
   onDelete: (id: string) => void;
   onEdit: (id: string) => void;
   selectedCurrency: 'BRL' | 'USD';
+  displayUnit: 'BTC' | 'SATS';
 }
 
 const EntriesList: React.FC<EntriesListProps> = ({
@@ -26,9 +28,11 @@ const EntriesList: React.FC<EntriesListProps> = ({
   onDelete,
   onEdit,
   selectedCurrency,
+  displayUnit,
 }) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
+  const isMobile = useIsMobile();
 
   const handleEditClick = (id: string) => {
     setSelectedEntryId(id);
@@ -44,7 +48,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
     return (
       <Card className="mt-6">
         <CardHeader className="pb-3">
-          <CardTitle className="text-xl">Aportes Registrados</CardTitle>
+          <CardTitle className={isMobile ? "text-lg" : "text-xl"}>Aportes Registrados</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-center text-muted-foreground py-6">
@@ -64,23 +68,32 @@ const EntriesList: React.FC<EntriesListProps> = ({
     ? entries.find(entry => entry.id === selectedEntryId) 
     : null;
 
+  const formatBitcoinAmount = (amount: number) => {
+    if (displayUnit === 'SATS') {
+      // Convert to satoshis (1 BTC = 100,000,000 satoshis)
+      const satoshis = amount * 100000000;
+      return formatNumber(satoshis, 0);
+    }
+    return formatNumber(amount, 8);
+  };
+
   return (
     <>
       <Card className="mt-6">
         <CardHeader className="pb-3">
-          <CardTitle className="text-xl">Aportes Registrados</CardTitle>
+          <CardTitle className={isMobile ? "text-lg" : "text-xl"}>Aportes Registrados</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Valor Investido</TableHead>
-                  <TableHead>Bitcoin</TableHead>
-                  <TableHead>Cotação</TableHead>
-                  <TableHead>Variação</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                  <TableHead className={isMobile ? "text-xs" : ""}>Data</TableHead>
+                  <TableHead className={isMobile ? "text-xs" : ""}>Valor Investido</TableHead>
+                  <TableHead className={isMobile ? "text-xs" : ""}>{displayUnit === 'SATS' ? 'Satoshis' : 'Bitcoin'}</TableHead>
+                  <TableHead className={isMobile ? "text-xs" : ""}>Cotação</TableHead>
+                  <TableHead className={isMobile ? "text-xs" : ""}>Variação</TableHead>
+                  <TableHead className={`text-right ${isMobile ? "text-xs" : ""}`}>Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -100,17 +113,19 @@ const EntriesList: React.FC<EntriesListProps> = ({
                   
                   return (
                     <TableRow key={entry.id}>
-                      <TableCell>
+                      <TableCell className={isMobile ? "text-xs py-2" : ""}>
                         {format(entry.date, 'dd/MM/yyyy', { locale: ptBR })}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className={isMobile ? "text-xs py-2" : ""}>
                         {entry.currency === 'USD' ? '$' : 'R$'} {formatNumber(entry.amountInvested)}
                       </TableCell>
-                      <TableCell>{formatNumber(entry.btcAmount, 8)}</TableCell>
-                      <TableCell>
+                      <TableCell className={isMobile ? "text-xs py-2" : ""}>
+                        {formatBitcoinAmount(entry.btcAmount)}
+                      </TableCell>
+                      <TableCell className={isMobile ? "text-xs py-2" : ""}>
                         {entry.currency === 'USD' ? '$' : 'R$'} {formatNumber(entry.exchangeRate)}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className={isMobile ? "text-xs py-2" : ""}>
                         <div className="flex items-center">
                           {percentChange > 0 ? (
                             <TrendingUp className="h-4 w-4 mr-1 text-green-500" />
@@ -126,7 +141,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
                           </span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className={`text-right ${isMobile ? "text-xs py-2" : ""}`}>
                         <div className="flex justify-end">
                           <Button
                             variant="ghost"
@@ -164,6 +179,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
               entry={selectedEntry}
               currentRate={currentRate}
               onClose={handleEditClose}
+              displayUnit={displayUnit}
             />
           )}
         </DialogContent>

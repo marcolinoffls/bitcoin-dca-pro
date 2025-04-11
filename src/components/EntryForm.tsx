@@ -7,11 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import CurrencySelector from '@/components/CurrencySelector';
-import { Bitcoin, CalendarIcon, CalendarCheck, Check } from 'lucide-react';
+import { Bitcoin, CalendarIcon, CalendarCheck, Check, Calculator } from 'lucide-react';
 import { formatNumber } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface EntryFormProps {
   onAddEntry: (
@@ -31,19 +32,25 @@ interface EntryFormProps {
     currency: 'BRL' | 'USD';
   };
   onCancelEdit?: () => void;
+  displayUnit?: 'BTC' | 'SATS';
 }
 
 const EntryForm: React.FC<EntryFormProps> = ({ 
   onAddEntry, 
   currentRate, 
   editingEntry, 
-  onCancelEdit 
+  onCancelEdit,
+  displayUnit = 'BTC'
 }) => {
   const [amountInvested, setAmountInvested] = useState(
     editingEntry ? formatNumber(editingEntry.amountInvested) : ''
   );
   const [btcAmount, setBtcAmount] = useState(
-    editingEntry ? formatNumber(editingEntry.btcAmount, 8) : ''
+    editingEntry 
+      ? (displayUnit === 'SATS' 
+          ? formatNumber(editingEntry.btcAmount * 100000000, 0) 
+          : formatNumber(editingEntry.btcAmount, 8))
+      : ''
   );
   const [exchangeRate, setExchangeRate] = useState(
     editingEntry ? formatNumber(editingEntry.exchangeRate) : ''
@@ -51,13 +58,13 @@ const EntryForm: React.FC<EntryFormProps> = ({
   const [currency, setCurrency] = useState<'BRL' | 'USD'>(
     editingEntry ? editingEntry.currency : 'BRL'
   );
-  const [formMode, setFormMode] = useState<'amount' | 'rate'>('amount');
   const [date, setDate] = useState<Date>(
     editingEntry ? editingEntry.date : new Date()
   );
   const [tempDate, setTempDate] = useState<Date>(date);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const calendarPopoverRef = useRef<HTMLButtonElement>(null);
+  const isMobile = useIsMobile();
 
   // Função para converter string com vírgula para número
   const parseLocalNumber = (value: string): number => {
@@ -68,7 +75,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
     setCurrency(newCurrency);
     
     // Atualizar a taxa de câmbio com base na moeda selecionada
-    if (formMode === 'rate' && currentRate) {
+    if (currentRate) {
       setExchangeRate(
         formatNumber(newCurrency === 'USD' ? currentRate.usd : currentRate.brl)
       );
@@ -89,8 +96,14 @@ const EntryForm: React.FC<EntryFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const parsedAmount = parseLocalNumber(amountInvested);
-    const parsedBtc = parseLocalNumber(btcAmount);
+    let parsedAmount = parseLocalNumber(amountInvested);
+    let parsedBtc = parseLocalNumber(btcAmount);
+    
+    // Convert from satoshis to BTC if necessary
+    if (displayUnit === 'SATS') {
+      parsedBtc = parsedBtc / 100000000;
+    }
+    
     const parsedRate = parseLocalNumber(exchangeRate);
     
     if (isNaN(parsedAmount) || isNaN(parsedBtc) || isNaN(parsedRate)) {
@@ -109,12 +122,22 @@ const EntryForm: React.FC<EntryFormProps> = ({
     
     if (!isNaN(amount) && !isNaN(rate) && rate > 0) {
       const btc = amount / rate;
-      setBtcAmount(formatNumber(btc, 8));
+      if (displayUnit === 'SATS') {
+        setBtcAmount(formatNumber(btc * 100000000, 0));
+      } else {
+        setBtcAmount(formatNumber(btc, 8));
+      }
     }
   };
 
   const calculateFromBtc = () => {
-    const btc = parseLocalNumber(btcAmount);
+    let btc = parseLocalNumber(btcAmount);
+    
+    // Convert from satoshis to BTC if necessary
+    if (displayUnit === 'SATS') {
+      btc = btc / 100000000;
+    }
+    
     const rate = parseLocalNumber(exchangeRate);
     
     if (!isNaN(btc) && !isNaN(rate)) {
@@ -150,14 +173,14 @@ const EntryForm: React.FC<EntryFormProps> = ({
 
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-xl flex items-center gap-2">
-          <Bitcoin className="h-6 w-6 text-bitcoin" />
+      <CardHeader className={`${isMobile ? "pb-2" : "pb-3"}`}>
+        <CardTitle className={`${isMobile ? "text-lg" : "text-xl"} flex items-center gap-2`}>
+          <Bitcoin className={`${isMobile ? "h-5 w-5" : "h-6 w-6"} text-bitcoin`} />
           {editingEntry ? 'Editar Aporte' : 'Registrar Novo Aporte'}
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <CardContent className={isMobile ? "pb-3" : ""}>
+        <form onSubmit={handleSubmit} className={`space-y-${isMobile ? "3" : "4"}`}>
           <div className="flex flex-col space-y-1.5">
             <Label htmlFor="purchaseDate">Data do Aporte</Label>
             <div className="flex gap-2">
@@ -168,7 +191,8 @@ const EntryForm: React.FC<EntryFormProps> = ({
                     variant="outline"
                     className={cn(
                       "w-full justify-start text-left font-normal",
-                      !date && "text-muted-foreground"
+                      !date && "text-muted-foreground",
+                      isMobile && "text-sm"
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
@@ -184,6 +208,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
                       initialFocus
                       defaultMonth={tempDate}
                       locale={ptBR}
+                      className="rounded-md border"
                     />
                     <div className="flex justify-end mt-2 gap-2">
                       <Button 
@@ -197,7 +222,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
                         variant="default" 
                         size="sm" 
                         onClick={confirmDateSelection}
-                        className="bg-bitcoin hover:bg-bitcoin-dark"
+                        className="bg-[#F97316] hover:bg-[#E85D04]"
                       >
                         <Check className="h-4 w-4 mr-1" />
                         Confirmar
@@ -211,6 +236,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
                 variant="outline"
                 onClick={setToday}
                 className="shrink-0"
+                size={isMobile ? "sm" : "default"}
               >
                 <CalendarCheck className="h-4 w-4 mr-2" />
                 Hoje
@@ -246,14 +272,14 @@ const EntryForm: React.FC<EntryFormProps> = ({
             </div>
             
             <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="btcAmount">Quantidade de Bitcoin</Label>
+              <Label htmlFor="btcAmount">{displayUnit === 'SATS' ? 'Satoshis' : 'Bitcoin'}</Label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-muted-foreground">
                   <Bitcoin className="h-4 w-4" />
                 </span>
                 <Input
                   id="btcAmount"
-                  placeholder="0,00000000"
+                  placeholder={displayUnit === 'SATS' ? "0" : "0,00000000"}
                   value={btcAmount}
                   onChange={(e) => setBtcAmount(e.target.value)}
                   className="pl-8"
@@ -293,28 +319,30 @@ const EntryForm: React.FC<EntryFormProps> = ({
             </div>
           </div>
           
-          <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+          <div className={`grid grid-cols-1 gap-2 ${isMobile ? "grid-cols-2" : "md:grid-cols-3"}`}>
             {!editingEntry ? (
               <>
                 <Button 
                   type="button" 
                   variant="outline" 
                   onClick={calculateFromAmount}
-                  className="col-span-1"
+                  className={`${isMobile ? "col-span-1 text-xs px-2" : "col-span-1"}`}
                 >
-                  Calcular BTC a partir do valor
+                  <Calculator className="h-4 w-4 mr-1" />
+                  {isMobile ? "" : "Calcular "}{displayUnit === 'SATS' ? 'Satoshis' : 'BTC'}
                 </Button>
                 <Button 
                   type="button" 
                   variant="outline" 
                   onClick={calculateFromBtc}
-                  className="col-span-1"
+                  className={`${isMobile ? "col-span-1 text-xs px-2" : "col-span-1"}`}
                 >
-                  Calcular valor a partir do BTC
+                  <Calculator className="h-4 w-4 mr-1" />
+                  {isMobile ? "" : "Calcular "}Valor
                 </Button>
                 <Button 
                   type="submit" 
-                  className="col-span-1 bg-bitcoin hover:bg-bitcoin-dark"
+                  className={`${isMobile ? "col-span-2" : "col-span-1"} bg-bitcoin hover:bg-bitcoin-dark`}
                 >
                   Registrar
                 </Button>
@@ -325,21 +353,22 @@ const EntryForm: React.FC<EntryFormProps> = ({
                   type="button" 
                   variant="outline" 
                   onClick={calculateFromAmount}
-                  className="col-span-1"
+                  className={`${isMobile ? "col-span-1 text-xs px-2" : "col-span-1"}`}
                 >
-                  Calcular BTC
+                  <Calculator className="h-4 w-4 mr-1" />
+                  Calcular {displayUnit === 'SATS' ? 'Satoshis' : 'BTC'}
                 </Button>
                 <Button 
                   type="button" 
                   variant="outline"
                   onClick={resetForm}
-                  className="col-span-1"
+                  className={`${isMobile ? "col-span-1 text-xs px-2" : "col-span-1"}`}
                 >
                   Cancelar
                 </Button>
                 <Button 
                   type="submit" 
-                  className="col-span-1 bg-bitcoin hover:bg-bitcoin-dark"
+                  className={`${isMobile ? "col-span-2" : "col-span-1"} bg-bitcoin hover:bg-bitcoin-dark`}
                 >
                   Atualizar
                 </Button>

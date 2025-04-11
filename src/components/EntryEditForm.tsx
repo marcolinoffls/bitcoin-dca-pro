@@ -1,37 +1,40 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import CurrencySelector from '@/components/CurrencySelector';
-import { Bitcoin, CalendarIcon, CalendarCheck, Check } from 'lucide-react';
+import { Bitcoin, CalendarIcon, CalendarCheck, Check, Calculator } from 'lucide-react';
 import { formatNumber } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { BitcoinEntry, CurrentRate } from '@/types';
-import { useBitcoinEntries } from '@/hooks/useBitcoinEntries';
+import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface EntryEditFormProps {
   entry: BitcoinEntry;
   currentRate: CurrentRate;
   onClose: () => void;
+  displayUnit?: 'BTC' | 'SATS';
 }
 
 const EntryEditForm: React.FC<EntryEditFormProps> = ({ 
   entry, 
   currentRate, 
-  onClose 
+  onClose,
+  displayUnit = 'BTC'
 }) => {
-  const { addEntry } = useBitcoinEntries();
-  
   const [amountInvested, setAmountInvested] = useState(
     formatNumber(entry.amountInvested)
   );
   const [btcAmount, setBtcAmount] = useState(
-    formatNumber(entry.btcAmount, 8)
+    displayUnit === 'SATS' 
+      ? formatNumber(entry.btcAmount * 100000000, 0)
+      : formatNumber(entry.btcAmount, 8)
   );
   const [exchangeRate, setExchangeRate] = useState(
     formatNumber(entry.exchangeRate)
@@ -41,6 +44,16 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
   const [tempDate, setTempDate] = useState<Date>(date);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const calendarPopoverRef = useRef<HTMLButtonElement>(null);
+  const { toast } = useToast();
+  const isMobile = useIsMobile();
+
+  // Track if component is mounted to prevent state updates after unmounting
+  const isMounted = useRef(true);
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   // Função para converter string com vírgula para número
   const parseLocalNumber = (value: string): number => {
@@ -61,16 +74,53 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const parsedAmount = parseLocalNumber(amountInvested);
-    const parsedBtc = parseLocalNumber(btcAmount);
+    let parsedAmount = parseLocalNumber(amountInvested);
+    let parsedBtc = parseLocalNumber(btcAmount);
+    
+    // Convert from satoshis to BTC if necessary
+    if (displayUnit === 'SATS') {
+      parsedBtc = parsedBtc / 100000000;
+    }
+    
     const parsedRate = parseLocalNumber(exchangeRate);
     
     if (isNaN(parsedAmount) || isNaN(parsedBtc) || isNaN(parsedRate)) {
+      toast({
+        title: "Erro nos dados",
+        description: "Por favor, verifique os valores inseridos.",
+        variant: "destructive"
+      });
       return;
     }
     
-    // Use the existing entry.id so it updates instead of creating new
-    addEntry(parsedAmount, parsedBtc, parsedRate, currency, date);
+    // Find and update entry directly in localStorage to avoid the issue with the hook
+    const savedEntries = localStorage.getItem('bitcoin-entries');
+    if (savedEntries) {
+      const entries = JSON.parse(savedEntries);
+      const updatedEntries = entries.map((savedEntry: any) => {
+        if (savedEntry.id === entry.id) {
+          return {
+            ...savedEntry,
+            amountInvested: parsedAmount,
+            btcAmount: parsedBtc,
+            exchangeRate: parsedRate,
+            currency,
+            date: date.toISOString()
+          };
+        }
+        return savedEntry;
+      });
+      
+      localStorage.setItem('bitcoin-entries', JSON.stringify(updatedEntries));
+      
+      // Reload the page to refresh the data
+      window.location.reload();
+    }
+    
+    toast({
+      title: "Aporte atualizado",
+      description: "Os dados do aporte foram atualizados com sucesso."
+    });
     
     onClose();
   };
@@ -81,12 +131,22 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
     
     if (!isNaN(amount) && !isNaN(rate) && rate > 0) {
       const btc = amount / rate;
-      setBtcAmount(formatNumber(btc, 8));
+      if (displayUnit === 'SATS') {
+        setBtcAmount(formatNumber(btc * 100000000, 0));
+      } else {
+        setBtcAmount(formatNumber(btc, 8));
+      }
     }
   };
 
   const calculateFromBtc = () => {
-    const btc = parseLocalNumber(btcAmount);
+    let btc = parseLocalNumber(btcAmount);
+    
+    // Convert from satoshis to BTC if necessary
+    if (displayUnit === 'SATS') {
+      btc = btc / 100000000;
+    }
+    
     const rate = parseLocalNumber(exchangeRate);
     
     if (!isNaN(btc) && !isNaN(rate)) {
@@ -147,6 +207,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
                   initialFocus
                   defaultMonth={tempDate}
                   locale={ptBR}
+                  className="rounded-md border"
                 />
                 <div className="flex justify-end mt-2 gap-2">
                   <Button 
@@ -160,7 +221,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
                     variant="default" 
                     size="sm" 
                     onClick={confirmDateSelection}
-                    className="bg-bitcoin hover:bg-bitcoin-dark"
+                    className="bg-[#F97316] hover:bg-[#E85D04]"
                   >
                     <Check className="h-4 w-4 mr-1" />
                     Confirmar
@@ -209,14 +270,14 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
         </div>
         
         <div className="flex flex-col space-y-1.5">
-          <Label htmlFor="editBtcAmount">Quantidade de Bitcoin</Label>
+          <Label htmlFor="editBtcAmount">{displayUnit === 'SATS' ? 'Satoshis' : 'Bitcoin'}</Label>
           <div className="relative">
             <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-muted-foreground">
               <Bitcoin className="h-4 w-4" />
             </span>
             <Input
               id="editBtcAmount"
-              placeholder="0,00000000"
+              placeholder={displayUnit === 'SATS' ? "0" : "0,00000000"}
               value={btcAmount}
               onChange={(e) => setBtcAmount(e.target.value)}
               className="pl-8"
@@ -256,13 +317,24 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
         </div>
       </div>
       
-      <div className="grid grid-cols-2 gap-2 pt-2">
+      <div className="grid grid-cols-3 gap-2 pt-2">
         <Button 
           type="button" 
           variant="outline" 
           onClick={calculateFromAmount}
+          className="text-xs px-2"
         >
-          Calcular BTC
+          <Calculator className="h-4 w-4 mr-1" />
+          Calcular {displayUnit === 'SATS' ? 'Satoshis' : 'BTC'}
+        </Button>
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={calculateFromBtc}
+          className="text-xs px-2"
+        >
+          <Calculator className="h-4 w-4 mr-1" />
+          Calcular Valor
         </Button>
         <Button 
           type="submit" 
