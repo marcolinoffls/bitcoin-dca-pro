@@ -15,6 +15,7 @@ import { BitcoinEntry, CurrentRate } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 interface EntryEditFormProps {
   entry: BitcoinEntry;
@@ -47,6 +48,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
   const calendarPopoverRef = useRef<HTMLButtonElement>(null);
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const { user } = useAuth();
 
   const isMounted = useRef(true);
   useEffect(() => {
@@ -71,6 +73,15 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user) {
+      toast({
+        title: "Acesso negado",
+        description: "Você precisa estar logado para editar aportes.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     let parsedAmount = parseLocalNumber(amountInvested);
     let parsedBtc = parseLocalNumber(btcAmount);
@@ -97,6 +108,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
         .update({
           data_aporte: date.toISOString().split('T')[0],
           moeda: currency,
+          cotacao_moeda: currency,
           valor_investido: parsedAmount,
           bitcoin: parsedBtc,
           cotacao: parsedRate

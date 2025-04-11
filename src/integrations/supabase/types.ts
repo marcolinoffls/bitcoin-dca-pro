@@ -13,28 +13,34 @@ export type Database = {
         Row: {
           bitcoin: number
           cotacao: number
+          cotacao_moeda: string
           created_at: string
           data_aporte: string
           id: string
           moeda: string
+          user_id: string | null
           valor_investido: number
         }
         Insert: {
           bitcoin: number
           cotacao: number
+          cotacao_moeda?: string
           created_at?: string
           data_aporte: string
           id?: string
           moeda: string
+          user_id?: string | null
           valor_investido: number
         }
         Update: {
           bitcoin?: number
           cotacao?: number
+          cotacao_moeda?: string
           created_at?: string
           data_aporte?: string
           id?: string
           moeda?: string
+          user_id?: string | null
           valor_investido?: number
         }
         Relationships: []

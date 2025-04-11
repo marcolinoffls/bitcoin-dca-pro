@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useToast } from '@/components/ui/use-toast';
 import { fetchCurrentBitcoinRate } from '@/services/bitcoinService';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 export function useBitcoinEntries() {
   const [entries, setEntries] = useState<BitcoinEntry[]>([]);
@@ -16,16 +17,19 @@ export function useBitcoinEntries() {
   const [isLoading, setIsLoading] = useState(true);
   const [editingEntry, setEditingEntry] = useState<BitcoinEntry | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
-    // Fetch entries from Supabase
-    fetchEntries();
+    // Only fetch entries if user is logged in
+    if (user) {
+      fetchEntries();
+    }
     
-    // Fetch current BTC rate
+    // Always fetch current BTC rate
     updateCurrentRate();
-  }, []);
+  }, [user]);
 
-  // Atualizar a cotação a cada 5 minutos
+  // Update the quote every 5 minutes
   useEffect(() => {
     const interval = setInterval(() => {
       updateCurrentRate();
@@ -35,6 +39,8 @@ export function useBitcoinEntries() {
   }, []);
 
   const fetchEntries = async () => {
+    if (!user) return;
+    
     setIsLoading(true);
     try {
       const { data, error } = await supabase
@@ -95,6 +101,15 @@ export function useBitcoinEntries() {
     currency: 'BRL' | 'USD',
     date: Date
   ) => {
+    if (!user) {
+      toast({
+        title: 'Erro ao registrar',
+        description: 'Você precisa estar logado para registrar um aporte.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (editingEntry) {
       // Update existing entry in Supabase
       try {
@@ -103,6 +118,7 @@ export function useBitcoinEntries() {
           .update({
             data_aporte: date.toISOString().split('T')[0],
             moeda: currency,
+            cotacao_moeda: currency, // Set the currency used for the exchange rate
             valor_investido: amountInvested,
             bitcoin: btcAmount,
             cotacao: exchangeRate
@@ -150,9 +166,11 @@ export function useBitcoinEntries() {
             id: newEntryId,
             data_aporte: date.toISOString().split('T')[0],
             moeda: currency,
+            cotacao_moeda: currency, // Store the currency of the exchange rate
             valor_investido: amountInvested,
             bitcoin: btcAmount,
-            cotacao: exchangeRate
+            cotacao: exchangeRate,
+            user_id: user.id // Set the user_id from the authenticated user
           });
 
         if (error) throw error;
@@ -196,6 +214,8 @@ export function useBitcoinEntries() {
   };
 
   const deleteEntry = async (id: string) => {
+    if (!user) return;
+    
     try {
       const { error } = await supabase
         .from('aportes')
