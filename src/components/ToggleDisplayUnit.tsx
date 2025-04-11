@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Bitcoin, CoinIcon } from 'lucide-react';
+import { Bitcoin, Coins } from 'lucide-react';
 
 interface ToggleDisplayUnitProps {
   displayUnit: 'BTC' | 'SATS';
@@ -43,7 +43,7 @@ const ToggleDisplayUnit = ({
             displayUnit === 'SATS' ? 'data-[state=on]' : ''
           }`}
         >
-          <CoinIcon className="h-4 w-4 mr-1.5" />
+          <Coins className="h-4 w-4 mr-1.5" />
           <span>SATS</span>
         </ToggleGroupItem>
       </ToggleGroup>
