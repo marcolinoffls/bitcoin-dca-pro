@@ -193,6 +193,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
                   "w-full justify-start text-left font-normal",
                   !date && "text-muted-foreground"
                 )}
+                type="button" // Add type="button" to prevent form submission
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {date ? format(date, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecione uma data</span>}
@@ -214,6 +215,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
                     variant="outline" 
                     size="sm" 
                     onClick={() => setIsCalendarOpen(false)}
+                    type="button" // Add type="button" to prevent form submission
                   >
                     Cancelar
                   </Button>
@@ -222,6 +224,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
                     size="sm" 
                     onClick={confirmDateSelection}
                     className="bg-[#F97316] hover:bg-[#E85D04]"
+                    type="button" // Add type="button" to prevent form submission
                   >
                     <Check className="h-4 w-4 mr-1" />
                     Confirmar
@@ -247,6 +250,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
         <CurrencySelector
           selectedCurrency={currency}
           onChange={handleCurrencyChange}
+          buttonType="button" // Add buttonType="button" to prevent form submission
         />
       </div>
       

@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { TrendingDown, TrendingUp, Trash2, Edit } from 'lucide-react';
 import { formatNumber } from '@/lib/utils';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import EntryEditForm from '@/components/EntryEditForm';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -93,6 +93,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
                   <TableHead className={isMobile ? "text-xs" : ""}>{displayUnit === 'SATS' ? 'Satoshis' : 'Bitcoin'}</TableHead>
                   <TableHead className={isMobile ? "text-xs" : ""}>Cotação</TableHead>
                   <TableHead className={isMobile ? "text-xs" : ""}>Variação</TableHead>
+                  <TableHead className={isMobile ? "text-xs" : ""}>Valor Atual</TableHead>
                   <TableHead className={`text-right ${isMobile ? "text-xs" : ""}`}>Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -110,6 +111,15 @@ const EntriesList: React.FC<EntriesListProps> = ({
                     entryRateInSelectedCurrency,
                     currentRateValue
                   );
+                  
+                  // Calculate current value based on BTC amount and current rate
+                  const currentValue = entry.btcAmount * currentRateValue;
+                  const investedValue = 
+                    entry.currency === selectedCurrency
+                      ? entry.amountInvested 
+                      : entry.currency === 'USD'
+                        ? entry.amountInvested * (currentRate.brl / currentRate.usd)
+                        : entry.amountInvested / (currentRate.brl / currentRate.usd);
                   
                   return (
                     <TableRow key={entry.id}>
@@ -139,6 +149,14 @@ const EntriesList: React.FC<EntriesListProps> = ({
                           >
                             {formatNumber(percentChange)}%
                           </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className={isMobile ? "text-xs py-2" : ""}>
+                        <div className={percentChange > 0 ? 'text-green-500' : 'text-red-500'}>
+                          {selectedCurrency === 'USD' ? '$' : 'R$'} {formatNumber(currentValue)}
+                          <div className="text-xs text-muted-foreground">
+                            {percentChange > 0 ? '+' : ''}{formatNumber(currentValue - investedValue)}
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell className={`text-right ${isMobile ? "text-xs py-2" : ""}`}>
@@ -173,6 +191,9 @@ const EntriesList: React.FC<EntriesListProps> = ({
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Editar Aporte</DialogTitle>
+            <DialogDescription>
+              Modifique os dados do seu aporte e clique em atualizar para salvar.
+            </DialogDescription>
           </DialogHeader>
           {selectedEntry && (
             <EntryEditForm

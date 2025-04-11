@@ -10,12 +10,14 @@ interface StatisticsCardsProps {
   entries: BitcoinEntry[];
   currentRate: CurrentRate;
   selectedCurrency: 'BRL' | 'USD';
+  displayUnit: 'BTC' | 'SATS';
 }
 
 const StatisticsCards: React.FC<StatisticsCardsProps> = ({
   entries,
   currentRate,
   selectedCurrency,
+  displayUnit,
 }) => {
   const totalBitcoin = calculateTotalBitcoin(entries);
   
@@ -28,15 +30,20 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
   
   const totalValueCurrent = totalBitcoin * currentRateValue;
 
+  // Format total Bitcoin amount based on display unit
+  const formattedTotalBitcoin = displayUnit === 'SATS' 
+    ? `${formatNumber(totalBitcoin * 100000000, 0)} SATS`
+    : `${formatNumber(totalBitcoin, 8)} BTC`;
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total em Bitcoin</CardTitle>
+          <CardTitle className="text-sm font-medium">Total em {displayUnit === 'SATS' ? 'Satoshis' : 'Bitcoin'}</CardTitle>
           <Bitcoin className="h-4 w-4 text-bitcoin" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{formatNumber(totalBitcoin, 8)} BTC</div>
+          <div className="text-2xl font-bold">{formattedTotalBitcoin}</div>
           <p className="text-xs text-muted-foreground">
             Valor atual: {currencySymbol} {formatNumber(totalValueCurrent)}
           </p>
