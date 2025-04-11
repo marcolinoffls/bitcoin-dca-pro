@@ -25,11 +25,15 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
 }) => {
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Cotação Atual do Bitcoin</CardTitle>
-        <Bitcoin className="h-4 w-4 text-bitcoin" />
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-5">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-bitcoin/10">
+            <Bitcoin className="h-6 w-6 text-bitcoin" />
+          </div>
+          <CardTitle className="text-sm text-gray-500">Cotação Atual do Bitcoin</CardTitle>
+        </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-5 pt-0">
         <div className="grid gap-4 grid-cols-2">
           <div 
             className={`flex flex-col p-3 rounded-md cursor-pointer transition-colors ${
@@ -40,7 +44,7 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
             onClick={() => onChangeCurrency('USD')}
           >
             <span className="text-sm font-medium">USD</span>
-            <span className="text-2xl font-bold">$ {formatNumber(currentRate.usd)}</span>
+            <span className="text-xl font-bold text-center">$ {formatNumber(currentRate.usd)}</span>
           </div>
           
           <div 
@@ -52,7 +56,7 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
             onClick={() => onChangeCurrency('BRL')}
           >
             <span className="text-sm font-medium">BRL</span>
-            <span className="text-2xl font-bold">R$ {formatNumber(currentRate.brl)}</span>
+            <span className="text-xl font-bold text-center">R$ {formatNumber(currentRate.brl)}</span>
           </div>
         </div>
         

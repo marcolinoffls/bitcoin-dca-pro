@@ -53,20 +53,7 @@ const Index = () => {
           </div>
         </header>
 
-        {/* Move the entry form higher on mobile */}
-        {isMobile && (
-          <div className="mb-6">
-            <EntryForm 
-              onAddEntry={addEntry} 
-              currentRate={currentRate}
-              editingEntry={editingEntry || undefined}
-              onCancelEdit={cancelEdit}
-              displayUnit={displayUnit}
-            />
-          </div>
-        )}
-
-        <div className="grid gap-4 grid-cols-1 md:grid-cols-3 mb-6">
+        <div className="grid gap-5 grid-cols-1 md:grid-cols-3 mb-6">
           <div className="md:col-span-2">
             <StatisticsCards 
               entries={entries} 
@@ -87,18 +74,15 @@ const Index = () => {
           </div>
         </div>
         
-        {/* Only show entry form here on larger screens */}
-        {!isMobile && (
-          <div className="mb-6">
-            <EntryForm 
-              onAddEntry={addEntry} 
-              currentRate={currentRate}
-              editingEntry={editingEntry || undefined}
-              onCancelEdit={cancelEdit}
-              displayUnit={displayUnit}
-            />
-          </div>
-        )}
+        <div className="mb-6">
+          <EntryForm 
+            onAddEntry={addEntry} 
+            currentRate={currentRate}
+            editingEntry={editingEntry || undefined}
+            onCancelEdit={cancelEdit}
+            displayUnit={displayUnit}
+          />
+        </div>
         
         <div>
           <EntriesList 
