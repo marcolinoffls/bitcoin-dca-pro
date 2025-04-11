@@ -6,8 +6,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 interface FormActionsProps {
   isEditing: boolean;
   displayUnit: 'BTC' | 'SATS';
-  onCalculateFromAmount: () => void;
-  onCalculateFromBtc: () => void;
+  onCalculateFromAmount?: () => void;
+  onCalculateFromBtc?: () => void;
   onReset?: () => void;
 }
 
@@ -28,18 +28,18 @@ const FormActions: React.FC<FormActionsProps> = ({
           Registrar
         </Button>
       ) : (
-        <div className="flex gap-4">
+        <div className="flex gap-4 w-full">
           <Button 
             type="button"
             variant="outline"
             onClick={onReset}
-            className="rounded-xl"
+            className="rounded-xl flex-1"
           >
             Cancelar
           </Button>
           <Button 
             type="submit" 
-            className="bg-bitcoin hover:bg-bitcoin/90 rounded-xl px-6 py-3 h-auto font-medium transition-all duration-200"
+            className="bg-bitcoin hover:bg-bitcoin/90 rounded-xl px-6 py-3 h-auto font-medium transition-all duration-200 flex-1"
           >
             Atualizar
           </Button>

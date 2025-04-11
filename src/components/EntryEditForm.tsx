@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -5,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import CurrencySelector from '@/components/CurrencySelector';
-import { Bitcoin, CalendarIcon, CalendarCheck, Check, Calculator } from 'lucide-react';
+import { Bitcoin, CalendarIcon, CalendarCheck, Check } from 'lucide-react';
 import { formatNumber } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -141,35 +142,6 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
     }
   };
 
-  const calculateFromBtc = () => {
-    let btc = parseLocalNumber(btcAmount);
-    
-    if (displayUnit === 'SATS') {
-      btc = btc / 100000000;
-    }
-    
-    const rate = parseLocalNumber(exchangeRate);
-    
-    if (!isNaN(btc) && !isNaN(rate)) {
-      const amount = btc * rate;
-      setAmountInvested(formatNumber(amount));
-    }
-  };
-
-  const calculateFromExchange = () => {
-    const amount = parseLocalNumber(amountInvested);
-    let btc = parseLocalNumber(btcAmount);
-    
-    if (displayUnit === 'SATS') {
-      btc = btc / 100000000;
-    }
-    
-    if (!isNaN(amount) && !isNaN(btc) && btc > 0) {
-      const rate = amount / btc;
-      setExchangeRate(formatNumber(rate));
-    }
-  };
-
   const useCurrentRate = () => {
     if (currentRate) {
       const rate = currency === 'USD' ? currentRate.usd : currentRate.brl;
@@ -177,28 +149,26 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
     }
   };
 
-  const setToday = () => {
-    const today = new Date();
-    setDate(today);
+  const handleDateSelect = (newDate: Date | undefined) => {
+    if (newDate) {
+      setTempDate(newDate);
+    }
+  };
+
+  const confirmDateSelection = () => {
+    setDate(tempDate);
     setIsCalendarOpen(false);
   };
 
-  const handleDateSelect = (newDate: Date | undefined) => {
-    if (newDate) {
-      setDate(newDate);
-      setIsCalendarOpen(false);
-    }
-  };
-
-  const handleCalendarToggle = (open: boolean) => {
-    setIsCalendarOpen(open);
-    if (open) {
-      setTempDate(date);
-    }
+  const setToday = () => {
+    const today = new Date();
+    setDate(today);
+    setTempDate(today);
+    setIsCalendarOpen(false);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4 px-1">
       <div className="flex flex-col space-y-1.5">
         <Label htmlFor="editPurchaseDate">Data do Aporte</Label>
         <div className="flex gap-4">
@@ -208,7 +178,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
                 ref={calendarPopoverRef}
                 variant="outline"
                 className={cn(
-                  "w-full justify-start text-left font-normal",
+                  "w-full justify-start text-left font-normal rounded-xl",
                   !date && "text-muted-foreground"
                 )}
                 type="button"
@@ -221,12 +191,22 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
               <div className="p-3 rounded-md shadow-sm">
                 <Calendar
                   mode="single"
-                  selected={date}
+                  selected={tempDate}
                   onSelect={handleDateSelect}
                   initialFocus
                   locale={ptBR}
-                  className="rounded-md border-0 shadow-none"
+                  className="rounded-md border-0 shadow-none pointer-events-auto"
                 />
+                <div className="flex justify-center p-2 mt-2">
+                  <Button 
+                    type="button" 
+                    onClick={confirmDateSelection}
+                    className="rounded-full bg-bitcoin hover:bg-bitcoin/90 text-white w-full"
+                  >
+                    <Check className="h-4 w-4 mr-2" />
+                    Confirmar
+                  </Button>
+                </div>
               </div>
             </PopoverContent>
           </Popover>
@@ -234,7 +214,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
             type="button"
             variant="outline"
             onClick={setToday}
-            className="shrink-0"
+            className="shrink-0 rounded-xl"
           >
             <CalendarCheck className="h-4 w-4 mr-2" />
             Hoje
@@ -262,8 +242,21 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
               id="editAmount"
               placeholder="0,00"
               value={amountInvested}
-              onChange={(e) => setAmountInvested(e.target.value)}
-              className="pl-8"
+              onChange={(e) => {
+                setAmountInvested(e.target.value);
+                // Auto-calculate BTC amount when amount changes
+                const amount = parseLocalNumber(e.target.value);
+                const rate = parseLocalNumber(exchangeRate);
+                if (!isNaN(amount) && !isNaN(rate) && rate > 0) {
+                  const btc = amount / rate;
+                  if (displayUnit === 'SATS') {
+                    setBtcAmount(formatNumber(btc * 100000000, 0));
+                  } else {
+                    setBtcAmount(formatNumber(btc, 8));
+                  }
+                }
+              }}
+              className="pl-8 rounded-xl"
               type="text"
               required
             />
@@ -281,7 +274,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
               placeholder={displayUnit === 'SATS' ? "0" : "0,00000000"}
               value={btcAmount}
               onChange={(e) => setBtcAmount(e.target.value)}
-              className="pl-8"
+              className="pl-8 rounded-xl"
               type="text"
               required
             />
@@ -289,7 +282,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
         </div>
       </div>
       
-      <div className="flex flex-col space-y-1.5">
+      <div className="flex flex-col space-y-1.5 mt-4">
         <div className="flex justify-between">
           <Label htmlFor="editExchangeRate">Cotação no momento da compra</Label>
           <Button 
@@ -311,35 +304,25 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
             placeholder="0,00"
             value={exchangeRate}
             onChange={(e) => setExchangeRate(e.target.value)}
-            className="pl-8"
+            className="pl-8 rounded-xl"
             type="text"
             required
           />
         </div>
       </div>
       
-      <div className="grid grid-cols-3 gap-2 pt-2">
+      <div className="flex gap-4 pt-4">
         <Button 
           type="button" 
           variant="outline" 
-          onClick={calculateFromAmount}
-          className="text-xs px-2"
+          onClick={onClose}
+          className="flex-1 rounded-xl"
         >
-          <Calculator className="h-4 w-4 mr-1" />
-          Calcular {displayUnit === 'SATS' ? 'Satoshis' : 'BTC'}
-        </Button>
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={calculateFromBtc}
-          className="text-xs px-2"
-        >
-          <Calculator className="h-4 w-4 mr-1" />
-          Calcular Valor
+          Cancelar
         </Button>
         <Button 
           type="submit" 
-          className="bg-bitcoin hover:bg-bitcoin-dark"
+          className="flex-1 bg-bitcoin hover:bg-bitcoin/90 rounded-xl py-3 px-4"
         >
           Atualizar
         </Button>

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { BitcoinEntry, CurrentRate } from '@/types';
 import { calculatePercentageChange } from '@/services/bitcoinService';
@@ -219,7 +220,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
       </Card>
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md rounded-2xl px-6">
           <DialogHeader>
             <DialogTitle>Editar Aporte</DialogTitle>
             <DialogDescription>
@@ -238,7 +239,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
       </Dialog>
       
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-sm rounded-xl px-6">
+        <DialogContent className="sm:max-w-sm rounded-2xl px-6">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-red-500" />
@@ -252,13 +253,13 @@ const EntriesList: React.FC<EntriesListProps> = ({
             <Button 
               variant="outline" 
               onClick={() => setIsDeleteDialogOpen(false)}
-              className="flex-1 rounded-full"
+              className="flex-1 rounded-xl"
             >
               Cancelar
             </Button>
             <Button 
               onClick={handleConfirmDelete}
-              className="flex-1 bg-bitcoin hover:bg-bitcoin/90 text-white rounded-full"
+              className="flex-1 bg-bitcoin hover:bg-bitcoin/90 text-white rounded-xl"
             >
               Confirmar exclusão
             </Button>

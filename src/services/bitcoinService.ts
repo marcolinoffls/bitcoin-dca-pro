@@ -57,14 +57,14 @@ export const calculateAverageByPeriod = (
 
   if (filteredEntries.length === 0) return 0;
 
-  const totalInvested = filteredEntries.reduce(
-    (sum, entry) => sum + entry.amountInvested, 
-    0
-  );
-  const totalBtc = filteredEntries.reduce(
-    (sum, entry) => sum + entry.btcAmount, 
-    0
-  );
+  // Calculate weighted average price based on BTC amount
+  let totalBtc = 0;
+  let weightedRateSum = 0;
 
-  return totalBtc > 0 ? totalInvested / totalBtc : 0;
+  filteredEntries.forEach(entry => {
+    totalBtc += entry.btcAmount;
+    weightedRateSum += entry.exchangeRate * entry.btcAmount;
+  });
+
+  return totalBtc > 0 ? weightedRateSum / totalBtc : 0;
 };

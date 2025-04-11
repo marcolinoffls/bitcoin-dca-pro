@@ -80,7 +80,6 @@ const Index = () => {
               <EntryForm 
                 onAddEntry={addEntry} 
                 currentRate={currentRate}
-                editingEntry={editingEntry || undefined}
                 onCancelEdit={cancelEdit}
                 displayUnit={displayUnit}
               />
