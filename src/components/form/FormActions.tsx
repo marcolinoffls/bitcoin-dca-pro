@@ -23,7 +23,7 @@ const FormActions: React.FC<FormActionsProps> = ({
       {!isEditing ? (
         <Button 
           type="submit" 
-          className="bg-bitcoin hover:bg-bitcoin-dark rounded-full px-8 py-3 h-auto font-medium transition-all duration-200"
+          className="bg-bitcoin hover:bg-bitcoin/90 rounded-xl px-8 py-3 h-auto font-medium transition-all duration-200 w-full sm:w-auto sm:min-w-[160px]"
         >
           Registrar
         </Button>
@@ -33,13 +33,13 @@ const FormActions: React.FC<FormActionsProps> = ({
             type="button"
             variant="outline"
             onClick={onReset}
-            className="rounded-full"
+            className="rounded-xl"
           >
             Cancelar
           </Button>
           <Button 
             type="submit" 
-            className="bg-bitcoin hover:bg-bitcoin-dark rounded-full px-6 py-3 h-auto font-medium transition-all duration-200"
+            className="bg-bitcoin hover:bg-bitcoin/90 rounded-xl px-6 py-3 h-auto font-medium transition-all duration-200"
           >
             Atualizar
           </Button>

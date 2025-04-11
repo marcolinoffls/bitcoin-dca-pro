@@ -238,7 +238,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
       </Dialog>
       
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-md rounded-xl px-6">
+        <DialogContent className="sm:max-w-sm rounded-xl px-6">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-red-500" />

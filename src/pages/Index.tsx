@@ -47,14 +47,19 @@ const Index = () => {
           </p>
         </header>
 
+        <div className="flex justify-center gap-4 mb-6">
+          <ToggleDisplayUnit 
+            displayUnit={displayUnit} 
+            onToggle={toggleDisplayUnit} 
+          />
+          <ToggleCurrency
+            selectedCurrency={selectedCurrency}
+            onToggle={toggleCurrency}
+          />
+        </div>
+        
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
           <div className="md:col-span-1">
-            <div className="mb-5">
-              <ToggleDisplayUnit 
-                displayUnit={displayUnit} 
-                onToggle={toggleDisplayUnit} 
-              />
-            </div>
             <StatisticsCards 
               entries={entries} 
               currentRate={currentRate}
@@ -64,12 +69,6 @@ const Index = () => {
           </div>
           
           <div className="md:col-span-2">
-            <div className="mb-5">
-              <ToggleCurrency
-                selectedCurrency={selectedCurrency}
-                onToggle={toggleCurrency}
-              />
-            </div>
             <div className="mb-5">
               <CurrentRateCard 
                 currentRate={currentRate} 
