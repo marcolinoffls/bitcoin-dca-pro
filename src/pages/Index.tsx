@@ -31,16 +31,16 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="container mx-auto py-8 px-4">
-        <header className="mb-8 text-center">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <Bitcoin size={isMobile ? 30 : 40} className="text-bitcoin" />
-            <h1 className={`${isMobile ? "text-2xl" : "text-3xl"} font-bold`}>Bitcoin Stash Tracker Pro</h1>
+      <div className="container mx-auto py-6 px-4">
+        <header className="mb-4 text-center">
+          <div className="flex items-center justify-center gap-3 mb-3">
+            <Bitcoin size={isMobile ? 28 : 40} className="text-bitcoin" />
+            <h1 className={`${isMobile ? "text-xl" : "text-3xl"} font-bold`}>Bitcoin Stash Tracker Pro</h1>
           </div>
-          <p className={`text-muted-foreground ${isMobile ? "text-sm" : ""}`}>
+          <p className={`text-muted-foreground ${isMobile ? "text-xs" : ""}`}>
             Acompanhe seus investimentos em Bitcoin e monitore seu desempenho ao longo do tempo
           </p>
-          <div className="mt-4 flex justify-center">
+          <div className="mt-3 flex justify-center">
             <Button 
               variant="outline"
               size={isMobile ? "sm" : "default"}
@@ -53,8 +53,21 @@ const Index = () => {
           </div>
         </header>
 
-        <div className={`grid gap-6 ${isMobile ? "grid-cols-2" : "md:grid-cols-3"}`}>
-          <div className={`${isMobile ? "col-span-2" : "md:col-span-2"}`}>
+        {/* Move the entry form higher on mobile */}
+        {isMobile && (
+          <div className="mb-4">
+            <EntryForm 
+              onAddEntry={addEntry} 
+              currentRate={currentRate}
+              editingEntry={editingEntry || undefined}
+              onCancelEdit={cancelEdit}
+              displayUnit={displayUnit}
+            />
+          </div>
+        )}
+
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-3 mb-4">
+          <div className="md:col-span-2">
             <StatisticsCards 
               entries={entries} 
               currentRate={currentRate}
@@ -63,7 +76,7 @@ const Index = () => {
             />
           </div>
           
-          <div className={`${isMobile ? "col-span-2" : "md:col-span-1"}`}>
+          <div className="md:col-span-1">
             <CurrentRateCard 
               currentRate={currentRate} 
               isLoading={isLoading} 
@@ -74,17 +87,20 @@ const Index = () => {
           </div>
         </div>
         
-        <div className={`${isMobile ? "mt-4" : "mt-6"}`}>
-          <EntryForm 
-            onAddEntry={addEntry} 
-            currentRate={currentRate}
-            editingEntry={editingEntry || undefined}
-            onCancelEdit={cancelEdit}
-            displayUnit={displayUnit}
-          />
-        </div>
+        {/* Only show entry form here on larger screens */}
+        {!isMobile && (
+          <div className="mb-4">
+            <EntryForm 
+              onAddEntry={addEntry} 
+              currentRate={currentRate}
+              editingEntry={editingEntry || undefined}
+              onCancelEdit={cancelEdit}
+              displayUnit={displayUnit}
+            />
+          </div>
+        )}
         
-        <div className={`${isMobile ? "mt-4" : "mt-6"}`}>
+        <div>
           <EntriesList 
             entries={entries} 
             currentRate={currentRate} 
