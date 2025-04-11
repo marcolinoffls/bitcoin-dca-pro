@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { BitcoinEntry, CurrentRate } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { supabase } from '@/integrations/supabase/client';
 
 interface EntryEditFormProps {
   entry: BitcoinEntry;
@@ -68,7 +69,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     let parsedAmount = parseLocalNumber(amountInvested);
@@ -89,57 +90,38 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
       return;
     }
     
-    const savedEntries = localStorage.getItem('bitcoin-entries');
-    if (savedEntries) {
-      try {
-        const entries = JSON.parse(savedEntries);
-        const updatedEntries = entries.map((savedEntry: any) => {
-          if (savedEntry.id === entry.id) {
-            return {
-              ...savedEntry,
-              amountInvested: parsedAmount,
-              btcAmount: parsedBtc,
-              exchangeRate: parsedRate,
-              currency,
-              date: date.toISOString()
-            };
-          }
-          return savedEntry;
-        });
+    try {
+      // Update entry in Supabase
+      const { error } = await supabase
+        .from('aportes')
+        .update({
+          data_aporte: date.toISOString().split('T')[0],
+          moeda: currency,
+          valor_investido: parsedAmount,
+          bitcoin: parsedBtc,
+          cotacao: parsedRate
+        })
+        .eq('id', entry.id);
         
-        localStorage.setItem('bitcoin-entries', JSON.stringify(updatedEntries));
-        
-        window.location.reload();
-        
-        toast({
-          title: "Aporte atualizado",
-          description: "Os dados do aporte foram atualizados com sucesso."
-        });
-      } catch (error) {
-        console.error("Error updating entry:", error);
-        toast({
-          title: "Erro ao atualizar",
-          description: "Ocorreu um erro ao atualizar o aporte.",
-          variant: "destructive"
-        });
-      }
+      if (error) throw error;
+      
+      // Reload the page to see updated data
+      window.location.reload();
+      
+      toast({
+        title: "Aporte atualizado",
+        description: "Os dados do aporte foram atualizados com sucesso."
+      });
+    } catch (error) {
+      console.error("Error updating entry:", error);
+      toast({
+        title: "Erro ao atualizar",
+        description: "Ocorreu um erro ao atualizar o aporte.",
+        variant: "destructive"
+      });
     }
     
     onClose();
-  };
-
-  const calculateFromAmount = () => {
-    const amount = parseLocalNumber(amountInvested);
-    const rate = parseLocalNumber(exchangeRate);
-    
-    if (!isNaN(amount) && !isNaN(rate) && rate > 0) {
-      const btc = amount / rate;
-      if (displayUnit === 'SATS') {
-        setBtcAmount(formatNumber(btc * 100000000, 0));
-      } else {
-        setBtcAmount(formatNumber(btc, 8));
-      }
-    }
   };
 
   const useCurrentRate = () => {

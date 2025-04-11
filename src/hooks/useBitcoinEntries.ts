@@ -4,6 +4,7 @@ import { BitcoinEntry, CurrentRate } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from '@/components/ui/use-toast';
 import { fetchCurrentBitcoinRate } from '@/services/bitcoinService';
+import { supabase } from '@/integrations/supabase/client';
 
 export function useBitcoinEntries() {
   const [entries, setEntries] = useState<BitcoinEntry[]>([]);
@@ -17,27 +18,10 @@ export function useBitcoinEntries() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Carregar entradas do localStorage
-    const savedEntries = localStorage.getItem('bitcoin-entries');
-    if (savedEntries) {
-      try {
-        const parsed = JSON.parse(savedEntries);
-        const formattedEntries = parsed.map((entry: any) => ({
-          ...entry,
-          date: new Date(entry.date),
-        }));
-        setEntries(formattedEntries);
-      } catch (error) {
-        console.error('Error parsing saved entries:', error);
-        toast({
-          title: 'Erro ao carregar registros',
-          description: 'Não foi possível carregar seus registros anteriores.',
-          variant: 'destructive',
-        });
-      }
-    }
-
-    // Buscar cotação atual
+    // Fetch entries from Supabase
+    fetchEntries();
+    
+    // Fetch current BTC rate
     updateCurrentRate();
   }, []);
 
@@ -49,6 +33,43 @@ export function useBitcoinEntries() {
 
     return () => clearInterval(interval);
   }, []);
+
+  const fetchEntries = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('aportes')
+        .select('*')
+        .order('data_aporte', { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data) {
+        // Convert Supabase data to app's BitcoinEntry format
+        const formattedEntries: BitcoinEntry[] = data.map(entry => ({
+          id: entry.id,
+          date: new Date(entry.data_aporte),
+          amountInvested: Number(entry.valor_investido),
+          btcAmount: Number(entry.bitcoin),
+          exchangeRate: Number(entry.cotacao),
+          currency: entry.moeda as 'BRL' | 'USD',
+        }));
+        
+        setEntries(formattedEntries);
+      }
+    } catch (error) {
+      console.error('Error fetching entries:', error);
+      toast({
+        title: 'Erro ao carregar dados',
+        description: 'Não foi possível carregar seus aportes do banco de dados.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const updateCurrentRate = async () => {
     setIsLoading(true);
@@ -67,7 +88,7 @@ export function useBitcoinEntries() {
     }
   };
 
-  const addEntry = (
+  const addEntry = async (
     amountInvested: number,
     btcAmount: number,
     exchangeRate: number,
@@ -75,47 +96,91 @@ export function useBitcoinEntries() {
     date: Date
   ) => {
     if (editingEntry) {
-      // Update existing entry
-      const updatedEntries = entries.map(entry => 
-        entry.id === editingEntry.id 
-          ? {
-              ...entry,
-              amountInvested,
-              btcAmount,
-              exchangeRate,
-              currency,
-              date
-            }
-          : entry
-      );
-      
-      setEntries(updatedEntries);
-      saveEntriesToLocalStorage(updatedEntries);
-      setEditingEntry(null);
-      
-      toast({
-        title: 'Aporte atualizado',
-        description: 'Seu aporte de Bitcoin foi atualizado com sucesso.',
-      });
+      // Update existing entry in Supabase
+      try {
+        const { error } = await supabase
+          .from('aportes')
+          .update({
+            data_aporte: date.toISOString().split('T')[0],
+            moeda: currency,
+            valor_investido: amountInvested,
+            bitcoin: btcAmount,
+            cotacao: exchangeRate
+          })
+          .eq('id', editingEntry.id);
+
+        if (error) throw error;
+
+        // Update local state
+        const updatedEntries = entries.map(entry => 
+          entry.id === editingEntry.id 
+            ? {
+                ...entry,
+                amountInvested,
+                btcAmount,
+                exchangeRate,
+                currency,
+                date
+              }
+            : entry
+        );
+        
+        setEntries(updatedEntries);
+        setEditingEntry(null);
+        
+        toast({
+          title: 'Aporte atualizado',
+          description: 'Seu aporte de Bitcoin foi atualizado com sucesso.',
+        });
+      } catch (error) {
+        console.error('Error updating entry:', error);
+        toast({
+          title: 'Erro ao atualizar',
+          description: 'Ocorreu um erro ao atualizar o aporte.',
+          variant: 'destructive',
+        });
+      }
     } else {
-      // Add new entry
-      const newEntry: BitcoinEntry = {
-        id: uuidv4(),
-        date,
-        amountInvested,
-        btcAmount,
-        exchangeRate,
-        currency,
-      };
+      // Add new entry to Supabase
+      try {
+        const newEntryId = uuidv4();
+        const { error } = await supabase
+          .from('aportes')
+          .insert({
+            id: newEntryId,
+            data_aporte: date.toISOString().split('T')[0],
+            moeda: currency,
+            valor_investido: amountInvested,
+            bitcoin: btcAmount,
+            cotacao: exchangeRate
+          });
 
-      const updatedEntries = [...entries, newEntry];
-      setEntries(updatedEntries);
-      saveEntriesToLocalStorage(updatedEntries);
+        if (error) throw error;
 
-      toast({
-        title: 'Aporte registrado',
-        description: 'Seu aporte de Bitcoin foi registrado com sucesso.',
-      });
+        // Add to local state
+        const newEntry: BitcoinEntry = {
+          id: newEntryId,
+          date,
+          amountInvested,
+          btcAmount,
+          exchangeRate,
+          currency,
+        };
+
+        setEntries(prev => [newEntry, ...prev]);
+
+        toast({
+          title: 'Aporte registrado',
+          description: 'Seu aporte de Bitcoin foi registrado com sucesso.',
+        });
+      } catch (error) {
+        console.error('Error adding entry:', error);
+        toast({
+          title: 'Erro ao registrar',
+          description: 'Ocorreu um erro ao registrar o aporte.',
+          variant: 'destructive',
+        });
+      }
     }
   };
 
@@ -130,19 +195,31 @@ export function useBitcoinEntries() {
     setEditingEntry(null);
   };
 
-  const deleteEntry = (id: string) => {
-    const updatedEntries = entries.filter((entry) => entry.id !== id);
-    setEntries(updatedEntries);
-    saveEntriesToLocalStorage(updatedEntries);
+  const deleteEntry = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('aportes')
+        .delete()
+        .eq('id', id);
 
-    toast({
-      title: 'Registro removido',
-      description: 'O registro foi removido com sucesso.',
-    });
-  };
+      if (error) throw error;
 
-  const saveEntriesToLocalStorage = (entriesToSave: BitcoinEntry[]) => {
-    localStorage.setItem('bitcoin-entries', JSON.stringify(entriesToSave));
+      // Update local state
+      const updatedEntries = entries.filter((entry) => entry.id !== id);
+      setEntries(updatedEntries);
+
+      toast({
+        title: 'Registro removido',
+        description: 'O registro foi removido com sucesso.',
+      });
+    } catch (error) {
+      console.error('Error deleting entry:', error);
+      toast({
+        title: 'Erro ao remover',
+        description: 'Ocorreu um erro ao remover o aporte.',
+        variant: 'destructive',
+      });
+    }
   };
 
   return {
