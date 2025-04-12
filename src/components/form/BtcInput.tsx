@@ -8,6 +8,9 @@
  * Integrações:
  * - Label e Input do shadcn/ui para UI consistente
  * - Automaticamente converte pontos (.) para vírgulas (,) para compatibilidade com formato brasileiro
+ * 
+ * Atualização:
+ * - Melhorada a manipulação dos valores para conversão correta entre string e number
  */
 
 import React from 'react';

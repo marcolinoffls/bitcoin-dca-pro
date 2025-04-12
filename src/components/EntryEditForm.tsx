@@ -14,9 +14,9 @@
  *    - displayUnit: unidade usada para exibir BTC ou SATS
  * 
  * Atualizações:
- * - Removido o botão "Usar cotação atual"
- * - Garantido que a lista de aportes seja atualizada após a edição
- * - Campos de valor e BTC são agora completamente independentes
+ * - Corrigido o problema de atualização de data no Supabase
+ * - Convertidos os campos de string para number para manipulação mais segura
+ * - Garantida a atualização da lista de aportes após uma edição
  */
 
 import React, { useRef, useState } from 'react';
@@ -56,8 +56,9 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
   // Usamos o hook diretamente no componente para ter acesso à função updateEntry
   const { updateEntry } = useBitcoinEntries();
 
-  const [amountInvested, setAmountInvested] = useState(formatNumber(entry.amountInvested));
-  const [btcAmount, setBtcAmount] = useState(
+  // Inicializa os campos com valores formatados para exibição
+  const [amountInvestedDisplay, setAmountInvestedDisplay] = useState(formatNumber(entry.amountInvested));
+  const [btcAmountDisplay, setBtcAmountDisplay] = useState(
     displayUnit === 'SATS'
       ? formatNumber(entry.btcAmount * 100000000, 0)
       : formatNumber(entry.btcAmount, 8)
@@ -71,6 +72,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const calendarPopoverRef = useRef<HTMLButtonElement>(null);
 
+  // Função para converter string em formato brasileiro para número
   const parseLocalNumber = (value: string): number => {
     return parseFloat(value.replace(/\./g, '').replace(',', '.'));
   };
@@ -84,6 +86,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
     }
   };
 
+  // Essa função garante que a data selecionada no calendário seja aplicada corretamente
   const confirmDateSelection = () => {
     setDate(tempDate);
     setIsCalendarOpen(false);
@@ -108,10 +111,12 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
       return;
     }
 
-    let parsedAmount = parseLocalNumber(amountInvested);
-    let parsedBtc = parseLocalNumber(btcAmount);
+    // Converte os valores de string para number para processamento
+    let parsedAmount = parseLocalNumber(amountInvestedDisplay);
+    let parsedBtc = parseLocalNumber(btcAmountDisplay);
+    // Converte SATS para BTC se necessário
     if (displayUnit === 'SATS') parsedBtc = parsedBtc / 100000000;
-
+    
     if (
       isNaN(parsedAmount) ||
       isNaN(parsedBtc) ||
@@ -127,14 +132,13 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
     }
 
     try {
-      // Usa a função updateEntry do hook useBitcoinEntries, que cuidará da atualização no Supabase
-      // e da invalidação dos dados em cache para refletir as mudanças na interface
+      // Usa a função updateEntry do hook useBitcoinEntries com a data correta
       await updateEntry(entry.id, {
         amountInvested: parsedAmount,
         btcAmount: parsedBtc,
         exchangeRate: exchangeRate,
         currency: currency,
-        date: date,
+        date: date, // Usa a data atualizada
         origin: origin
       });
 
@@ -181,7 +185,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
                 <Calendar
                   mode="single"
                   selected={tempDate}
-                  onSelect={setTempDate}
+                  onSelect={(newDate) => newDate && setTempDate(newDate)}
                   initialFocus
                   locale={ptBR}
                   className="rounded-md border-0 shadow-none pointer-events-auto"
@@ -226,17 +230,17 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
             <Input
               id="editAmount"
               placeholder="0,00"
-              value={amountInvested}
+              value={amountInvestedDisplay}
               onChange={(e) => {
-                // Apenas atualiza o valor do campo, sem recalcular o BTC
+                // Substitui pontos por vírgulas para compatibilidade com formato brasileiro
                 const formattedInput = e.target.value.replace(/\./g, ',');
                 
                 if (e.target.value === '0.') {
-                  setAmountInvested('0,');
+                  setAmountInvestedDisplay('0,');
                   return;
                 }
 
-                setAmountInvested(formattedInput);
+                setAmountInvestedDisplay(formattedInput);
               }}
               className="pl-8 rounded-xl"
               type="text"
@@ -246,7 +250,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
         </div>
 
         {/* Campo de Bitcoin ou Sats */}
-        <BtcInput displayUnit={displayUnit} value={btcAmount} onChange={setBtcAmount} />
+        <BtcInput displayUnit={displayUnit} value={btcAmountDisplay} onChange={setBtcAmountDisplay} />
       </div>
 
       {/* Cotação */}

@@ -12,6 +12,10 @@
  * - Controla unidade BTC/SATS
  * - Conecta com cotação atual (passada por props)
  * - Permite edição ou criação de aporte
+ * 
+ * Atualização:
+ * - Convertido valores string para number para manipulação mais segura
+ * - Mantido formato de exibição para o usuário com strings formatadas
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -40,11 +44,11 @@ export const useEntryFormLogic = (
   currentRate?: CurrentRate,
   displayUnit: DisplayUnit = 'BTC'
 ) => {
-  // Estados principais do formulário
-  const [amountInvested, setAmountInvested] = useState<string>('');     // valor em real/dólar
-  const [btcAmount, setBtcAmount] = useState<string>('');               // valor em BTC ou SATS
-  const [exchangeRate, setExchangeRate] = useState<number>(0);          // número puro
-  const [exchangeRateDisplay, setExchangeRateDisplay] = useState<string>(''); // string formatada
+  // Estados principais do formulário - display strings para UI e valores numéricos para cálculos
+  const [amountInvested, setAmountInvested] = useState<string>('');     // valor em real/dólar como string formatada
+  const [btcAmount, setBtcAmount] = useState<string>('');               // valor em BTC ou SATS como string formatada
+  const [exchangeRate, setExchangeRate] = useState<number>(0);          // número puro para cálculos
+  const [exchangeRateDisplay, setExchangeRateDisplay] = useState<string>(''); // string formatada para exibição
   const [currency, setCurrency] = useState<Currency>('BRL');
   const [origin, setOrigin] = useState<'corretora' | 'p2p'>('corretora');
   const [date, setDate] = useState<Date>(new Date());
@@ -53,6 +57,7 @@ export const useEntryFormLogic = (
    * Converte string de moeda local (ex: 1.000,50) para número real (ex: 1000.50)
    */
   const parseLocalNumber = (value: string): number => {
+    if (!value) return 0;
     return parseFloat(value.replace(/\./g, '').replace(',', '.'));
   };
 
@@ -60,6 +65,7 @@ export const useEntryFormLogic = (
    * Formata número em string de moeda com separadores locais
    */
   const formatCurrency = (value: number, type: Currency): string => {
+    if (isNaN(value) || value === undefined) return '';
     return value.toLocaleString('pt-BR', {
       style: 'currency',
       currency: type,

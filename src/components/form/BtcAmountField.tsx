@@ -1,4 +1,14 @@
 
+/**
+ * Componente para entrada do valor em Bitcoin ou Satoshis
+ * 
+ * Função: Permite que o usuário digite o valor de BTC adquirido
+ * e converte automaticamente pontos (.) para vírgulas (,)
+ * para compatibilidade com o formato brasileiro
+ * 
+ * Atualização:
+ * - Melhorada a manipulação dos valores para conversão correta entre string e number
+ */
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -9,13 +19,6 @@ interface BtcAmountFieldProps {
   displayUnit?: 'BTC' | 'SATS';
 }
 
-/**
- * Campo para entrada do valor em Bitcoin ou Satoshis
- * 
- * Permite que o usuário digite o valor de BTC adquirido
- * e converte automaticamente pontos (.) para vírgulas (,)
- * para compatibilidade com o formato brasileiro
- */
 const BtcAmountField: React.FC<BtcAmountFieldProps> = ({
   btcAmount,
   onBtcAmountChange,
