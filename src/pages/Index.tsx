@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useBitcoinEntries } from '@/hooks/useBitcoinEntries';
 import EntryForm from '@/components/EntryForm';
 import EntriesList from '@/components/EntriesList';
@@ -11,23 +10,38 @@ import ToggleDisplayUnit from '@/components/ToggleDisplayUnit';
 import ToggleCurrency from '@/components/ToggleCurrency';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast'; // ✅ Importa hook para exibir notificações
 
 const Index = () => {
-  const { 
-    entries, 
-    currentRate, 
-    isLoading, 
+  const {
+    entries,
+    currentRate,
+    isLoading,
     editingEntry,
-    addEntry, 
+    addEntry,
     editEntry,
     cancelEdit,
-    deleteEntry, 
-    updateCurrentRate 
+    deleteEntry,
+    updateCurrentRate
   } = useBitcoinEntries();
+
   const [selectedCurrency, setSelectedCurrency] = useState<'BRL' | 'USD'>('BRL');
   const [displayUnit, setDisplayUnit] = useState<'BTC' | 'SATS'>('BTC');
   const isMobile = useIsMobile();
   const { user, signOut } = useAuth();
+  const { toast } = useToast();
+
+  // 🔔 Exibe o toast de "login bem-sucedido" apenas uma vez por sessão
+  useEffect(() => {
+    if (user && !sessionStorage.getItem('loginSuccessShown')) {
+      toast({
+        title: "Login bem-sucedido",
+        description: "Bem-vindo de volta!",
+      });
+      // Seta a flag para que o toast não apareça novamente nesta sessão
+      sessionStorage.setItem('loginSuccessShown', 'true');
+    }
+  }, [user]);
 
   const toggleDisplayUnit = (value: 'BTC' | 'SATS') => {
     setDisplayUnit(value);
@@ -44,11 +58,13 @@ const Index = () => {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <Bitcoin size={isMobile ? 28 : 40} className="text-bitcoin" />
-              <h1 className={`${isMobile ? "text-xl" : "text-3xl"} font-bold`}>Bitcoin DCA Pro</h1>
+              <h1 className={`${isMobile ? "text-xl" : "text-3xl"} font-bold`}>
+                Bitcoin DCA Pro
+              </h1>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               onClick={signOut}
               className="flex items-center gap-1"
             >
@@ -69,37 +85,37 @@ const Index = () => {
         </header>
 
         <div className="flex justify-center gap-4 mb-6">
-          <ToggleDisplayUnit 
-            displayUnit={displayUnit} 
-            onToggle={toggleDisplayUnit} 
+          <ToggleDisplayUnit
+            displayUnit={displayUnit}
+            onToggle={toggleDisplayUnit}
           />
           <ToggleCurrency
             selectedCurrency={selectedCurrency}
             onToggle={toggleCurrency}
           />
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
           <div className="md:col-span-1">
-            <StatisticsCards 
-              entries={entries} 
+            <StatisticsCards
+              entries={entries}
               currentRate={currentRate}
               selectedCurrency={selectedCurrency}
               displayUnit={displayUnit}
             />
           </div>
-          
+
           <div className="md:col-span-2">
             <div className="mb-5">
-              <CurrentRateCard 
-                currentRate={currentRate} 
-                isLoading={isLoading} 
+              <CurrentRateCard
+                currentRate={currentRate}
+                isLoading={isLoading}
                 onRefresh={updateCurrentRate}
               />
             </div>
             <div>
-              <EntryForm 
-                onAddEntry={addEntry} 
+              <EntryForm
+                onAddEntry={addEntry}
                 currentRate={currentRate}
                 onCancelEdit={cancelEdit}
                 displayUnit={displayUnit}
@@ -108,11 +124,11 @@ const Index = () => {
             </div>
           </div>
         </div>
-        
+
         <div>
-          <EntriesList 
-            entries={entries} 
-            currentRate={currentRate} 
+          <EntriesList
+            entries={entries}
+            currentRate={currentRate}
             onDelete={deleteEntry}
             onEdit={editEntry}
             selectedCurrency={selectedCurrency}
