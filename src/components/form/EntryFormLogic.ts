@@ -1,152 +1,188 @@
+/**
+ * Hook: useEntryFormLogic
+ *
+ * Função:
+ * Controla todos os estados e cálculos usados no formulário de registro/edição de aportes.
+ *
+ * Onde é usado:
+ * - Em `EntryForm.tsx` (formulário principal da aplicação)
+ *
+ * Integrações:
+ * - Controla unidade BTC/SATS
+ * - Conecta com cotação atual (passada por props)
+ * - Permite edição ou criação de aporte
+ */
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { formatNumber } from '@/lib/utils';
 
-export const useEntryFormLogic = (
-  editingEntry: any,
-  currentRate: { usd: number; brl: number },
-  displayUnit: 'BTC' | 'SATS'
-) => {
-  const [amountInvested, setAmountInvested] = useState(
-    editingEntry ? formatNumber(editingEntry.amountInvested) : ''
-  );
-  const [btcAmount, setBtcAmount] = useState(
-    editingEntry
-      ? (displayUnit === 'SATS'
-          ? formatNumber(editingEntry.btcAmount * 100000000, 0)
-          : formatNumber(editingEntry.btcAmount, 8))
-      : ''
-  );
-  // Armazenar o valor numérico puro para a cotação
-  const [exchangeRate, setExchangeRate] = useState<number>(
-    editingEntry ? editingEntry.exchangeRate : 0
-  );
-  // Armazenar a representação formatada para exibição
-  const [exchangeRateDisplay, setExchangeRateDisplay] = useState(
-    editingEntry ? formatNumber(editingEntry.exchangeRate) : ''
-  );
-  const [currency, setCurrency] = useState<'BRL' | 'USD'>(
-    editingEntry ? editingEntry.currency : 'BRL'
-  );
-  const [origin, setOrigin] = useState<'corretora' | 'p2p'>(
-    editingEntry?.origin || 'corretora'
-  );
-  const [date, setDate] = useState<Date>(
-    editingEntry ? editingEntry.date : new Date()
-  );
+type Currency = 'BRL' | 'USD';
+type DisplayUnit = 'BTC' | 'SATS';
 
+interface CurrentRate {
+  usd: number;
+  brl: number;
+}
+
+interface EditingEntry {
+  id: string;
+  date: Date;
+  amountInvested: number;
+  btcAmount: number;
+  exchangeRate: number;
+  currency: Currency;
+  origin?: 'corretora' | 'p2p';
+}
+
+export const useEntryFormLogic = (
+  editingEntry?: EditingEntry,
+  currentRate?: CurrentRate,
+  displayUnit: DisplayUnit = 'BTC'
+) => {
+  // Estados principais do formulário
+  const [amountInvested, setAmountInvested] = useState<string>('');     // valor em real/dólar
+  const [btcAmount, setBtcAmount] = useState<string>('');               // valor em BTC ou SATS
+  const [exchangeRate, setExchangeRate] = useState<number>(0);          // número puro
+  const [exchangeRateDisplay, setExchangeRateDisplay] = useState<string>(''); // string formatada
+  const [currency, setCurrency] = useState<Currency>('BRL');
+  const [origin, setOrigin] = useState<'corretora' | 'p2p'>('corretora');
+  const [date, setDate] = useState<Date>(new Date());
+
+  /**
+   * Converte string de moeda local (ex: 1.000,50) para número real (ex: 1000.50)
+   */
   const parseLocalNumber = (value: string): number => {
     return parseFloat(value.replace(/\./g, '').replace(',', '.'));
   };
 
-  const handleCurrencyChange = (newCurrency: 'BRL' | 'USD') => {
-    setCurrency(newCurrency);
-    
-    if (currentRate) {
-      // Usar o valor numérico puro
-      const newRate = newCurrency === 'USD' ? currentRate.usd : currentRate.brl;
-      setExchangeRate(newRate);
-      // Formatar para exibição
-      setExchangeRateDisplay(formatCurrency(newRate, newCurrency));
-    }
-  };
-
-  const handleOriginChange = (newOrigin: 'corretora' | 'p2p') => {
-    setOrigin(newOrigin);
-  };
-
-  const calculateFromAmount = () => {
-    const amount = parseLocalNumber(amountInvested);
-    
-    if (!isNaN(amount) && exchangeRate > 0) {
-      const btc = amount / exchangeRate;
-      if (displayUnit === 'SATS') {
-        setBtcAmount(formatNumber(btc * 100000000, 0));
-      } else {
-        setBtcAmount(formatNumber(btc, 8));
-      }
-    }
-  };
-
-  const calculateFromBtc = () => {
-    let btc = parseLocalNumber(btcAmount);
-    
-    if (displayUnit === 'SATS') {
-      btc = btc / 100000000;
-    }
-    
-    if (!isNaN(btc) && exchangeRate > 0) {
-      const amount = btc * exchangeRate;
-      setAmountInvested(formatNumber(amount));
-    }
-  };
-
-  // Função para formatar o valor da moeda para exibição
-  const formatCurrency = (value: number, currencyType: 'BRL' | 'USD'): string => {
+  /**
+   * Formata número em string de moeda com separadores locais
+   */
+  const formatCurrency = (value: number, type: Currency): string => {
     return value.toLocaleString('pt-BR', {
       style: 'currency',
-      currency: currencyType === 'USD' ? 'USD' : 'BRL',
+      currency: type,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     });
   };
 
-  // Atualizado para trabalhar com o valor numérico puro e a representação formatada
-  const handleExchangeRateChange = (value: string) => {
-    setExchangeRateDisplay(value);
-    
-    // Tentativa de converter para número
-    try {
-      const numericValue = parseLocalNumber(value);
-      if (!isNaN(numericValue)) {
-        setExchangeRate(numericValue);
-      }
-    } catch (e) {
-      // Se falhar na conversão, não atualiza o valor numérico
-      console.log("Erro ao converter valor:", e);
-    }
-  };
+  /**
+   * Quando estamos editando um aporte, preenche os valores iniciais
+   */
+  useEffect(() => {
+    if (editingEntry) {
+      const { amountInvested, btcAmount, exchangeRate, currency, origin, date } = editingEntry;
 
-  const useCurrentRate = () => {
+      setAmountInvested(formatNumber(amountInvested));
+      setBtcAmount(
+        displayUnit === 'SATS'
+          ? formatNumber(btcAmount * 100000000, 0)
+          : formatNumber(btcAmount, 8)
+      );
+      setExchangeRate(exchangeRate);
+      setExchangeRateDisplay(formatNumber(exchangeRate));
+      setCurrency(currency);
+      setOrigin(origin || 'corretora');
+      setDate(date);
+    }
+  }, [editingEntry, displayUnit]);
+
+  /**
+   * Atualiza o valor da moeda e ressincroniza cotação
+   */
+  const handleCurrencyChange = (newCurrency: Currency) => {
+    setCurrency(newCurrency);
+
     if (currentRate) {
-      // Usar o valor numérico puro
-      const rate = currency === 'USD' ? currentRate.usd : currentRate.brl;
-      setExchangeRate(rate);
-      // Formatar para exibição
-      setExchangeRateDisplay(formatCurrency(rate, currency));
+      const newRate = newCurrency === 'USD' ? currentRate.usd : currentRate.brl;
+      setExchangeRate(newRate);
+      setExchangeRateDisplay(formatCurrency(newRate, newCurrency));
     }
   };
 
-  const reset = () => {
+  /**
+   * Permite que o usuário use a cotação atual como base
+   */
+  const useCurrentRate = () => {
+    if (!currentRate) return;
+    const rate = currency === 'USD' ? currentRate.usd : currentRate.brl;
+    setExchangeRate(rate);
+    setExchangeRateDisplay(formatCurrency(rate, currency));
+  };
+
+  /**
+   * Atualiza o valor da cotação manualmente
+   */
+  const handleExchangeRateChange = (displayValue: string) => {
+    setExchangeRateDisplay(displayValue);
+    const parsed = parseLocalNumber(displayValue);
+    if (!isNaN(parsed)) {
+      setExchangeRate(parsed);
+    }
+  };
+
+  /**
+   * Calcula automaticamente o valor em BTC ou SATS com base no valor investido
+   */
+  const calculateFromAmount = () => {
+    const parsedAmount = parseLocalNumber(amountInvested);
+    if (isNaN(parsedAmount) || exchangeRate <= 0) return;
+
+    const btc = parsedAmount / exchangeRate;
+
+    setBtcAmount(
+      displayUnit === 'SATS'
+        ? formatNumber(btc * 100000000, 0)
+        : formatNumber(btc, 8)
+    );
+  };
+
+  /**
+   * Calcula automaticamente o valor em BRL/USD com base na quantidade de BTC/SATS
+   */
+  const calculateFromBtc = () => {
+    const parsedBtc = parseLocalNumber(btcAmount);
+    if (isNaN(parsedBtc) || exchangeRate <= 0) return;
+
+    const btc = displayUnit === 'SATS' ? parsedBtc / 100000000 : parsedBtc;
+    const invested = btc * exchangeRate;
+
+    setAmountInvested(formatNumber(invested));
+  };
+
+  /**
+   * Restaura todos os campos para o estado inicial
+   */
+  const reset = useCallback(() => {
     setAmountInvested('');
     setBtcAmount('');
     setExchangeRate(0);
     setExchangeRateDisplay('');
-    setDate(new Date());
+    setCurrency('BRL');
     setOrigin('corretora');
-  };
+    setDate(new Date());
+  }, []);
 
   return {
     amountInvested,
     setAmountInvested,
     btcAmount,
     setBtcAmount,
-    exchangeRate, // Valor numérico puro
-    exchangeRateDisplay, // Valor formatado para exibição
-    setExchangeRate, // Método para atualizar o valor numérico
-    handleExchangeRateChange, // Método para atualizar o valor formatado
+    exchangeRate,
+    exchangeRateDisplay,
+    setExchangeRateDisplay,
     currency,
-    setCurrency,
     origin,
-    setOrigin,
     date,
     setDate,
     parseLocalNumber,
     handleCurrencyChange,
-    handleOriginChange,
+    handleExchangeRateChange,
+    useCurrentRate,
     calculateFromAmount,
     calculateFromBtc,
-    useCurrentRate,
+    handleOriginChange: setOrigin,
     reset
   };
 };
