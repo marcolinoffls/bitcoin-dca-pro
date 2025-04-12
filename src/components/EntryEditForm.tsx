@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -104,11 +105,10 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
     
     try {
       // Update entry in Supabase
-      const formattedDate = date.toISOString().split('T')[0];
       const { error } = await supabase
         .from('aportes')
         .update({
-          data_aporte: formattedDate,
+          data_aporte: date.toISOString().split('T')[0],
           moeda: currency,
           cotacao_moeda: currency,
           valor_investido: parsedAmount,

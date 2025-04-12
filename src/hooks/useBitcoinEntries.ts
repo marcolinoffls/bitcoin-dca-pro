@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { BitcoinEntry, CurrentRate } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { fetchCurrentBitcoinRate } from '@/services/bitcoinService';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -167,6 +167,7 @@ export function useBitcoinEntries() {
         const { error } = await supabase
           .from('aportes')
           .insert({
+            id: newEntryId,
             data_aporte: date.toISOString().split('T')[0],
             moeda: currency,
             cotacao_moeda: currency,
