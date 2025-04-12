@@ -1,25 +1,39 @@
 
 import React, { useState, useRef } from 'react';
-import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { Button } from '@/components/ui/button';
-import { CalendarIcon, CalendarCheck, Check } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon, CalendarCheck, Check } from "lucide-react";
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 interface DatePickerFieldProps {
   date: Date;
   onDateChange: (date: Date) => void;
+  disabled?: boolean;
 }
 
-const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange }) => {
+const DatePickerField: React.FC<DatePickerFieldProps> = ({ 
+  date, 
+  onDateChange,
+  disabled = false
+}) => {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const [tempDate, setTempDate] = useState<Date | undefined>(date);
+  const [tempDate, setTempDate] = useState<Date>(date);
   const calendarPopoverRef = useRef<HTMLButtonElement>(null);
-  const isMobile = useIsMobile();
+
+  const handleDateSelect = (newDate: Date | undefined) => {
+    if (newDate) {
+      setTempDate(newDate);
+    }
+  };
+
+  const confirmDateSelection = () => {
+    onDateChange(tempDate);
+    setIsCalendarOpen(false);
+  };
 
   const setToday = () => {
     const today = new Date();
@@ -28,40 +42,27 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange })
     setIsCalendarOpen(false);
   };
 
-  const handleDateSelect = (newDate: Date | undefined) => {
-    if (newDate) {
-      setTempDate(newDate);
-    }
-  };
-
-  const handleConfirm = () => {
-    if (tempDate) {
-      onDateChange(tempDate);
-      setIsCalendarOpen(false);
-    }
-  };
-
   return (
     <div className="flex flex-col space-y-1.5">
       <Label htmlFor="purchaseDate">Data do Aporte</Label>
-      <div className="flex items-center gap-2">
+      <div className="flex gap-4">
         <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
           <PopoverTrigger asChild>
             <Button
               ref={calendarPopoverRef}
               variant="outline"
               className={cn(
-                "flex-1 justify-start text-left font-normal rounded-xl border-input hover:border-bitcoin hover:bg-transparent",
-                !date && "text-muted-foreground",
-                isMobile && "text-sm"
+                "w-full justify-start text-left font-normal rounded-xl",
+                !date && "text-muted-foreground"
               )}
               type="button"
+              disabled={disabled}
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
               {date ? format(date, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecione uma data</span>}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
+          <PopoverContent className="w-auto p-0" align="center">
             <div className="p-3 rounded-md shadow-sm">
               <Calendar
                 mode="single"
@@ -74,8 +75,8 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange })
               <div className="flex justify-center p-2 mt-2">
                 <Button 
                   type="button" 
-                  onClick={handleConfirm}
-                  className="rounded-full bg-bitcoin hover:bg-bitcoin/90 text-white w-full"
+                  onClick={confirmDateSelection}
+                  className="rounded-full bg-bitcoin hover:bg-bitcoin/90 text-white px-4 w-auto"
                 >
                   <Check className="h-4 w-4 mr-2" />
                   Confirmar
@@ -88,8 +89,8 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange })
           type="button"
           variant="outline"
           onClick={setToday}
-          className="shrink-0 rounded-xl hover:border-bitcoin hover:text-bitcoin hover:bg-transparent transition-colors"
-          size={isMobile ? "sm" : "default"}
+          className="shrink-0 rounded-xl"
+          disabled={disabled}
         >
           <CalendarCheck className="h-4 w-4 mr-2" />
           Hoje
