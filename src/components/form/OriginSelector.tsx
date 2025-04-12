@@ -2,7 +2,7 @@
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Bank, Users } from 'lucide-react';
+import { Building, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /**
@@ -39,7 +39,7 @@ const OriginSelector: React.FC<OriginSelectorProps> = ({
             "border border-input bg-muted hover:bg-muted/80"
           )}
         >
-          <Bank className="h-4 w-4" />
+          <Building className="h-4 w-4" />
           <span>Corretora</span>
         </ToggleGroupItem>
         <ToggleGroupItem 
