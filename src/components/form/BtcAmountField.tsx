@@ -10,7 +10,21 @@ interface BtcAmountFieldProps {
   displayUnit: 'BTC' | 'SATS';
 }
 
+/**
+ * Componente que renderiza o campo de entrada para quantidade de Bitcoin ou Satoshis
+ * 
+ * @param btcAmount - Valor atual do campo
+ * @param onBtcAmountChange - Função chamada quando o valor muda
+ * @param displayUnit - Unidade a ser exibida (BTC ou SATS)
+ */
 const BtcAmountField: React.FC<BtcAmountFieldProps> = ({ btcAmount, onBtcAmountChange, displayUnit }) => {
+  // Função que converte pontos para vírgulas durante a digitação
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Converte automaticamente pontos para vírgulas
+    const newValue = e.target.value.replace(/\./g, ',');
+    onBtcAmountChange(newValue);
+  };
+
   return (
     <div className="flex flex-col space-y-1.5">
       <Label htmlFor="btcAmount">{displayUnit === 'SATS' ? 'Satoshis' : 'Bitcoin'}</Label>
@@ -22,7 +36,7 @@ const BtcAmountField: React.FC<BtcAmountFieldProps> = ({ btcAmount, onBtcAmountC
           id="btcAmount"
           placeholder={displayUnit === 'SATS' ? "0" : "0,00000000"}
           value={btcAmount}
-          onChange={(e) => onBtcAmountChange(e.target.value)}
+          onChange={handleChange}
           className="pl-8 rounded-xl"
           type="text"
           required
