@@ -2,42 +2,47 @@
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Bitcoin } from 'lucide-react';
 
 interface BtcAmountFieldProps {
   btcAmount: string;
-  onBtcAmountChange: (btcAmount: string) => void;
-  displayUnit: 'BTC' | 'SATS';
+  onBtcAmountChange: (value: string) => void;
+  displayUnit?: 'BTC' | 'SATS';
 }
 
 /**
- * Componente que renderiza o campo de entrada para quantidade de Bitcoin ou Satoshis
+ * Campo para entrada do valor em Bitcoin ou Satoshis
  * 
- * @param btcAmount - Valor atual do campo
- * @param onBtcAmountChange - Função chamada quando o valor muda
- * @param displayUnit - Unidade a ser exibida (BTC ou SATS)
+ * Permite que o usuário digite o valor de BTC adquirido
+ * e converte automaticamente pontos (.) para vírgulas (,)
+ * para compatibilidade com o formato brasileiro
  */
-const BtcAmountField: React.FC<BtcAmountFieldProps> = ({ btcAmount, onBtcAmountChange, displayUnit }) => {
-  // Função que converte pontos para vírgulas durante a digitação
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Converte automaticamente pontos para vírgulas
-    const newValue = e.target.value.replace(/\./g, ',');
-    onBtcAmountChange(newValue);
+const BtcAmountField: React.FC<BtcAmountFieldProps> = ({
+  btcAmount,
+  onBtcAmountChange,
+  displayUnit = 'BTC'
+}) => {
+  // Função que converte pontos para vírgulas ao digitar
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Substitui pontos por vírgulas para compatibilidade com formato brasileiro
+    const value = e.target.value.replace(/\./g, ',');
+    onBtcAmountChange(value);
   };
 
   return (
     <div className="flex flex-col space-y-1.5">
-      <Label htmlFor="btcAmount">{displayUnit === 'SATS' ? 'Satoshis' : 'Bitcoin'}</Label>
+      <Label htmlFor="btcAmount">
+        {displayUnit === 'BTC' ? 'Quantidade em Bitcoin' : 'Quantidade em Satoshis'}
+      </Label>
       <div className="relative">
         <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-muted-foreground">
-          <Bitcoin className="h-4 w-4" />
+          {displayUnit === 'BTC' ? 'BTC' : 'SATS'}
         </span>
         <Input
           id="btcAmount"
-          placeholder={displayUnit === 'SATS' ? "0" : "0,00000000"}
+          placeholder={displayUnit === 'BTC' ? '0,00000000' : '0'}
           value={btcAmount}
-          onChange={handleChange}
-          className="pl-8 rounded-xl"
+          onChange={handleInputChange}
+          className="pl-12 rounded-xl"
           type="text"
           required
         />

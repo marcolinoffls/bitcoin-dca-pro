@@ -4,13 +4,14 @@ import { BitcoinEntry } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useBitcoinRate } from '@/hooks/useBitcoinRate';
-import { CheckCircle } from 'lucide-react';
 import { 
   fetchBitcoinEntries, 
   createBitcoinEntry, 
   updateBitcoinEntry, 
   deleteBitcoinEntry 
 } from '@/services/bitcoinEntryService';
+
+// Removemos o import do CheckCircle, pois não podemos usar JSX diretamente aqui
 
 export function useBitcoinEntries() {
   const [entries, setEntries] = useState<BitcoinEntry[]>([]);
@@ -89,12 +90,11 @@ export function useBitcoinEntries() {
         setEntries(updatedEntries);
         setEditingEntry(null);
         
-        // Corrigindo aqui - usando objeto para o ícone em vez de JSX
+        // Usando apenas o objeto de configuração sem JSX
         toast({
           title: 'Aporte atualizado',
           description: 'Seu aporte de Bitcoin foi atualizado com sucesso.',
           variant: 'success',
-          icon: <CheckCircle className="h-5 w-5" />,
         });
       } catch (error) {
         console.error('Error updating entry:', error);
@@ -118,12 +118,11 @@ export function useBitcoinEntries() {
 
         setEntries(prev => [newEntry, ...prev]);
 
-        // Corrigindo aqui também - usando objeto para o ícone em vez de JSX
+        // Usando apenas o objeto de configuração sem JSX
         toast({
           title: 'Aporte registrado',
           description: 'Seu aporte de Bitcoin foi registrado com sucesso.',
           variant: 'success',
-          icon: <CheckCircle className="h-5 w-5" />,
         });
       } catch (error) {
         console.error('Error adding entry:', error);
