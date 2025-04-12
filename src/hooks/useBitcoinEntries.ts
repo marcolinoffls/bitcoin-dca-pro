@@ -4,6 +4,7 @@ import { BitcoinEntry } from '@/types';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useBitcoinRate } from '@/hooks/useBitcoinRate';
+import { CheckCircle } from 'lucide-react';
 import { 
   fetchBitcoinEntries, 
   createBitcoinEntry, 
@@ -91,6 +92,7 @@ export function useBitcoinEntries() {
         toast({
           title: 'Aporte atualizado',
           description: 'Seu aporte de Bitcoin foi atualizado com sucesso.',
+          variant: 'success',
         });
       } catch (error) {
         console.error('Error updating entry:', error);
@@ -117,6 +119,8 @@ export function useBitcoinEntries() {
         toast({
           title: 'Aporte registrado',
           description: 'Seu aporte de Bitcoin foi registrado com sucesso.',
+          variant: 'success',
+          icon: <CheckCircle className="h-5 w-5 text-green-500" />,
         });
       } catch (error) {
         console.error('Error adding entry:', error);
