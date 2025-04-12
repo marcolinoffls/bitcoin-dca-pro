@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,7 +38,10 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
       ? formatNumber(entry.btcAmount * 100000000, 0)
       : formatNumber(entry.btcAmount, 8)
   );
-  const [exchangeRate, setExchangeRate] = useState(
+  const [exchangeRate, setExchangeRate] = useState<number>(
+    entry.exchangeRate
+  );
+  const [exchangeRateDisplay, setExchangeRateDisplay] = useState(
     formatNumber(entry.exchangeRate)
   );
   const [currency, setCurrency] = useState<'BRL' | 'USD'>(entry.currency);
@@ -60,16 +62,25 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
   }, []);
 
   const parseLocalNumber = (value: string): number => {
-    return parseFloat(value.replace(',', '.'));
+    return parseFloat(value.replace(/\./g, '').replace(',', '.'));
+  };
+
+  const formatCurrency = (value: number, currencyType: 'BRL' | 'USD'): string => {
+    return value.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: currencyType === 'USD' ? 'USD' : 'BRL',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
   };
 
   const handleCurrencyChange = (newCurrency: 'BRL' | 'USD') => {
     setCurrency(newCurrency);
     
     if (currentRate) {
-      setExchangeRate(
-        formatNumber(newCurrency === 'USD' ? currentRate.usd : currentRate.brl)
-      );
+      const newRate = newCurrency === 'USD' ? currentRate.usd : currentRate.brl;
+      setExchangeRate(newRate);
+      setExchangeRateDisplay(formatCurrency(newRate, newCurrency));
     }
   };
 
@@ -92,9 +103,9 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
       parsedBtc = parsedBtc / 100000000;
     }
     
-    const parsedRate = parseLocalNumber(exchangeRate);
+    const parsedRate = exchangeRate;
     
-    if (isNaN(parsedAmount) || isNaN(parsedBtc) || isNaN(parsedRate)) {
+    if (isNaN(parsedAmount) || isNaN(parsedBtc) || isNaN(parsedRate) || parsedRate === 0) {
       toast({
         title: "Erro nos dados",
         description: "Por favor, verifique os valores inseridos.",
@@ -104,7 +115,6 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
     }
     
     try {
-      // Update entry in Supabase
       const { error } = await supabase
         .from('aportes')
         .update({
@@ -120,7 +130,6 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
         
       if (error) throw error;
       
-      // Reload the page to see updated data
       window.location.reload();
       
       toast({
@@ -142,7 +151,8 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
   const useCurrentRate = () => {
     if (currentRate) {
       const rate = currency === 'USD' ? currentRate.usd : currentRate.brl;
-      setExchangeRate(formatNumber(rate));
+      setExchangeRate(rate);
+      setExchangeRateDisplay(formatCurrency(rate, currency));
     }
   };
 
@@ -241,11 +251,9 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
               value={amountInvested}
               onChange={(e) => {
                 setAmountInvested(e.target.value);
-                // Auto-calculate BTC amount when amount changes
                 const amount = parseLocalNumber(e.target.value);
-                const rate = parseLocalNumber(exchangeRate);
-                if (!isNaN(amount) && !isNaN(rate) && rate > 0) {
-                  const btc = amount / rate;
+                if (!isNaN(amount) && exchangeRate > 0) {
+                  const btc = amount / exchangeRate;
                   if (displayUnit === 'SATS') {
                     setBtcAmount(formatNumber(btc * 100000000, 0));
                   } else {
@@ -299,8 +307,18 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
           <Input
             id="editExchangeRate"
             placeholder="0,00"
-            value={exchangeRate}
-            onChange={(e) => setExchangeRate(e.target.value)}
+            value={exchangeRateDisplay}
+            onChange={(e) => {
+              setExchangeRateDisplay(e.target.value);
+              try {
+                const numericValue = parseLocalNumber(e.target.value);
+                if (!isNaN(numericValue)) {
+                  setExchangeRate(numericValue);
+                }
+              } catch (e) {
+                console.log("Erro ao converter valor:", e);
+              }
+            }}
             className="pl-8 rounded-xl"
             type="text"
             required

@@ -7,16 +7,18 @@ import { RefreshCw } from 'lucide-react';
 
 interface ExchangeRateFieldProps {
   currency: 'BRL' | 'USD';
-  exchangeRate: string;
+  exchangeRate: number | string;
   onExchangeRateChange: (rate: string) => void;
   onUseCurrentRate: () => void;
+  displayValue: string;
 }
 
 const ExchangeRateField: React.FC<ExchangeRateFieldProps> = ({ 
   currency, 
   exchangeRate, 
   onExchangeRateChange, 
-  onUseCurrentRate 
+  onUseCurrentRate,
+  displayValue 
 }) => {
   return (
     <div className="flex flex-col space-y-3 mt-6">
@@ -40,7 +42,7 @@ const ExchangeRateField: React.FC<ExchangeRateFieldProps> = ({
         <Input
           id="exchangeRate"
           placeholder="0,00"
-          value={exchangeRate}
+          value={displayValue}
           onChange={(e) => onExchangeRateChange(e.target.value)}
           className="pl-8 rounded-xl focus-visible:ring-bitcoin focus-visible:border-bitcoin transition-all"
           type="text"

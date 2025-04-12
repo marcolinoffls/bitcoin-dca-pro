@@ -49,7 +49,8 @@ const EntryForm: React.FC<EntryFormProps> = ({
     btcAmount,
     setBtcAmount,
     exchangeRate,
-    setExchangeRate,
+    exchangeRateDisplay,
+    handleExchangeRateChange,
     currency,
     origin,
     date,
@@ -80,9 +81,10 @@ const EntryForm: React.FC<EntryFormProps> = ({
       parsedBtc = parsedBtc / 100000000;
     }
     
-    const parsedRate = parseLocalNumber(exchangeRate);
+    // Usar diretamente o valor numérico da cotação
+    const parsedRate = exchangeRate;
     
-    if (isNaN(parsedAmount) || isNaN(parsedBtc) || isNaN(parsedRate)) {
+    if (isNaN(parsedAmount) || isNaN(parsedBtc) || isNaN(parsedRate) || parsedRate === 0) {
       return;
     }
     
@@ -127,8 +129,9 @@ const EntryForm: React.FC<EntryFormProps> = ({
           
           <ExchangeRateField 
             currency={currency} 
-            exchangeRate={exchangeRate} 
-            onExchangeRateChange={setExchangeRate} 
+            exchangeRate={exchangeRate}
+            displayValue={exchangeRateDisplay}
+            onExchangeRateChange={handleExchangeRateChange} 
             onUseCurrentRate={useCurrentRate} 
           />
           
