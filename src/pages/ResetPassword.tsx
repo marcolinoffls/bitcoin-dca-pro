@@ -21,10 +21,28 @@ const ResetPassword = () => {
   const location = useLocation();
   const { toast } = useToast();
 
-  // Extract the access token from the URL on component mount
+  // Extrai o token de acesso da URL ao montar o componente
+  // Função melhorada para capturar o token de diferentes formatos de URL
   useEffect(() => {
-    const hashParams = new URLSearchParams(location.hash.substring(1));
-    const token = hashParams.get('access_token');
+    // Função para extrair o token de vários formatos possíveis
+    const extractToken = () => {
+      // Verifica se o token está no hash (formato #access_token=XXX)
+      const hashParams = new URLSearchParams(location.hash.substring(1));
+      const hashToken = hashParams.get('access_token');
+      if (hashToken) return hashToken;
+      
+      // Verifica se o token está nos parâmetros de consulta (formato ?token=XXX)
+      const queryParams = new URLSearchParams(location.search);
+      const queryToken = queryParams.get('token') || queryParams.get('access_token');
+      if (queryToken) return queryToken;
+      
+      // Verifica se há um formato de URL específico para a recuperação de senha
+      // Alguns provedores usam diretamente o parâmetro na URL
+      return null;
+    };
+
+    const token = extractToken();
+    console.log("Token encontrado na URL:", token ? "Sim" : "Não"); // Log para depuração
     setAccessToken(token);
     
     if (!token) {
@@ -32,10 +50,12 @@ const ResetPassword = () => {
     }
   }, [location]);
 
+  // Alterna a visibilidade da senha
   const toggleShowPassword = () => {
     setShowPassword(!showPassword);
   };
 
+  // Valida a senha inserida
   const validatePassword = () => {
     if (password.length < 6) {
       setPasswordError('A senha deve ter pelo menos 6 caracteres');
@@ -49,6 +69,7 @@ const ResetPassword = () => {
     return true;
   };
 
+  // Manipula o envio do formulário de redefinição de senha
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -64,20 +85,30 @@ const ResetPassword = () => {
     setIsSubmitting(true);
     
     try {
-      // Set the access token in the session
+      console.log("Tentando definir a sessão com o token"); // Log para depuração
+      
+      // Define o token de acesso na sessão
       const { error: sessionError } = await supabase.auth.setSession({
         access_token: accessToken,
         refresh_token: '',
       });
 
-      if (sessionError) throw sessionError;
+      if (sessionError) {
+        console.error("Erro ao definir a sessão:", sessionError); // Log para depuração
+        throw sessionError;
+      }
 
-      // Update the user's password
+      console.log("Tentando atualizar a senha do usuário"); // Log para depuração
+      
+      // Atualiza a senha do usuário
       const { error } = await supabase.auth.updateUser({ 
         password: password 
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Erro ao atualizar a senha:", error); // Log para depuração
+        throw error;
+      }
       
       toast({
         title: "Senha atualizada com sucesso",
@@ -86,7 +117,7 @@ const ResetPassword = () => {
       
       navigate('/');
     } catch (error: any) {
-      console.error('Error resetting password:', error.message);
+      console.error('Erro ao redefinir a senha:', error.message);
       setPasswordError(error.message || 'Ocorreu um erro ao redefinir a senha. Por favor, tente novamente.');
     } finally {
       setIsSubmitting(false);
