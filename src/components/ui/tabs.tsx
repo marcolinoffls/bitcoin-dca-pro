@@ -1,20 +1,11 @@
+
 import * as React from "react"
 import * as TabsPrimitive from "@radix-ui/react-tabs"
+
 import { cn } from "@/lib/utils"
 
-/**
- * Tabs
- * Componente raiz do sistema de abas (Radix Tabs)
- * Usado para agrupar conteúdos com navegação por botões ("abas")
- */
 const Tabs = TabsPrimitive.Root
 
-/**
- * TabsList
- * Container que agrupa os botões de navegação (abas) como "Entrar" e "Criar Conta".
- * Ajustado com `w-full` para ocupar toda a largura disponível.
- * Usado, por exemplo, na tela de login para alternar entre abas.
- */
 const TabsList = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.List>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
@@ -22,8 +13,7 @@ const TabsList = React.forwardRef<
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      // Ocupar toda a largura, remover espaçamento interno e arredondar levemente
-      "w-full flex rounded-md border bg-muted p-0",
+      "inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground",
       className
     )}
     {...props}
@@ -31,12 +21,6 @@ const TabsList = React.forwardRef<
 ))
 TabsList.displayName = TabsPrimitive.List.displayName
 
-/**
- * TabsTrigger
- * Cada botão de aba, como "Entrar" ou "Criar Conta".
- * Aplica estilos diferentes quando estiver ativo (data-[state=active]).
- * Usado para trocar o conteúdo da aba visível.
- */
 const TabsTrigger = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
@@ -44,13 +28,7 @@ const TabsTrigger = React.forwardRef<
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      // Ocupa metade do container (w-full dentro de flex), sem padding lateral exagerado
-      "w-full px-4 py-2 text-sm font-medium text-muted-foreground transition-all",
-      // Estilo quando a aba está ativa
-      "data-[state=active]:bg-background data-[state=active]:text-foreground",
-      // Acessibilidade e responsividade
-      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-      "disabled:pointer-events-none disabled:opacity-50",
+      "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm",
       className
     )}
     {...props}
@@ -58,11 +36,6 @@ const TabsTrigger = React.forwardRef<
 ))
 TabsTrigger.displayName = TabsPrimitive.Trigger.displayName
 
-/**
- * TabsContent
- * Área de conteúdo que aparece ao selecionar uma aba.
- * Por exemplo: formulário de login ou de cadastro.
- */
 const TabsContent = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>
@@ -70,8 +43,7 @@ const TabsContent = React.forwardRef<
   <TabsPrimitive.Content
     ref={ref}
     className={cn(
-      // Adiciona animação de fade suave ao trocar de aba
-      "mt-2 animate-in fade-in-0 duration-200 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+      "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 animate-in fade-in-0 duration-200",
       className
     )}
     {...props}
@@ -79,8 +51,4 @@ const TabsContent = React.forwardRef<
 ))
 TabsContent.displayName = TabsPrimitive.Content.displayName
 
-/**
- * Exporta os componentes para uso externo
- * Usado no Auth.tsx (login/cadastro) ou onde houver navegação por abas
- */
 export { Tabs, TabsList, TabsTrigger, TabsContent }
