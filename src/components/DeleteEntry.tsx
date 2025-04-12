@@ -17,29 +17,30 @@ interface DeleteEntryProps {
   onCancel: () => void;
 }
 
-export const DeleteEntry: React.FC<DeleteEntryProps> = ({
-  isOpen,
-  onConfirm,
-  onCancel
+export const DeleteEntry: React.FC<DeleteEntryProps> = ({ 
+  isOpen, 
+  onConfirm, 
+  onCancel 
 }) => {
   return (
-    <AlertDialog open={isOpen} onOpenChange={(open) => {
-      if (!open) onCancel();
-    }}>
-      <AlertDialogContent className="sm:max-w-[425px]">
+    <AlertDialog open={isOpen}>
+      <AlertDialogContent className="sm:max-w-[425px] rounded-xl">
         <AlertDialogHeader>
-          <AlertDialogTitle>Confirmação de Exclusão</AlertDialogTitle>
+          <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
           <AlertDialogDescription>
-            Tem certeza que deseja excluir este aporte? Esta ação não pode ser desfeita.
+            Tem certeza de que deseja excluir este aporte? Esta ação não pode ser desfeita.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onCancel} className="rounded-xl">
+          <AlertDialogCancel 
+            onClick={onCancel}
+            className="rounded-xl"
+          >
             Cancelar
           </AlertDialogCancel>
           <AlertDialogAction 
             onClick={onConfirm}
-            className="bg-destructive hover:bg-destructive/90 rounded-xl"
+            className="bg-red-500 hover:bg-red-600 rounded-xl"
           >
             Excluir
           </AlertDialogAction>
@@ -48,3 +49,5 @@ export const DeleteEntry: React.FC<DeleteEntryProps> = ({
     </AlertDialog>
   );
 };
+
+export default DeleteEntry;

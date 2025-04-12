@@ -1,42 +1,44 @@
 
-import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Bitcoin, Users } from "lucide-react";
+import React from "react";
 
 interface OriginSelectorProps {
   selectedOrigin: 'corretora' | 'p2p';
   onChange: (origin: 'corretora' | 'p2p') => void;
-  buttonType?: "submit" | "reset" | "button";
-  disabled?: boolean;
+  buttonType?: "button" | "submit" | "reset"; // Optional prop to specify button type
 }
 
-const OriginSelector: React.FC<OriginSelectorProps> = ({
-  selectedOrigin,
+const OriginSelector: React.FC<OriginSelectorProps> = ({ 
+  selectedOrigin, 
   onChange,
-  buttonType = "button",
-  disabled = false,
+  buttonType = "button"
 }) => {
   return (
     <div className="flex gap-2">
       <Button
-        variant={selectedOrigin === 'corretora' ? "default" : "outline"}
         type={buttonType}
         onClick={() => onChange('corretora')}
-        className={`flex-1 rounded-xl ${selectedOrigin === 'corretora' ? 'bg-bitcoin hover:bg-bitcoin/90' : ''}`}
-        disabled={disabled}
+        variant={selectedOrigin === 'corretora' ? 'default' : 'outline'}
+        className={`flex-1 rounded-xl ${
+          selectedOrigin === 'corretora' 
+            ? 'bg-bitcoin hover:bg-bitcoin/90 text-white' 
+            : 'border-bitcoin text-bitcoin hover:text-bitcoin hover:bg-bitcoin/10'
+        }`}
       >
-        <Bitcoin className="h-4 w-4 mr-2" />
-        <span>Corretora</span>
+        Corretora
       </Button>
+      
       <Button
-        variant={selectedOrigin === 'p2p' ? "default" : "outline"}
         type={buttonType}
         onClick={() => onChange('p2p')}
-        className={`flex-1 rounded-xl ${selectedOrigin === 'p2p' ? 'bg-bitcoin hover:bg-bitcoin/90' : ''}`}
-        disabled={disabled}
+        variant={selectedOrigin === 'p2p' ? 'default' : 'outline'}
+        className={`flex-1 rounded-xl ${
+          selectedOrigin === 'p2p' 
+            ? 'bg-bitcoin hover:bg-bitcoin/90 text-white' 
+            : 'border-bitcoin text-bitcoin hover:text-bitcoin hover:bg-bitcoin/10'
+        }`}
       >
-        <Users className="h-4 w-4 mr-2" />
-        <span>P2P</span>
+        P2P
       </Button>
     </div>
   );
