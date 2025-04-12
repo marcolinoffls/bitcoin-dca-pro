@@ -1,4 +1,7 @@
-
+/**
+ * Campo para preencher o valor investido.
+ * Exibe "R$" ou "$" à esquerda e permite apenas valores numéricos formatados como string.
+ */
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -24,6 +27,8 @@ const AmountField: React.FC<AmountFieldProps> = ({ currency, amount, onAmountCha
           onChange={(e) => onAmountChange(e.target.value)}
           className="pl-8 rounded-xl"
           type="text"
+          inputMode="decimal"
+          pattern="[0-9]*"
           required
         />
       </div>
