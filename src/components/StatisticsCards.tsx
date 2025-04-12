@@ -14,6 +14,16 @@ interface StatisticsCardsProps {
   displayUnit: 'BTC' | 'SATS';
 }
 
+/**
+ * Componente que exibe os cards de estatísticas no dashboard
+ * 
+ * Mostra:
+ * - Total de Bitcoin/Satoshis acumulados
+ * - Preço médio de compra ponderado pelo valor investido
+ * 
+ * O preço médio é calculado usando a fórmula:
+ * (cotacao₁ × valorInvestido₁ + cotacao₂ × valorInvestido₂ + ...) / (valorInvestido₁ + valorInvestido₂ + ...)
+ */
 const StatisticsCards: React.FC<StatisticsCardsProps> = ({
   entries,
   currentRate,
@@ -23,8 +33,9 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
   const totalBitcoin = calculateTotalBitcoin(entries);
   const [selectedPeriod, setSelectedPeriod] = useState<'month' | 'year' | 'all'>('month');
   
-  // Calculate average price based on currency selection
+  // Calcula o preço médio com base na seleção de moeda
   const calculateAvgPrice = (period: 'month' | 'year' | 'all') => {
+    // Obtém o preço médio ponderado na moeda original (BRL)
     const avgPriceLocal = calculateAverageByPeriod(entries, period);
     
     if (avgPriceLocal <= 0) return 0;

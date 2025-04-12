@@ -1,7 +1,10 @@
 
 import { BitcoinEntry, CurrentRate } from "@/types";
 
-// Funções para buscar a cotação atual
+/**
+ * Funções para buscar a cotação atual
+ * Responsável por fazer a requisição à API do CoinGecko e retornar os dados formatados
+ */
 export const fetchCurrentBitcoinRate = async (): Promise<CurrentRate> => {
   try {
     const response = await fetch(
@@ -25,15 +28,37 @@ export const fetchCurrentBitcoinRate = async (): Promise<CurrentRate> => {
   }
 };
 
-// Funções para cálculos estatísticos
+/**
+ * Calcula o total de Bitcoin em todos os aportes
+ * @param entries Lista de aportes
+ * @returns Soma total de Bitcoin
+ */
 export const calculateTotalBitcoin = (entries: BitcoinEntry[]): number => {
   return entries.reduce((total, entry) => total + entry.btcAmount, 0);
 };
 
+/**
+ * Calcula a variação percentual entre duas taxas
+ * @param buyRate Taxa de compra
+ * @param currentRate Taxa atual
+ * @returns Percentual de variação
+ */
 export const calculatePercentageChange = (buyRate: number, currentRate: number): number => {
   return ((currentRate - buyRate) / buyRate) * 100;
 };
 
+/**
+ * Calcula o preço médio de compra ponderado pelo valor investido
+ * 
+ * A fórmula aplicada é:
+ * (cotacao₁ × valorInvestido₁ + cotacao₂ × valorInvestido₂ + ...) / (valorInvestido₁ + valorInvestido₂ + ...)
+ * 
+ * Esta média reflete o preço médio pago por 1 BTC considerando todos os aportes realizados no período.
+ * 
+ * @param entries Lista de aportes
+ * @param period Período para filtrar os aportes ('month', 'year' ou 'all')
+ * @returns Preço médio ponderado
+ */
 export const calculateAverageByPeriod = (
   entries: BitcoinEntry[],
   period: 'month' | 'year' | 'all'
@@ -57,14 +82,16 @@ export const calculateAverageByPeriod = (
 
   if (filteredEntries.length === 0) return 0;
 
-  // Calculate weighted average price based on BTC amount
-  let totalBtc = 0;
-  let weightedRateSum = 0;
+  // Calcula a média ponderada das cotações pelo valor investido
+  let totalInvested = 0;
+  let weightedExchangeRateSum = 0;
 
   filteredEntries.forEach(entry => {
-    totalBtc += entry.btcAmount;
-    weightedRateSum += entry.exchangeRate * entry.btcAmount;
+    totalInvested += entry.amountInvested;
+    // Multiplicamos a cotação pelo valor investido para o cálculo ponderado
+    weightedExchangeRateSum += entry.exchangeRate * entry.amountInvested;
   });
 
-  return totalBtc > 0 ? weightedRateSum / totalBtc : 0;
+  // Retorna a média ponderada
+  return totalInvested > 0 ? weightedExchangeRateSum / totalInvested : 0;
 };
