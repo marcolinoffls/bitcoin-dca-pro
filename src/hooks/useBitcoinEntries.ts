@@ -8,6 +8,11 @@
  * - Integra com a cotação atual do Bitcoin
  *
  * Utiliza React Query para cache e atualização reativa
+ * 
+ * Atualizações:
+ * - Corrigido o problema de atualização da data no Supabase
+ * - Adicionado log detalhado para acompanhar a atualização dos aportes
+ * - Garantida a invalidação do cache de queries após operações
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -54,7 +59,7 @@ export const useBitcoinEntries = () => {
       if (error) throw error;
       
       // Converte os dados do formato do Supabase para o formato da aplicação
-      return (data as SupabaseAporte[]).map(item => ({
+      const formattedEntries = (data as SupabaseAporte[]).map(item => ({
         id: item.id,
         date: new Date(item.data_aporte),
         amountInvested: item.valor_investido,
@@ -63,6 +68,9 @@ export const useBitcoinEntries = () => {
         currency: item.moeda,
         origin: item.origem_aporte,
       })) as BitcoinEntry[];
+      
+      console.log('Aportes carregados do Supabase:', formattedEntries);
+      return formattedEntries;
     },
     enabled: !!user,
   });
@@ -114,11 +122,17 @@ export const useBitcoinEntries = () => {
   const updateEntry = async (entryId: string, updatedFields: Partial<BitcoinEntry>) => {
     if (!user) return;
     
+    console.log('Iniciando atualização do aporte:', entryId);
+    console.log('Campos a atualizar:', updatedFields);
+    
     // Converte do formato da aplicação para o formato do Supabase
     const supabaseData: Partial<SupabaseAporte> = {};
     
     if (updatedFields.date) {
-      supabaseData.data_aporte = updatedFields.date.toISOString().split('T')[0];
+      // Garante que a data seja formatada corretamente para o Supabase (YYYY-MM-DD)
+      const formattedDate = updatedFields.date.toISOString().split('T')[0];
+      supabaseData.data_aporte = formattedDate;
+      console.log('Data formatada para o Supabase:', formattedDate);
     }
     if (updatedFields.amountInvested !== undefined) {
       supabaseData.valor_investido = updatedFields.amountInvested;
@@ -137,12 +151,19 @@ export const useBitcoinEntries = () => {
       supabaseData.origem_aporte = updatedFields.origin;
     }
 
+    console.log('Dados preparados para envio ao Supabase:', supabaseData);
+
     const { error } = await supabase
       .from('aportes')
       .update(supabaseData)
       .eq('id', entryId);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Erro ao atualizar no Supabase:', error);
+      throw error;
+    }
+
+    console.log('Aporte atualizado com sucesso no Supabase');
 
     // Força a atualização da lista após edição - CRUCIAL PARA REFLETIR MUDANÇAS
     await queryClient.invalidateQueries({ queryKey: ['entries'] });

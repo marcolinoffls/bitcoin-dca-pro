@@ -10,6 +10,17 @@ import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 
+/**
+ * Componente de seleção de data
+ * 
+ * Função: Permite ao usuário escolher uma data através de um calendário
+ * Onde é usado: Nos formulários de registro e edição de aportes
+ * 
+ * Atualizações:
+ * - Adicionado estado tempDate para controlar a data temporária selecionada
+ * - Adicionado botão de confirmação para aplicar a data selecionada
+ * - Corrigido o problema de atualização de data que não era persistida
+ */
 interface DatePickerFieldProps {
   date: Date;
   onDateChange: (date: Date) => void;
@@ -21,6 +32,7 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange })
   const calendarPopoverRef = useRef<HTMLButtonElement>(null);
   const isMobile = useIsMobile();
 
+  // Define a data como hoje
   const setToday = () => {
     const today = new Date();
     onDateChange(today);
@@ -28,18 +40,25 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange })
     setIsCalendarOpen(false);
   };
 
+  // Controla a seleção temporária de data no calendário
   const handleDateSelect = (newDate: Date | undefined) => {
     if (newDate) {
       setTempDate(newDate);
     }
   };
 
+  // Confirma a data selecionada e a aplica ao formulário
   const handleConfirm = () => {
     if (tempDate) {
       onDateChange(tempDate);
       setIsCalendarOpen(false);
     }
   };
+
+  // Atualiza a data temporária quando a propriedade date mudar
+  React.useEffect(() => {
+    setTempDate(date);
+  }, [date]);
 
   return (
     <div className="flex flex-col space-y-1.5">

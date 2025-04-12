@@ -8,6 +8,7 @@
  * 
  * Atualização:
  * - Melhorada a manipulação dos valores para conversão correta entre string e number
+ * - Adicionado console.log para depuração do formato de número
  */
 import React from 'react';
 import { Label } from '@/components/ui/label';
@@ -28,6 +29,7 @@ const BtcAmountField: React.FC<BtcAmountFieldProps> = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Substitui pontos por vírgulas para compatibilidade com formato brasileiro
     const value = e.target.value.replace(/\./g, ',');
+    console.log('Valor BTC formatado:', value);
     onBtcAmountChange(value);
   };
 

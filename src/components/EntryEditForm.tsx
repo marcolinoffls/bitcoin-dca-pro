@@ -17,26 +17,25 @@
  * - Corrigido o problema de atualização de data no Supabase
  * - Convertidos os campos de string para number para manipulação mais segura
  * - Garantida a atualização da lista de aportes após uma edição
+ * - Adicionado console.log para mostrar a data selecionada antes de enviar ao Supabase
  */
 
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { BitcoinEntry, CurrentRate } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { cn, formatNumber } from '@/lib/utils';
+import { formatNumber } from '@/lib/utils';
 import { useBitcoinEntries } from '@/hooks/useBitcoinEntries'; // Importa o hook para uso direto
 
 import CurrencySelector from '@/components/CurrencySelector';
 import OriginSelector from '@/components/form/OriginSelector';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Calendar } from '@/components/ui/calendar';
-import { CalendarCheck, CalendarIcon, Check } from 'lucide-react';
 import { BtcInput } from '@/components/form/BtcInput';
+import DatePickerField from '@/components/form/DatePickerField';
 
 interface EntryEditFormProps {
   entry: BitcoinEntry;
@@ -68,9 +67,6 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
   const [currency, setCurrency] = useState<'BRL' | 'USD'>(entry.currency);
   const [origin, setOrigin] = useState<'corretora' | 'p2p'>(entry.origin || 'corretora');
   const [date, setDate] = useState<Date>(entry.date);
-  const [tempDate, setTempDate] = useState<Date>(entry.date);
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const calendarPopoverRef = useRef<HTMLButtonElement>(null);
 
   // Função para converter string em formato brasileiro para número
   const parseLocalNumber = (value: string): number => {
@@ -86,17 +82,10 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
     }
   };
 
-  // Essa função garante que a data selecionada no calendário seja aplicada corretamente
-  const confirmDateSelection = () => {
-    setDate(tempDate);
-    setIsCalendarOpen(false);
-  };
-
-  const setToday = () => {
-    const today = new Date();
-    setDate(today);
-    setTempDate(today);
-    setIsCalendarOpen(false);
+  // Função para atualizar a data do aporte
+  const handleDateChange = (newDate: Date) => {
+    console.log('Data selecionada:', newDate);
+    setDate(newDate);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -131,6 +120,17 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
       return;
     }
 
+    // Log para verificar os dados antes de enviar
+    console.log('Dados sendo enviados para atualização:', {
+      id: entry.id,
+      amountInvested: parsedAmount,
+      btcAmount: parsedBtc,
+      exchangeRate: exchangeRate,
+      currency: currency,
+      date: date,
+      origin: origin
+    });
+
     try {
       // Usa a função updateEntry do hook useBitcoinEntries com a data correta
       await updateEntry(entry.id, {
@@ -138,7 +138,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
         btcAmount: parsedBtc,
         exchangeRate: exchangeRate,
         currency: currency,
-        date: date, // Usa a data atualizada
+        date: date, // Garante que a data atualizada seja enviada
         origin: origin
       });
 
@@ -162,58 +162,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-4 px-1">
       {/* Data do aporte */}
-      <div className="flex flex-col space-y-1.5">
-        <Label>Data do Aporte</Label>
-        <div className="flex gap-4">
-          <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                ref={calendarPopoverRef}
-                variant="outline"
-                className={cn(
-                  'w-full justify-start text-left font-normal rounded-xl',
-                  !date && 'text-muted-foreground'
-                )}
-                type="button"
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {date ? format(date, 'dd/MM/yyyy', { locale: ptBR }) : 'Selecione uma data'}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <div className="p-3 rounded-md shadow-sm">
-                <Calendar
-                  mode="single"
-                  selected={tempDate}
-                  onSelect={(newDate) => newDate && setTempDate(newDate)}
-                  initialFocus
-                  locale={ptBR}
-                  className="rounded-md border-0 shadow-none pointer-events-auto"
-                />
-                <div className="flex justify-center p-2 mt-2">
-                  <Button
-                    type="button"
-                    onClick={confirmDateSelection}
-                    className="rounded-full bg-bitcoin hover:bg-bitcoin/90 text-white w-full"
-                  >
-                    <Check className="h-4 w-4 mr-2" />
-                    Confirmar
-                  </Button>
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={setToday}
-            className="shrink-0 rounded-xl"
-          >
-            <CalendarCheck className="h-4 w-4 mr-2" />
-            Hoje
-          </Button>
-        </div>
-      </div>
+      <DatePickerField date={date} onDateChange={handleDateChange} />
 
       {/* Moeda (BRL ou USD) */}
       <CurrencySelector selectedCurrency={currency} onChange={handleCurrencyChange} />

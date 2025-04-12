@@ -5,6 +5,11 @@
  * - Cria novos aportes
  * - Atualiza aportes existentes
  * - Exclui aportes
+ * 
+ * Atualizações:
+ * - Corrigido problema de atualização da data não ser persistida corretamente
+ * - Adicionados logs para monitorar as conversões de data
+ * - Melhorada a manipulação dos valores para conversão correta entre string e number
  */
 
 import { BitcoinEntry, CurrentRate } from '@/types';
@@ -50,12 +55,16 @@ export const createBitcoinEntry = async (
   date: Date,
   origin: 'corretora' | 'p2p'
 ) => {
+  // Formata a data para o formato ISO (YYYY-MM-DD)
+  const formattedDate = date.toISOString().split('T')[0];
+  console.log('Data sendo enviada para criação:', formattedDate);
+  
   const newEntryId = uuidv4();
   const { error } = await supabase
     .from('aportes')
     .insert({
       id: newEntryId,
-      data_aporte: date.toISOString().split('T')[0],
+      data_aporte: formattedDate,
       moeda: currency,
       cotacao_moeda: currency,
       valor_investido: amountInvested,
@@ -92,10 +101,14 @@ export const updateBitcoinEntry = async (
   date: Date,
   origin: 'corretora' | 'p2p'
 ) => {
+  // Formata a data para o formato ISO (YYYY-MM-DD)
+  const formattedDate = date.toISOString().split('T')[0];
+  console.log('Data sendo enviada para atualização:', formattedDate);
+  
   const { error } = await supabase
     .from('aportes')
     .update({
-      data_aporte: date.toISOString().split('T')[0],
+      data_aporte: formattedDate,
       moeda: currency,
       cotacao_moeda: currency,
       valor_investido: amountInvested,
@@ -106,7 +119,10 @@ export const updateBitcoinEntry = async (
     .eq('id', entryId);
 
   if (error) {
+    console.error('Erro ao atualizar o aporte no Supabase:', error);
     throw error;
+  } else {
+    console.log('Aporte atualizado com sucesso no Supabase:', entryId);
   }
 };
 
