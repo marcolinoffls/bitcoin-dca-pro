@@ -1,162 +1,184 @@
+/**
+ * Componente EntryForm
+ *
+ * Função: Formulário principal para registrar um novo aporte de Bitcoin.
+ * - Quando `editingEntry` está presente, entra no modo de edição.
+ * - Caso contrário, registra um novo aporte no Supabase.
+ *
+ * Onde é usado: Página principal (Index).
+ *
+ * Integrações:
+ * - Supabase: insere novo registro na tabela `aportes`.
+ * - Props:
+ *   - editingEntry: usado para entrar no modo edição
+ *   - onCancelEdit: função para cancelar a edição
+ *   - onAddEntry: callback após adicionar
+ *   - currentRate: cotação atual do Bitcoin
+ *   - displayUnit: unidade exibida (BTC ou SATS)
+ */
 
 import React, { useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bitcoin } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
-import DatePickerField from '@/components/form/DatePickerField';
-import CurrencyField from '@/components/form/CurrencyField';
-import AmountField from '@/components/form/AmountField';
-import BtcAmountField from '@/components/form/BtcAmountField';
-import ExchangeRateField from '@/components/form/ExchangeRateField';
-import OriginSelector from '@/components/form/OriginSelector';
-import FormActions from '@/components/form/FormActions';
-import { useEntryFormLogic } from '@/components/form/EntryFormLogic';
+import { useForm } from 'react-hook-form';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { BitcoinEntry, CurrentRate } from '@/types';
+import { format } from 'date-fns';
 
 interface EntryFormProps {
-  onAddEntry: (
-    amountInvested: number,
-    btcAmount: number,
-    exchangeRate: number,
-    currency: 'BRL' | 'USD',
-    date: Date,
-    origin: 'corretora' | 'p2p'
-  ) => void;
-  currentRate: { usd: number; brl: number };
-  editingEntry?: {
-    id: string;
-    date: Date;
-    amountInvested: number;
-    btcAmount: number;
-    exchangeRate: number;
-    currency: 'BRL' | 'USD';
-    origin?: 'corretora' | 'p2p';
-  };
-  onCancelEdit?: () => void;
-  displayUnit?: 'BTC' | 'SATS';
+  onAddEntry: () => void;
+  onCancelEdit: () => void;
+  editingEntry?: BitcoinEntry | null;
+  currentRate: CurrentRate;
+  displayUnit: 'BTC' | 'SATS';
 }
 
-const EntryForm: React.FC<EntryFormProps> = ({ 
-  onAddEntry, 
-  currentRate, 
-  editingEntry, 
+const EntryForm: React.FC<EntryFormProps> = ({
+  onAddEntry,
   onCancelEdit,
-  displayUnit = 'BTC'
+  editingEntry,
+  currentRate,
+  displayUnit,
 }) => {
-  const isMobile = useIsMobile();
-  const {
-    amountInvested,
-    setAmountInvested,
-    btcAmount,
-    setBtcAmount,
-    exchangeRate,
-    exchangeRateDisplay,
-    handleExchangeRateChange,
-    currency,
-    origin,
-    date,
-    setDate,
-    parseLocalNumber,
-    handleCurrencyChange,
-    handleOriginChange,
-    calculateFromAmount,
-    calculateFromBtc,
-    useCurrentRate,
-    reset
-  } = useEntryFormLogic(editingEntry, currentRate, displayUnit);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
-  // Quando editingEntry muda para null, resetamos o formulário
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    watch,
+  } = useForm({
+    defaultValues: {
+      valor_investido: '',
+      cotacao: '',
+      bitcoin: '',
+      data_aporte: format(new Date(), 'yyyy-MM-dd'),
+    },
+  });
+
+  const valorInvestido = watch('valor_investido');
+  const cotacao = watch('cotacao');
+
+  // 🔄 Sempre que sair do modo de edição, limpa o formulário
   useEffect(() => {
     if (!editingEntry) {
       reset();
     }
   }, [editingEntry, reset]);
 
-  const resetForm = () => {
-    reset();
-    if (onCancelEdit) {
-      onCancelEdit();
-    }
-  };
+  // Envia os dados para o Supabase
+  const onSubmit = async (data: any) => {
+    if (!user) return;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    let parsedAmount = parseLocalNumber(amountInvested);
-    let parsedBtc = parseLocalNumber(btcAmount);
-    
-    if (displayUnit === 'SATS') {
-      parsedBtc = parsedBtc / 100000000;
+    try {
+      await supabase.from('aportes').insert([
+        {
+          valor_investido: parseFloat(data.valor_investido),
+          cotacao: parseFloat(data.cotacao),
+          bitcoin: parseFloat(data.bitcoin),
+          data_aporte: data.data_aporte,
+        },
+      ]);
+
+      toast({
+        title: 'Aporte registrado com sucesso!',
+        className: 'bg-green-500 text-white',
+      });
+
+      reset();
+      onAddEntry();
+    } catch (error) {
+      toast({
+        title: 'Erro ao registrar aporte',
+        description: 'Tente novamente.',
+        variant: 'destructive',
+      });
     }
-    
-    // Usar diretamente o valor numérico da cotação
-    const parsedRate = exchangeRate;
-    
-    if (isNaN(parsedAmount) || isNaN(parsedBtc) || isNaN(parsedRate) || parsedRate === 0) {
-      return;
-    }
-    
-    onAddEntry(parsedAmount, parsedBtc, parsedRate, currency, date, origin);
-    
-    resetForm();
   };
 
   return (
-    <Card className="rounded-xl shadow-md hover:shadow-lg transition-all duration-200">
-      <CardHeader className={`${isMobile ? "pb-2" : "pb-3"}`}>
-        <CardTitle className={`${isMobile ? "text-lg" : "text-xl"} flex items-center gap-2`}>
-          <Bitcoin className={`${isMobile ? "h-5 w-5" : "h-6 w-6"} text-bitcoin`} />
-          {editingEntry ? 'Editar Aporte' : 'Registrar Novo Aporte'}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className={isMobile ? "pb-3" : ""}>
-        <form onSubmit={handleSubmit} className={`space-y-${isMobile ? "3" : "4"}`}>
-          <DatePickerField 
-            date={date} 
-            onDateChange={setDate} 
-          />
-          
-          <CurrencyField 
-            currency={currency} 
-            onCurrencyChange={handleCurrencyChange} 
-          />
-          
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <AmountField 
-              currency={currency} 
-              amount={amountInvested} 
-              onAmountChange={setAmountInvested} 
-            />
-            
-            <BtcAmountField 
-              btcAmount={btcAmount} 
-              onBtcAmountChange={setBtcAmount} 
-              displayUnit={displayUnit} 
-            />
-          </div>
-          
-          <ExchangeRateField 
-            currency={currency} 
-            exchangeRate={exchangeRate}
-            displayValue={exchangeRateDisplay}
-            onExchangeRateChange={handleExchangeRateChange} 
-            onUseCurrentRate={useCurrentRate} 
-          />
-          
-          <OriginSelector
-            origin={origin}
-            onOriginChange={handleOriginChange}
-          />
-          
-          <FormActions 
-            isEditing={!!editingEntry} 
-            displayUnit={displayUnit} 
-            onCalculateFromAmount={calculateFromAmount} 
-            onCalculateFromBtc={calculateFromBtc} 
-            onReset={resetForm} 
-          />
-        </form>
-      </CardContent>
-    </Card>
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="bg-white dark:bg-gray-900 shadow-md rounded-xl p-6 space-y-4"
+    >
+      <div className="flex flex-col space-y-1.5">
+        <Label htmlFor="valor_investido">Valor Investido</Label>
+        <Input
+          id="valor_investido"
+          placeholder="0,00"
+          {...register('valor_investido')}
+          className="rounded-xl"
+          required
+        />
+      </div>
+
+      <div className="flex flex-col space-y-1.5">
+        <Label htmlFor="cotacao">Cotação (R$)</Label>
+        <Input
+          id="cotacao"
+          placeholder="0,00"
+          {...register('cotacao')}
+          className="rounded-xl"
+          required
+        />
+      </div>
+
+      <div className="flex flex-col space-y-1.5">
+        <Label htmlFor="bitcoin">{displayUnit === 'SATS' ? 'Satoshis' : 'Bitcoin'}</Label>
+        <Input
+          id="bitcoin"
+          placeholder={displayUnit === 'SATS' ? '0' : '0,00000000'}
+          {...register('bitcoin')}
+          className="rounded-xl"
+          required
+        />
+      </div>
+
+      <div className="flex flex-col space-y-1.5">
+        <Label htmlFor="data_aporte">Data do Aporte</Label>
+        <Input
+          type="date"
+          id="data_aporte"
+          {...register('data_aporte')}
+          className="rounded-xl"
+          required
+        />
+      </div>
+
+      {/* Botões de ação */}
+      <div className="flex gap-4 pt-2">
+        {editingEntry ? (
+          <>
+            <Button
+              type="submit"
+              className="flex-1 bg-bitcoin hover:bg-bitcoin/90 text-white rounded-xl py-2"
+            >
+              Atualizar
+            </Button>
+            <Button
+              type="button"
+              onClick={onCancelEdit}
+              variant="outline"
+              className="flex-1 rounded-xl"
+            >
+              Cancelar
+            </Button>
+          </>
+        ) : (
+          <Button
+            type="submit"
+            className="w-full bg-bitcoin hover:bg-bitcoin/90 text-white rounded-xl py-3"
+          >
+            Registrar
+          </Button>
+        )}
+      </div>
+    </form>
   );
 };
 
