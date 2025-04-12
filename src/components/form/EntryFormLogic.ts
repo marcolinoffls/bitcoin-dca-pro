@@ -1,3 +1,4 @@
+
 /**
  * Hook: useEntryFormLogic
  *
@@ -97,7 +98,7 @@ export const useEntryFormLogic = (
     if (currentRate) {
       const newRate = newCurrency === 'USD' ? currentRate.usd : currentRate.brl;
       setExchangeRate(newRate);
-      setExchangeRateDisplay(formatCurrency(newRate, newCurrency));
+      setExchangeRateDisplay(formatNumber(newRate));
     }
   };
 

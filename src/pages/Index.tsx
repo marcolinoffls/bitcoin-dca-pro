@@ -65,7 +65,24 @@ const Index = () => {
     date: Date,
     origin: 'corretora' | 'p2p'
   ) => {
-    addEntry(amountInvested, btcAmount, exchangeRate, currency, date, origin);
+    addEntry({
+      amountInvested,
+      btcAmount,
+      exchangeRate,
+      currency,
+      date,
+      origin
+    });
+  };
+
+  // Adaptador para corrigir incompatibilidade entre tipos BitcoinEntry e string
+  const handleDeleteEntry = (entryIdOrEntry: string | { id: string }) => {
+    // Verifica se é uma string ou um objeto com propriedade id
+    const id = typeof entryIdOrEntry === 'string' 
+      ? entryIdOrEntry 
+      : entryIdOrEntry.id;
+    
+    deleteEntry(id);
   };
 
   return (
@@ -146,7 +163,7 @@ const Index = () => {
           <EntriesList
             entries={entries}
             currentRate={bitcoinRate}
-            onDelete={deleteEntry}
+            onDelete={handleDeleteEntry}
             onEdit={editEntry}
             selectedCurrency={selectedCurrency}
             displayUnit={displayUnit}
