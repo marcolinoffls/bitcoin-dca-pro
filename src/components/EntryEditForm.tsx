@@ -6,7 +6,7 @@
  * Onde é usado: No modal de edição, dentro da seção "Aportes Registrados".
  *
  * Integrações:
- * - Supabase: Atualiza um registro da tabela `aportes`.
+ * - Supabase: Atualiza um registro da tabela `aportes` via hook useBitcoinEntries.
  * - Props:
  *    - entry: os dados originais do aporte
  *    - currentRate: cotação atual do Bitcoin
@@ -19,9 +19,9 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { BitcoinEntry, CurrentRate } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { cn, formatNumber } from '@/lib/utils';
+import { useBitcoinEntries } from '@/hooks/useBitcoinEntries'; // Importa o hook para uso direto
 
 import CurrencySelector from '@/components/CurrencySelector';
 import OriginSelector from '@/components/form/OriginSelector';
@@ -30,7 +30,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
-import { Bitcoin, CalendarCheck, CalendarIcon, Check } from 'lucide-react';
+import { CalendarCheck, CalendarIcon, Check } from 'lucide-react';
 import { BtcInput } from '@/components/form/BtcInput';
 
 interface EntryEditFormProps {
@@ -48,6 +48,8 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
 }) => {
   const { toast } = useToast();
   const { user } = useAuth();
+  // Usamos o hook diretamente no componente para ter acesso à função updateEntry
+  const { updateEntry } = useBitcoinEntries();
 
   const [amountInvested, setAmountInvested] = useState(formatNumber(entry.amountInvested));
   const [btcAmount, setBtcAmount] = useState(
@@ -136,36 +138,33 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
       return;
     }
 
-    const { error } = await supabase
-      .from('aportes')
-      .update({
-        data_aporte: date.toISOString().split('T')[0],
-        moeda: currency,
-        cotacao_moeda: currency,
-        valor_investido: parsedAmount,
-        bitcoin: parsedBtc,
-        cotacao: exchangeRate,
-        origem_aporte: origin,
-      })
-      .eq('id', entry.id);
+    try {
+      // Usa a função updateEntry do hook useBitcoinEntries, que cuidará da atualização no Supabase
+      // e da invalidação dos dados em cache para refletir as mudanças na interface
+      await updateEntry(entry.id, {
+        amountInvested: parsedAmount,
+        btcAmount: parsedBtc,
+        exchangeRate: exchangeRate,
+        currency: currency,
+        date: date,
+        origin: origin
+      });
 
-    if (error) {
+      toast({
+        title: 'Aporte atualizado',
+        description: 'Os dados foram atualizados com sucesso.',
+        variant: 'success',
+      });
+
+      onClose();
+    } catch (error) {
       console.error('Erro ao atualizar:', error);
       toast({
         title: 'Erro ao atualizar',
         description: 'Não foi possível atualizar o aporte.',
         variant: 'destructive',
       });
-      return;
     }
-
-    toast({
-      title: 'Aporte atualizado',
-      description: 'Os dados foram atualizados com sucesso.',
-      variant: 'success',
-    });
-
-    onClose();
   };
 
   return (

@@ -13,6 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useBitcoinEntries } from '@/hooks/useBitcoinEntries';
+import { BitcoinEntry } from '@/types';
 
 const Index = () => {
   const {
@@ -57,6 +58,7 @@ const Index = () => {
     setSelectedCurrency(value);
   };
 
+  // Adaptador que converte os parâmetros individuais para o objeto esperado por addEntry
   const handleAddEntry = (
     amountInvested: number,
     btcAmount: number,
@@ -83,6 +85,20 @@ const Index = () => {
       : entryIdOrEntry.id;
     
     deleteEntry(id);
+  };
+
+  // Adaptador para corrigir incompatibilidade entre tipos
+  const handleEditEntry = (entry: BitcoinEntry | string) => {
+    // Se for um ID (string), precisamos encontrar a entrada correspondente
+    if (typeof entry === 'string') {
+      const foundEntry = entries.find(e => e.id === entry);
+      if (foundEntry) {
+        editEntry(foundEntry);
+      }
+    } else {
+      // Se já for o objeto BitcoinEntry completo
+      editEntry(entry);
+    }
   };
 
   return (
@@ -164,7 +180,7 @@ const Index = () => {
             entries={entries}
             currentRate={bitcoinRate}
             onDelete={handleDeleteEntry}
-            onEdit={editEntry}
+            onEdit={handleEditEntry}
             selectedCurrency={selectedCurrency}
             displayUnit={displayUnit}
           />

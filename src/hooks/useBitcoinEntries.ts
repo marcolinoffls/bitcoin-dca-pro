@@ -70,7 +70,7 @@ export const useBitcoinEntries = () => {
   /**
    * Busca cotação atual do Bitcoin (USD e BRL)
    */
-  const { data: currentRate, refetch: refetchRate } = useQuery<CurrentRate>({
+  const { data: currentRate, refetch: refetchRate } = useQuery({
     queryKey: ['currentRate'],
     queryFn: async () => {
       return await fetchCurrentBitcoinRate();
@@ -81,15 +81,15 @@ export const useBitcoinEntries = () => {
   /**
    * Adiciona um novo aporte
    */
-  const addEntry = async (
-    amountInvested: number,
-    btcAmount: number,
-    exchangeRate: number,
-    currency: 'BRL' | 'USD',
-    date: Date,
-    origin: 'corretora' | 'p2p'
-  ) => {
+  const addEntry = async (entry: Partial<BitcoinEntry>) => {
     if (!user) return;
+    
+    const { date, amountInvested, btcAmount, exchangeRate, currency, origin } = entry;
+    
+    if (!date || amountInvested === undefined || btcAmount === undefined || 
+        exchangeRate === undefined || !currency || !origin) {
+      throw new Error("Dados incompletos para criar aporte");
+    }
     
     const { error } = await supabase.from('aportes').insert([{
       user_id: user.id,
@@ -144,7 +144,7 @@ export const useBitcoinEntries = () => {
 
     if (error) throw error;
 
-    // Força a atualização da lista após edição
+    // Força a atualização da lista após edição - CRUCIAL PARA REFLETIR MUDANÇAS
     await queryClient.invalidateQueries({ queryKey: ['entries'] });
     setEditingEntry(null); // Limpa estado de edição
   };
