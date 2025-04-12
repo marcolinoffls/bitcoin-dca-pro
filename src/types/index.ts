@@ -6,7 +6,6 @@ export interface BitcoinEntry {
   btcAmount: number;
   exchangeRate: number;
   currency: 'BRL' | 'USD';
-  origin?: 'corretora' | 'p2p';
 }
 
 export interface CurrentRate {

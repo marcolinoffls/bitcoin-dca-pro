@@ -61,7 +61,6 @@ export function useBitcoinEntries() {
           btcAmount: Number(entry.bitcoin),
           exchangeRate: Number(entry.cotacao),
           currency: entry.moeda as 'BRL' | 'USD',
-          origin: entry.origem_aporte as 'corretora' | 'p2p'
         }));
         
         setEntries(formattedEntries);
@@ -100,8 +99,7 @@ export function useBitcoinEntries() {
     btcAmount: number,
     exchangeRate: number,
     currency: 'BRL' | 'USD',
-    date: Date,
-    origin: 'corretora' | 'p2p'
+    date: Date
   ) => {
     if (!user) {
       toast({
@@ -123,8 +121,7 @@ export function useBitcoinEntries() {
             cotacao_moeda: currency, // Set the currency used for the exchange rate
             valor_investido: amountInvested,
             bitcoin: btcAmount,
-            cotacao: exchangeRate,
-            origem_aporte: origin
+            cotacao: exchangeRate
           })
           .eq('id', editingEntry.id);
 
@@ -139,8 +136,7 @@ export function useBitcoinEntries() {
                 btcAmount,
                 exchangeRate,
                 currency,
-                date,
-                origin
+                date
               }
             : entry
         );
@@ -174,7 +170,6 @@ export function useBitcoinEntries() {
             valor_investido: amountInvested,
             bitcoin: btcAmount,
             cotacao: exchangeRate,
-            origem_aporte: origin,
             user_id: user.id // Set the user_id from the authenticated user
           });
 
@@ -188,7 +183,6 @@ export function useBitcoinEntries() {
           btcAmount,
           exchangeRate,
           currency,
-          origin
         };
 
         setEntries(prev => [newEntry, ...prev]);

@@ -6,7 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import CurrencySelector from '@/components/CurrencySelector';
-import OriginSelector from '@/components/OriginSelector';
 import { Bitcoin, CalendarIcon, CalendarCheck, Check } from 'lucide-react';
 import { formatNumber } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -43,9 +42,6 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
     formatNumber(entry.exchangeRate)
   );
   const [currency, setCurrency] = useState<'BRL' | 'USD'>(entry.currency);
-  const [origin, setOrigin] = useState<'corretora' | 'p2p'>(
-    entry.origin || 'corretora'
-  );
   const [date, setDate] = useState<Date>(entry.date);
   const [tempDate, setTempDate] = useState<Date>(entry.date);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -115,8 +111,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
           cotacao_moeda: currency,
           valor_investido: parsedAmount,
           bitcoin: parsedBtc,
-          cotacao: parsedRate,
-          origem_aporte: origin
+          cotacao: parsedRate
         })
         .eq('id', entry.id);
         
@@ -186,7 +181,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
                 {date ? format(date, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecione uma data</span>}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="center">
+            <PopoverContent className="w-auto p-0" align="start">
               <div className="p-3 rounded-md shadow-sm">
                 <Calendar
                   mode="single"
@@ -200,7 +195,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
                   <Button 
                     type="button" 
                     onClick={confirmDateSelection}
-                    className="rounded-full bg-bitcoin hover:bg-bitcoin/90 text-white px-4 w-auto"
+                    className="rounded-full bg-bitcoin hover:bg-bitcoin/90 text-white w-full"
                   >
                     <Check className="h-4 w-4 mr-2" />
                     Confirmar
@@ -308,15 +303,6 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
             required
           />
         </div>
-      </div>
-      
-      <div className="flex flex-col space-y-1.5">
-        <Label htmlFor="editOrigin">Origem do Aporte</Label>
-        <OriginSelector
-          selectedOrigin={origin}
-          onChange={setOrigin}
-          buttonType="button"
-        />
       </div>
       
       <div className="flex gap-4 pt-4">

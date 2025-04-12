@@ -8,7 +8,6 @@ import CurrencyField from '@/components/form/CurrencyField';
 import AmountField from '@/components/form/AmountField';
 import BtcAmountField from '@/components/form/BtcAmountField';
 import ExchangeRateField from '@/components/form/ExchangeRateField';
-import OriginField from '@/components/form/OriginField';
 import FormActions from '@/components/form/FormActions';
 import { useEntryFormLogic } from '@/components/form/EntryFormLogic';
 
@@ -18,8 +17,7 @@ interface EntryFormProps {
     btcAmount: number,
     exchangeRate: number,
     currency: 'BRL' | 'USD',
-    date: Date,
-    origin: 'corretora' | 'p2p'
+    date: Date
   ) => void;
   currentRate: { usd: number; brl: number };
   editingEntry?: {
@@ -29,13 +27,12 @@ interface EntryFormProps {
     btcAmount: number;
     exchangeRate: number;
     currency: 'BRL' | 'USD';
-    origin?: 'corretora' | 'p2p';
   };
   onCancelEdit?: () => void;
   displayUnit?: 'BTC' | 'SATS';
 }
 
-export const EntryForm: React.FC<EntryFormProps> = ({ 
+const EntryForm: React.FC<EntryFormProps> = ({ 
   onAddEntry, 
   currentRate, 
   editingEntry, 
@@ -51,12 +48,10 @@ export const EntryForm: React.FC<EntryFormProps> = ({
     exchangeRate,
     setExchangeRate,
     currency,
-    origin,
     date,
     setDate,
     parseLocalNumber,
     handleCurrencyChange,
-    handleOriginChange,
     calculateFromAmount,
     calculateFromBtc,
     useCurrentRate,
@@ -86,7 +81,7 @@ export const EntryForm: React.FC<EntryFormProps> = ({
       return;
     }
     
-    onAddEntry(parsedAmount, parsedBtc, parsedRate, currency, date, origin);
+    onAddEntry(parsedAmount, parsedBtc, parsedRate, currency, date);
     
     resetForm();
   };
@@ -130,11 +125,6 @@ export const EntryForm: React.FC<EntryFormProps> = ({
             exchangeRate={exchangeRate} 
             onExchangeRateChange={setExchangeRate} 
             onUseCurrentRate={useCurrentRate} 
-          />
-          
-          <OriginField
-            origin={origin}
-            onOriginChange={handleOriginChange}
           />
           
           <FormActions 

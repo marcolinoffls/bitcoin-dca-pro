@@ -23,9 +23,6 @@ export const useEntryFormLogic = (
   const [currency, setCurrency] = useState<'BRL' | 'USD'>(
     editingEntry ? editingEntry.currency : 'BRL'
   );
-  const [origin, setOrigin] = useState<'corretora' | 'p2p'>(
-    editingEntry ? editingEntry.origin || 'corretora' : 'corretora'
-  );
   const [date, setDate] = useState<Date>(
     editingEntry ? editingEntry.date : new Date()
   );
@@ -42,10 +39,6 @@ export const useEntryFormLogic = (
         formatNumber(newCurrency === 'USD' ? currentRate.usd : currentRate.brl)
       );
     }
-  };
-
-  const handleOriginChange = (newOrigin: 'corretora' | 'p2p') => {
-    setOrigin(newOrigin);
   };
 
   const calculateFromAmount = () => {
@@ -89,7 +82,6 @@ export const useEntryFormLogic = (
     setBtcAmount('');
     setExchangeRate('');
     setDate(new Date());
-    setOrigin('corretora');
   };
 
   return {
@@ -101,13 +93,10 @@ export const useEntryFormLogic = (
     setExchangeRate,
     currency,
     setCurrency,
-    origin,
-    setOrigin,
     date,
     setDate,
     parseLocalNumber,
     handleCurrencyChange,
-    handleOriginChange,
     calculateFromAmount,
     calculateFromBtc,
     useCurrentRate,
