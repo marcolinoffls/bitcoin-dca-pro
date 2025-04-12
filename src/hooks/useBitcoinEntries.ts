@@ -14,6 +14,7 @@
  * - Adicionado log detalhado para acompanhar a atualização dos aportes
  * - Garantida a invalidação do cache de queries após operações
  * - Melhorada a validação da data para garantir que seja salva corretamente
+ * - Melhorado o tratamento de erros e validação de datas
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -89,6 +90,12 @@ export const useBitcoinEntries = () => {
       throw new Error("Dados incompletos para criar aporte");
     }
     
+    // Garantir que a data é válida antes de enviar
+    if (!(date instanceof Date) || isNaN(date.getTime())) {
+      console.error('Data inválida para criação:', date);
+      throw new Error('Data inválida fornecida');
+    }
+    
     const { error } = await supabase.from('aportes').insert([{
       user_id: user.id,
       data_aporte: date.toISOString().split('T')[0],
@@ -125,10 +132,10 @@ export const useBitcoinEntries = () => {
     // Garantindo que a data é um objeto Date válido
     let dateToUpdate: Date;
     if (updatedFields.date) {
-      if (!(updatedFields.date instanceof Date)) {
-        dateToUpdate = new Date(updatedFields.date);
-      } else {
+      if (updatedFields.date instanceof Date) {
         dateToUpdate = updatedFields.date;
+      } else {
+        dateToUpdate = new Date(updatedFields.date);
       }
       
       // Verificar se a data é válida

@@ -19,6 +19,7 @@
  * - Garantida a atualização da lista de aportes após uma edição
  * - Adicionado console.log para mostrar a data selecionada antes de enviar ao Supabase
  * - Melhorada a validação e tratamento da data
+ * - Garantido que a data selecionada no calendário seja aplicada imediatamente
  */
 
 import React, { useState, useEffect } from 'react';
@@ -67,12 +68,25 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
   const [exchangeRateDisplay, setExchangeRateDisplay] = useState(formatNumber(entry.exchangeRate));
   const [currency, setCurrency] = useState<'BRL' | 'USD'>(entry.currency);
   const [origin, setOrigin] = useState<'corretora' | 'p2p'>(entry.origin || 'corretora');
-  const [date, setDate] = useState<Date>(entry.date);
+  
+  // Garantir que a data seja sempre uma instância de Date válida
+  const [date, setDate] = useState<Date>(() => {
+    const entryDate = entry.date;
+    return entryDate instanceof Date && !isNaN(entryDate.getTime())
+      ? new Date(entryDate)
+      : new Date();
+  });
 
   // Atualizamos a data quando o entry mudar, garantindo que seja sempre um objeto Date
   useEffect(() => {
     console.log('Entry atualizado, data original:', entry.date);
-    setDate(new Date(entry.date));
+    if (entry.date) {
+      const newDate = new Date(entry.date);
+      if (!isNaN(newDate.getTime())) {
+        setDate(newDate);
+        console.log('Data do entry convertida e atualizada:', newDate);
+      }
+    }
   }, [entry]);
 
   // Função para converter string em formato brasileiro para número
@@ -91,8 +105,12 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
 
   // Função para atualizar a data do aporte
   const handleDateChange = (newDate: Date) => {
-    console.log('Nova data selecionada:', newDate);
-    setDate(newDate);
+    console.log('Nova data selecionada em EntryEditForm:', newDate);
+    if (newDate instanceof Date && !isNaN(newDate.getTime())) {
+      setDate(newDate);
+    } else {
+      console.error('Data inválida recebida:', newDate);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

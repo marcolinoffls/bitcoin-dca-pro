@@ -22,6 +22,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
  * - Corrigido o problema de atualização de data que não era persistida
  * - Adicionado useEffect para atualizar tempDate quando date prop muda
  * - Melhorada a persistência da data selecionada
+ * - Garantido que a data seja aplicada instantaneamente ao ser selecionada
  */
 interface DatePickerFieldProps {
   date: Date;
@@ -36,12 +37,16 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange })
 
   // Atualiza o estado tempDate quando a prop date mudar
   useEffect(() => {
-    setTempDate(date);
+    if (date) {
+      setTempDate(new Date(date));
+      console.log('DatePickerField recebeu nova data:', date);
+    }
   }, [date]);
 
   // Define a data como hoje
   const setToday = () => {
     const today = new Date();
+    console.log('Definindo data para hoje:', today);
     onDateChange(today);
     setTempDate(today);
     setIsCalendarOpen(false);
@@ -52,6 +57,9 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange })
     if (newDate) {
       console.log('Data selecionada no calendário:', newDate);
       setTempDate(newDate);
+      
+      // Aplica a data imediatamente ao selecioná-la, sem precisar confirmar
+      onDateChange(newDate);
     }
   };
 

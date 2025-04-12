@@ -11,6 +11,7 @@
  * - Adicionados logs para monitorar as conversões de data
  * - Melhorada a manipulação dos valores para conversão correta entre string e number
  * - Adicionada verificação extra para garantir que a data seja formatada corretamente
+ * - Melhorada a validação e conversão de datas para garantir persistência no Supabase
  */
 
 import { BitcoinEntry, CurrentRate } from '@/types';
@@ -31,15 +32,21 @@ export const fetchBitcoinEntries = async () => {
   }
 
   // Convert Supabase data to app's BitcoinEntry format
-  const formattedEntries: BitcoinEntry[] = data?.map(entry => ({
-    id: entry.id,
-    date: new Date(entry.data_aporte),
-    amountInvested: Number(entry.valor_investido),
-    btcAmount: Number(entry.bitcoin),
-    exchangeRate: Number(entry.cotacao),
-    currency: entry.moeda as 'BRL' | 'USD',
-    origin: entry.origem_aporte as 'corretora' | 'p2p',
-  })) || [];
+  const formattedEntries: BitcoinEntry[] = data?.map(entry => {
+    // Garantir que a data seja um objeto Date válido
+    const entryDate = new Date(entry.data_aporte);
+    console.log(`Convertendo data do aporte ${entry.id}: ${entry.data_aporte} para objeto Date: ${entryDate}`);
+    
+    return {
+      id: entry.id,
+      date: entryDate,
+      amountInvested: Number(entry.valor_investido),
+      btcAmount: Number(entry.bitcoin),
+      exchangeRate: Number(entry.cotacao),
+      currency: entry.moeda as 'BRL' | 'USD',
+      origin: entry.origem_aporte as 'corretora' | 'p2p',
+    };
+  }) || [];
   
   return formattedEntries;
 };
@@ -56,6 +63,12 @@ export const createBitcoinEntry = async (
   date: Date,
   origin: 'corretora' | 'p2p'
 ) => {
+  // Validar se a data é válida
+  if (!(date instanceof Date) || isNaN(date.getTime())) {
+    console.error('Data inválida para criação:', date);
+    throw new Error('Data inválida fornecida para criação');
+  }
+  
   // Formata a data para o formato ISO (YYYY-MM-DD)
   const formattedDate = date.toISOString().split('T')[0];
   console.log('Data sendo enviada para criação:', formattedDate);
@@ -104,7 +117,7 @@ export const updateBitcoinEntry = async (
 ) => {
   // Garantir que a data é um objeto Date válido
   if (!(date instanceof Date) || isNaN(date.getTime())) {
-    console.error('Data inválida:', date);
+    console.error('Data inválida para atualização:', date);
     throw new Error('Data inválida fornecida para atualização');
   }
   
