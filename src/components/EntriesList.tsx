@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { BitcoinEntry, CurrentRate } from '@/types';
 import { calculatePercentageChange } from '@/services/bitcoinService';
@@ -63,7 +64,19 @@ const EntriesList: React.FC<EntriesListProps> = ({
     return (
       <Card className="mt-6">
         <CardHeader className="pb-3">
-          <CardTitle className={isMobile ? "text-lg" : "text-xl"}>Aportes Registrados</CardTitle>
+          <CardTitle className={isMobile ? "text-lg" : "text-xl"}>
+            <div className="flex items-center gap-2">
+              {/* Novo ícone para o card de Aportes Registrados */}
+              <div className="h-6 w-6">
+                <img 
+                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/aportes.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvYXBvcnRlcy5wbmciLCJpYXQiOjE3NDQ0OTcwNTAsImV4cCI6MTc3NjAzMzA1MH0.Fic9xEZ5xFZcXW5u3cmmtJeNpXKgBZFGGSw5TJ-5uh0" 
+                  alt="Aportes Registrados"
+                  className="h-full w-full object-contain"
+                />
+              </div>
+              Aportes Registrados
+            </div>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-center text-muted-foreground py-6">
@@ -201,13 +214,25 @@ const EntriesList: React.FC<EntriesListProps> = ({
     <>
       <Card className="mt-6">
         <CardHeader className="pb-3">
-          <CardTitle className={isMobile ? "text-lg" : "text-xl"}>Aportes Registrados</CardTitle>
+          <CardTitle className={isMobile ? "text-lg" : "text-xl"}>
+            <div className="flex items-center gap-2">
+              {/* Novo ícone para o card de Aportes Registrados */}
+              <div className="h-6 w-6">
+                <img 
+                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/aportes.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvYXBvcnRlcy5wbmciLCJpYXQiOjE3NDQ0OTcwNTAsImV4cCI6MTc3NjAzMzA1MH0.Fic9xEZ5xFZcXW5u3cmmtJeNpXKgBZFGGSw5TJ-5uh0" 
+                  alt="Aportes Registrados"
+                  className="h-full w-full object-contain"
+                />
+              </div>
+              Aportes Registrados
+            </div>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="brl" className="w-full" onValueChange={(value) => setViewCurrency(value as 'BRL' | 'USD')}>
             <TabsList className="mb-4 grid w-full grid-cols-2">
-              <TabsTrigger value="brl">Exibir em BRL (R$)</TabsTrigger>
-              <TabsTrigger value="usd">Exibir em USD ($)</TabsTrigger>
+              <TabsTrigger value="brl" className="rounded-l-md rounded-r-none border-r">Exibir em BRL (R$)</TabsTrigger>
+              <TabsTrigger value="usd" className="rounded-r-md rounded-l-none border-l">Exibir em USD ($)</TabsTrigger>
             </TabsList>
             <TabsContent value="brl">
               {renderEntriesTable('BRL')}
