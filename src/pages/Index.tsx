@@ -27,7 +27,7 @@ const Index = () => {
   const [selectedCurrency, setSelectedCurrency] = useState<'BRL' | 'USD'>('BRL');
   const [displayUnit, setDisplayUnit] = useState<'BTC' | 'SATS'>('BTC');
   const isMobile = useIsMobile();
-  const { user, signOut } = useAuth();
+  const { signOut } = useAuth();
 
   const toggleDisplayUnit = (value: 'BTC' | 'SATS') => {
     setDisplayUnit(value);
@@ -60,11 +60,6 @@ const Index = () => {
             <p className={`text-muted-foreground ${isMobile ? "text-xs" : ""}`}>
               Stay Humble and Stack Sats
             </p>
-            {user && (
-              <p className="text-xs text-muted-foreground">
-                Logado como: {user.email}
-              </p>
-            )}
           </div>
         </header>
 

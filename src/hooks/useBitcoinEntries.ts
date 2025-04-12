@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { BitcoinEntry } from '@/types';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useBitcoinRate } from '@/hooks/useBitcoinRate';
 import { 
