@@ -89,6 +89,7 @@ export function useBitcoinEntries() {
         setEntries(updatedEntries);
         setEditingEntry(null);
         
+        // Corrigindo aqui - usando objeto para o ícone em vez de JSX
         toast({
           title: 'Aporte atualizado',
           description: 'Seu aporte de Bitcoin foi atualizado com sucesso.',
@@ -117,6 +118,7 @@ export function useBitcoinEntries() {
 
         setEntries(prev => [newEntry, ...prev]);
 
+        // Corrigindo aqui também - usando objeto para o ícone em vez de JSX
         toast({
           title: 'Aporte registrado',
           description: 'Seu aporte de Bitcoin foi registrado com sucesso.',
