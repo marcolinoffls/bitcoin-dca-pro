@@ -129,7 +129,6 @@ const ResetPassword = () => {
       <Card className="w-full max-w-md rounded-xl shadow-lg border-0">
         <CardHeader className="text-center pb-6">
           <div className="flex items-center justify-center mb-4">
-            {/* Ajuste do ícone e alinhamento do título em uma única linha */}
             <img 
               src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/bitcoin.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvYml0Y29pbi5wbmciLCJpYXQiOjE3NDQ0OTkzNDksImV4cCI6MTc3NjAzNTM0OX0.UMcsJt0r9ZhEcYmAtfv2QvtADaIshCKaTmKjD8oCAjo" 
               alt="Bitcoin" 
