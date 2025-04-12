@@ -19,20 +19,3 @@ export function formatNumber(value: number, decimals: number = 2): string {
     maximumFractionDigits: decimals
   });
 }
-
-/**
- * Formata um valor numérico como moeda
- * @param value Valor a ser formatado
- * @param currency Moeda (BRL ou USD)
- * @returns String formatada como valor monetário
- */
-export function formatCurrency(value: number, currency: 'BRL' | 'USD'): string {
-  const formatter = new Intl.NumberFormat(currency === 'BRL' ? 'pt-BR' : 'en-US', {
-    style: 'currency',
-    currency: currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
-  
-  return formatter.format(value);
-}

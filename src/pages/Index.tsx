@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useBitcoinEntries } from '@/hooks/useBitcoinEntries';
 import EntryForm from '@/components/EntryForm';
@@ -27,7 +26,7 @@ const Index = () => {
   const [selectedCurrency, setSelectedCurrency] = useState<'BRL' | 'USD'>('BRL');
   const [displayUnit, setDisplayUnit] = useState<'BTC' | 'SATS'>('BTC');
   const isMobile = useIsMobile();
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
 
   const toggleDisplayUnit = (value: 'BTC' | 'SATS') => {
     setDisplayUnit(value);
