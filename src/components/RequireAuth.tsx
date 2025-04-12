@@ -11,6 +11,9 @@ const RequireAuth = ({ children }: RequireAuthProps) => {
   const { user, loading } = useAuth();
   const location = useLocation();
 
+  // Verificamos se estamos na página de reset password
+  const isResetPasswordPage = location.pathname === '/reset-password';
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -19,6 +22,12 @@ const RequireAuth = ({ children }: RequireAuthProps) => {
     );
   }
 
+  // Se for a página de reset password, permitimos o acesso mesmo sem usuário logado
+  if (isResetPasswordPage) {
+    return <>{children}</>;
+  }
+
+  // Para outras páginas, verificamos se o usuário está autenticado
   if (!user) {
     // Redirect to login page but save the attempted location
     return <Navigate to="/auth" state={{ from: location }} replace />;

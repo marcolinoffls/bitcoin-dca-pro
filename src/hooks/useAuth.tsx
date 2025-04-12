@@ -25,27 +25,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, newSession) => {
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
+        console.log("Evento de autenticação detectado:", event);
+        
+        // Se o evento for PASSWORD_RECOVERY, não atualizamos o estado de sessão
+        // para evitar redirecionamento automático
+        if (event !== 'PASSWORD_RECOVERY') {
+          setSession(newSession);
+          setUser(newSession?.user ?? null);
+        }
         
         if (event === 'SIGNED_IN') {
-          toast({
-            title: "Login bem-sucedido",
-            description: "Bem-vindo de volta!",
-          });
+          // Verificamos se estamos na página de reset-password
+          const isResetPasswordPage = window.location.pathname.includes('reset-password');
+          
+          // Só mostramos o toast de login bem-sucedido se não estivermos na página de reset
+          if (!isResetPasswordPage) {
+            toast({
+              title: "Login bem-sucedido",
+              description: "Bem-vindo de volta!",
+            });
+          }
         } else if (event === 'SIGNED_OUT') {
           toast({
             title: "Logout efetuado",
             description: "Você saiu com sucesso.",
           });
         } else if (event === 'PASSWORD_RECOVERY') {
-          // This event is triggered when a user clicks the password reset link
-          toast({
-            title: "Redefinição de senha",
-            description: "Por favor, defina sua nova senha.",
-          });
+          // Deixamos o componente ResetPassword lidar com este evento
+          console.log("Evento de recuperação de senha detectado");
         } else if (event === 'USER_UPDATED') {
-          // This event is triggered when a user updates their profile
           toast({
             title: "Perfil atualizado",
             description: "Suas informações foram atualizadas com sucesso.",
@@ -56,8 +64,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session: newSession } }) => {
-      setSession(newSession);
-      setUser(newSession?.user ?? null);
+      // Verificamos se estamos na página de reset-password
+      const isResetPasswordPage = window.location.pathname.includes('reset-password');
+      
+      // Se estivermos na página de reset, não atualizamos o estado da sessão
+      if (!isResetPasswordPage || !window.location.hash.includes('access_token')) {
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+      }
+      
       setLoading(false);
     });
 

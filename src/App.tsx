@@ -32,6 +32,7 @@ const App = () => {
           <BrowserRouter>
             <Routes>
               <Route path="/auth" element={<Auth />} />
+              {/* A rota de reset-password não tem RequireAuth para permitir acesso mesmo sem login */}
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/" element={
                 <RequireAuth>
