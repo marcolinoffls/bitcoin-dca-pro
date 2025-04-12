@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { BitcoinEntry, CurrentRate } from '@/types';
 import { calculatePercentageChange } from '@/services/bitcoinService';
@@ -66,10 +65,9 @@ const EntriesList: React.FC<EntriesListProps> = ({
         <CardHeader className="pb-3">
           <CardTitle className={isMobile ? "text-lg" : "text-xl"}>
             <div className="flex items-center gap-2">
-              {/* Novo ícone para o card de Aportes Registrados */}
               <div className="h-6 w-6">
                 <img 
-                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/aportes.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvYXBvcnRlcy5wbmciLCJpYXQiOjE3NDQ0OTcwNTAsImV4cCI6MTc3NjAzMzA1MH0.Fic9xEZ5xFZcXW5u3cmmtJeNpXKgBZFGGSw5TJ-5uh0" 
+                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/aportes.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvYXBvcnRlcy5wbmciLCJpYXQiOjE3NDQ0OTc3MTMsImV4cCI6MTc3NjAzMzcxM30.ofk3Ocv9aFS_BI19nsngxNbJYjw10do5u3RjTgWrOTo" 
                   alt="Aportes Registrados"
                   className="h-full w-full object-contain"
                 />
@@ -216,10 +214,9 @@ const EntriesList: React.FC<EntriesListProps> = ({
         <CardHeader className="pb-3">
           <CardTitle className={isMobile ? "text-lg" : "text-xl"}>
             <div className="flex items-center gap-2">
-              {/* Novo ícone para o card de Aportes Registrados */}
               <div className="h-6 w-6">
                 <img 
-                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/aportes.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvYXBvcnRlcy5wbmciLCJpYXQiOjE3NDQ0OTcwNTAsImV4cCI6MTc3NjAzMzA1MH0.Fic9xEZ5xFZcXW5u3cmmtJeNpXKgBZFGGSw5TJ-5uh0" 
+                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/aportes.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvYXBvcnRlcy5wbmciLCJpYXQiOjE3NDQ0OTc3MTMsImV4cCI6MTc3NjAzMzcxM30.ofk3Ocv9aFS_BI19nsngxNbJYjw10do5u3RjTgWrOTo" 
                   alt="Aportes Registrados"
                   className="h-full w-full object-contain"
                 />
