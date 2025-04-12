@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useBitcoinEntries } from '@/hooks/useBitcoinEntries';
-import { EntryForm } from '@/components/EntryForm';
+import EntryForm from '@/components/EntryForm';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -24,7 +24,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import EntryEditForm from '@/components/EntryEditForm';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -75,8 +74,6 @@ const Index = () => {
 
   return (
     <div className="container py-6 max-w-7xl">
-      {/* Add a button or link to the statistics page in your layout
-      For example, add this in the header section: */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold flex items-center">
           <Bitcoin className="h-7 w-7 text-bitcoin mr-2" />
