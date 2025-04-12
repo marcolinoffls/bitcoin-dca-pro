@@ -1,9 +1,9 @@
 
 import React from 'react';
 import { Label } from '@/components/ui/label';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Building, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 /**
  * Componente que permite selecionar a origem do aporte (corretora ou p2p)
@@ -23,37 +23,37 @@ const OriginSelector: React.FC<OriginSelectorProps> = ({
   return (
     <div className="flex flex-col space-y-3 mt-6">
       <Label htmlFor="origin">Origem do aporte</Label>
-      <ToggleGroup 
-        type="single" 
-        value={origin} 
-        onValueChange={(value) => {
-          if (value) onOriginChange(value as 'corretora' | 'p2p');
-        }}
-        className="flex gap-2"
-      >
-        <ToggleGroupItem 
-          value="corretora" 
-          aria-label="Corretora"
+      
+      {/* Container para os botões com estilo semelhante ao CurrencySelector */}
+      <div className="flex space-x-1 rounded-md bg-muted p-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onOriginChange('corretora')}
           className={cn(
-            "flex-1 gap-1 rounded-lg data-[state=on]:bg-bitcoin data-[state=on]:text-white",
-            "border border-input bg-muted hover:bg-muted/80"
+            'flex-1 text-xs font-normal gap-1',
+            origin === 'corretora' && 'bg-bitcoin text-white hover:bg-bitcoin/90'
           )}
+          type="button"
         >
           <Building className="h-4 w-4" />
           <span>Corretora</span>
-        </ToggleGroupItem>
-        <ToggleGroupItem 
-          value="p2p" 
-          aria-label="P2P"
+        </Button>
+        
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onOriginChange('p2p')}
           className={cn(
-            "flex-1 gap-1 rounded-lg data-[state=on]:bg-bitcoin data-[state=on]:text-white",
-            "border border-input bg-muted hover:bg-muted/80"
+            'flex-1 text-xs font-normal gap-1',
+            origin === 'p2p' && 'bg-bitcoin text-white hover:bg-bitcoin/90'
           )}
+          type="button"
         >
           <Users className="h-4 w-4" />
           <span>P2P</span>
-        </ToggleGroupItem>
-      </ToggleGroup>
+        </Button>
+      </div>
     </div>
   );
 };
