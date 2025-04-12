@@ -125,7 +125,7 @@ const Auth = () => {
         <CardHeader className="text-center pb-6">
           <div className="flex items-center justify-center mb-4">
             <Bitcoin size={40} className="text-bitcoin mr-2" />
-            <CardTitle className="text-3xl font-bold">Bitcoin DCA Pro</CardTitle>
+            <CardTitle className="text-3xl font-bold">BITCOIN DCA PRO</CardTitle>
           </div>
           <CardDescription>
             Gerencie seus aportes de Bitcoin com facilidade e segurança
