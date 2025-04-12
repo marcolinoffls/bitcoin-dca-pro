@@ -1,71 +1,36 @@
 
 import { useState, useEffect } from 'react';
-import { BitcoinEntry, CurrentRate } from '@/types';
-import { v4 as uuidv4 } from 'uuid';
+import { BitcoinEntry } from '@/types';
 import { useToast } from '@/components/ui/use-toast';
-import { fetchCurrentBitcoinRate } from '@/services/bitcoinService';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useBitcoinRate } from '@/hooks/useBitcoinRate';
+import { 
+  fetchBitcoinEntries, 
+  createBitcoinEntry, 
+  updateBitcoinEntry, 
+  deleteBitcoinEntry 
+} from '@/services/bitcoinEntryService';
 
 export function useBitcoinEntries() {
   const [entries, setEntries] = useState<BitcoinEntry[]>([]);
-  const [currentRate, setCurrentRate] = useState<CurrentRate>({
-    usd: 0,
-    brl: 0,
-    timestamp: new Date(),
-  });
-  const [isLoading, setIsLoading] = useState(true);
   const [editingEntry, setEditingEntry] = useState<BitcoinEntry | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
+  const { currentRate, isLoading, updateCurrentRate } = useBitcoinRate();
 
   useEffect(() => {
     // Only fetch entries if user is logged in
     if (user) {
-      fetchEntries();
+      loadEntries();
     }
-    
-    // Always fetch current BTC rate
-    updateCurrentRate();
   }, [user]);
 
-  // Update the quote every 5 minutes
-  useEffect(() => {
-    const interval = setInterval(() => {
-      updateCurrentRate();
-    }, 5 * 60 * 1000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchEntries = async () => {
+  const loadEntries = async () => {
     if (!user) return;
     
-    setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('aportes')
-        .select('*')
-        .order('data_aporte', { ascending: false });
-
-      if (error) {
-        throw error;
-      }
-
-      if (data) {
-        // Convert Supabase data to app's BitcoinEntry format
-        const formattedEntries: BitcoinEntry[] = data.map(entry => ({
-          id: entry.id,
-          date: new Date(entry.data_aporte),
-          amountInvested: Number(entry.valor_investido),
-          btcAmount: Number(entry.bitcoin),
-          exchangeRate: Number(entry.cotacao),
-          currency: entry.moeda as 'BRL' | 'USD',
-          origin: entry.origem_aporte as 'corretora' | 'p2p',
-        }));
-        
-        setEntries(formattedEntries);
-      }
+      const data = await fetchBitcoinEntries();
+      setEntries(data);
     } catch (error) {
       console.error('Error fetching entries:', error);
       toast({
@@ -73,25 +38,6 @@ export function useBitcoinEntries() {
         description: 'Não foi possível carregar seus aportes do banco de dados.',
         variant: 'destructive',
       });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const updateCurrentRate = async () => {
-    setIsLoading(true);
-    try {
-      const rate = await fetchCurrentBitcoinRate();
-      setCurrentRate(rate);
-    } catch (error) {
-      console.error('Failed to fetch current rate:', error);
-      toast({
-        title: 'Erro ao buscar cotação',
-        description: 'Não foi possível atualizar a cotação atual do Bitcoin.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -113,22 +59,16 @@ export function useBitcoinEntries() {
     }
 
     if (editingEntry) {
-      // Update existing entry in Supabase
       try {
-        const { error } = await supabase
-          .from('aportes')
-          .update({
-            data_aporte: date.toISOString().split('T')[0],
-            moeda: currency,
-            cotacao_moeda: currency, // Set the currency used for the exchange rate
-            valor_investido: amountInvested,
-            bitcoin: btcAmount,
-            cotacao: exchangeRate,
-            origem_aporte: origin
-          })
-          .eq('id', editingEntry.id);
-
-        if (error) throw error;
+        await updateBitcoinEntry(
+          editingEntry.id,
+          amountInvested,
+          btcAmount,
+          exchangeRate,
+          currency,
+          date,
+          origin
+        );
 
         // Update local state
         const updatedEntries = entries.map(entry => 
@@ -161,35 +101,16 @@ export function useBitcoinEntries() {
         });
       }
     } else {
-      // Add new entry to Supabase
       try {
-        const newEntryId = uuidv4();
-        const { error } = await supabase
-          .from('aportes')
-          .insert({
-            id: newEntryId,
-            data_aporte: date.toISOString().split('T')[0],
-            moeda: currency,
-            cotacao_moeda: currency, // Store the currency of the exchange rate
-            valor_investido: amountInvested,
-            bitcoin: btcAmount,
-            cotacao: exchangeRate,
-            origem_aporte: origin,
-            user_id: user.id // Set the user_id from the authenticated user
-          });
-
-        if (error) throw error;
-
-        // Add to local state
-        const newEntry: BitcoinEntry = {
-          id: newEntryId,
-          date,
+        const newEntry = await createBitcoinEntry(
+          user.id,
           amountInvested,
           btcAmount,
           exchangeRate,
           currency,
-          origin,
-        };
+          date,
+          origin
+        );
 
         setEntries(prev => [newEntry, ...prev]);
 
@@ -223,12 +144,7 @@ export function useBitcoinEntries() {
     if (!user) return;
     
     try {
-      const { error } = await supabase
-        .from('aportes')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
+      await deleteBitcoinEntry(id);
 
       // Update local state
       const updatedEntries = entries.filter((entry) => entry.id !== id);
