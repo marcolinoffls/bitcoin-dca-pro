@@ -1,41 +1,28 @@
+
 /**
  * Campo para informar a cotação do Bitcoin no momento da compra.
- * Contém botão para preencher com a cotação atual automaticamente.
+ * Removido o botão para preencher com a cotação atual automaticamente.
  */
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
 
 interface ExchangeRateFieldProps {
   currency: 'BRL' | 'USD';
   exchangeRate: number | string;
   onExchangeRateChange: (rate: string) => void;
-  onUseCurrentRate: () => void;
   displayValue: string;
 }
 
 const ExchangeRateField: React.FC<ExchangeRateFieldProps> = ({ 
   currency, 
   onExchangeRateChange, 
-  onUseCurrentRate,
   displayValue 
 }) => {
   return (
     <div className="flex flex-col space-y-3 mt-6">
       <div className="flex justify-between items-center">
         <Label htmlFor="exchangeRate">Cotação no momento da compra</Label>
-        <Button 
-          type="button" 
-          variant="outline" 
-          size="sm" 
-          onClick={onUseCurrentRate} 
-          className="h-8 text-xs rounded-full border border-muted hover:border-bitcoin hover:text-bitcoin transition-colors"
-        >
-          <RefreshCw className="h-3.5 w-3.5 mr-1" />
-          Usar cotação atual
-        </Button>
       </div>
       <div className="relative">
         <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-muted-foreground">

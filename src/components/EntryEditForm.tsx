@@ -12,6 +12,11 @@
  *    - currentRate: cotação atual do Bitcoin
  *    - onClose: função para fechar o modal
  *    - displayUnit: unidade usada para exibir BTC ou SATS
+ * 
+ * Atualizações:
+ * - Removido o botão "Usar cotação atual"
+ * - Garantido que a lista de aportes seja atualizada após a edição
+ * - Campos de valor e BTC são agora completamente independentes
  */
 
 import React, { useRef, useState } from 'react';
@@ -70,29 +75,12 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
     return parseFloat(value.replace(/\./g, '').replace(',', '.'));
   };
 
-  const formatCurrency = (value: number, currencyType: 'BRL' | 'USD'): string => {
-    return value.toLocaleString('pt-BR', {
-      style: 'currency',
-      currency: currencyType,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-  };
-
   const handleCurrencyChange = (newCurrency: 'BRL' | 'USD') => {
     setCurrency(newCurrency);
     if (currentRate) {
       const newRate = newCurrency === 'USD' ? currentRate.usd : currentRate.brl;
       setExchangeRate(newRate);
-      setExchangeRateDisplay(formatCurrency(newRate, newCurrency));
-    }
-  };
-
-  const useCurrentRate = () => {
-    if (currentRate) {
-      const rate = currency === 'USD' ? currentRate.usd : currentRate.brl;
-      setExchangeRate(rate);
-      setExchangeRateDisplay(formatCurrency(rate, currency));
+      setExchangeRateDisplay(formatNumber(newRate));
     }
   };
 
@@ -240,25 +228,15 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
               placeholder="0,00"
               value={amountInvested}
               onChange={(e) => {
-                const input = e.target.value;
-                // Substitui pontos por vírgulas para compatibilidade com formato brasileiro
-                const formattedInput = input.replace(/\./g, ',');
+                // Apenas atualiza o valor do campo, sem recalcular o BTC
+                const formattedInput = e.target.value.replace(/\./g, ',');
                 
-                if (input === '0.') {
+                if (e.target.value === '0.') {
                   setAmountInvested('0,');
                   return;
                 }
 
                 setAmountInvested(formattedInput);
-                const amount = parseLocalNumber(formattedInput);
-                if (!isNaN(amount) && exchangeRate > 0) {
-                  const btc = amount / exchangeRate;
-                  if (displayUnit === 'SATS') {
-                    setBtcAmount(formatNumber(btc * 100000000, 0));
-                  } else {
-                    setBtcAmount(formatNumber(btc, 8));
-                  }
-                }
               }}
               className="pl-8 rounded-xl"
               type="text"
@@ -273,18 +251,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
 
       {/* Cotação */}
       <div className="flex flex-col space-y-1.5 mt-4">
-        <div className="flex justify-between">
-          <Label>Cotação no momento da compra</Label>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={useCurrentRate}
-            className="h-6 text-xs"
-          >
-            Usar cotação atual
-          </Button>
-        </div>
+        <Label>Cotação no momento da compra</Label>
         <div className="relative">
           <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-muted-foreground">
             {currency === 'USD' ? '$' : 'R$'}

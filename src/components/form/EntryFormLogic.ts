@@ -103,16 +103,6 @@ export const useEntryFormLogic = (
   };
 
   /**
-   * Permite que o usuário use a cotação atual como base
-   */
-  const useCurrentRate = () => {
-    if (!currentRate) return;
-    const rate = currency === 'USD' ? currentRate.usd : currentRate.brl;
-    setExchangeRate(rate);
-    setExchangeRateDisplay(formatCurrency(rate, currency));
-  };
-
-  /**
    * Atualiza o valor da cotação manualmente
    */
   const handleExchangeRateChange = (displayValue: string) => {
@@ -124,7 +114,9 @@ export const useEntryFormLogic = (
   };
 
   /**
-   * Calcula automaticamente o valor em BTC ou SATS com base no valor investido
+   * Calcula manualmente o valor em BTC ou SATS com base no valor investido
+   * Esta função agora só é chamada quando o usuário clica no botão de calcular,
+   * e não mais automaticamente quando o valor investido é alterado
    */
   const calculateFromAmount = () => {
     const parsedAmount = parseLocalNumber(amountInvested);
@@ -140,7 +132,9 @@ export const useEntryFormLogic = (
   };
 
   /**
-   * Calcula automaticamente o valor em BRL/USD com base na quantidade de BTC/SATS
+   * Calcula manualmente o valor em BRL/USD com base na quantidade de BTC/SATS
+   * Esta função agora só é chamada quando o usuário clica no botão de calcular,
+   * e não mais automaticamente quando a quantidade de BTC/SATS é alterada
    */
   const calculateFromBtc = () => {
     const parsedBtc = parseLocalNumber(btcAmount);
@@ -180,7 +174,6 @@ export const useEntryFormLogic = (
     parseLocalNumber,
     handleCurrencyChange,
     handleExchangeRateChange,
-    useCurrentRate,
     calculateFromAmount,
     calculateFromBtc,
     handleOriginChange: setOrigin,

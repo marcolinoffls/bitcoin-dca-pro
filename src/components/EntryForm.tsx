@@ -1,3 +1,4 @@
+
 /**
  * Componente: EntryForm
  * 
@@ -14,6 +15,8 @@
  * 
  * Correção aplicada:
  * - Agora, ao cancelar a edição, o formulário principal é **resetado** e retorna ao modo original.
+ * - Removido o botão "Usar cotação atual" para evitar inconsistências
+ * - Campos de valor e quantidade de BTC são totalmente independentes
  */
 
 import React, { useEffect } from 'react';
@@ -79,7 +82,6 @@ const EntryForm: React.FC<EntryFormProps> = ({
     handleOriginChange,
     calculateFromAmount,
     calculateFromBtc,
-    useCurrentRate,
     reset
   } = useEntryFormLogic(editingEntry, currentRate, displayUnit);
 
@@ -167,7 +169,6 @@ const EntryForm: React.FC<EntryFormProps> = ({
             exchangeRate={exchangeRate}
             displayValue={exchangeRateDisplay}
             onExchangeRateChange={handleExchangeRateChange} 
-            onUseCurrentRate={useCurrentRate} 
           />
 
           {/* Origem (Corretora ou P2P) */}
