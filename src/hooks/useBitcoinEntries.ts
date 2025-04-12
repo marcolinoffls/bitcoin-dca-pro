@@ -120,7 +120,7 @@ export function useBitcoinEntries() {
           title: 'Aporte registrado',
           description: 'Seu aporte de Bitcoin foi registrado com sucesso.',
           variant: 'success',
-          icon: <CheckCircle className="h-5 w-5 text-green-500" />,
+          icon: <CheckCircle className="h-5 w-5 text-green-500" />
         });
       } catch (error) {
         console.error('Error adding entry:', error);
