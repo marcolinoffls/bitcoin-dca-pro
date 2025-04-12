@@ -130,9 +130,9 @@ const EntryForm: React.FC<EntryFormProps> = ({
       <CardHeader className={isMobile ? 'pb-2' : 'pb-3'}>
         <CardTitle className={`${isMobile ? 'text-lg' : 'text-xl'} flex items-center gap-2`}>
           {/* Novo ícone para o card de Registrar Novo Aporte */}
-          <div className="h-6 w-6">
+          <div className="h-8 w-8">
             <img 
-              src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/novo-aporte.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvbm92by1hcG9ydGUucG5nIiwiaWF0IjoxNzQ0NDk2OTEwLCJleHAiOjE3NzYwMzI5MTB9.QQm5ch_3pcU9scA_w9wq4dJTBdYxKezx__logBQAk-o" 
+              src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/bitcoin%20novo%20aporte.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvYml0Y29pbiBub3ZvIGFwb3J0ZS5wbmciLCJpYXQiOjE3NDQ0OTQ5NzMsImV4cCI6MTc3NjAzMDk3M30.XWJ4YhIcFHwbzD7F3UquWmIzuoqZ743JhN6ygCfd-ME" 
               alt="Novo Aporte"
               className="h-full w-full object-contain"
             />
