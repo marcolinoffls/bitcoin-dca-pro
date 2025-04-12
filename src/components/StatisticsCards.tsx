@@ -6,6 +6,7 @@ import { calculateTotalBitcoin, calculateAverageByPeriod } from '@/services/bitc
 import { Bitcoin, TrendingUp } from 'lucide-react';
 import { formatNumber } from '@/lib/utils';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import BitcoinTotalCard from './BitcoinTotalCard';
 
 interface StatisticsCardsProps {
   entries: BitcoinEntry[];
@@ -30,7 +31,6 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
   selectedCurrency,
   displayUnit,
 }) => {
-  const totalBitcoin = calculateTotalBitcoin(entries);
   const [selectedPeriod, setSelectedPeriod] = useState<'month' | 'year' | 'all'>('month');
   
   // Calcula o preço médio com base na seleção de moeda
@@ -62,45 +62,16 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
   // Adicionando verificações de segurança
   const currentRateValue = currentRate && selectedCurrency === 'USD' ? currentRate.usd : currentRate?.brl || 0;
   const currencySymbol = selectedCurrency === 'USD' ? '$' : 'R$';
-  
-  // Garantindo que totalValueCurrent seja calculado apenas se currentRateValue não for nulo
-  const totalValueCurrent = totalBitcoin * (currentRateValue || 0);
-
-  // Format total Bitcoin amount based on display unit
-  const formattedTotalBitcoin = displayUnit === 'SATS' 
-    ? `${formatNumber(totalBitcoin * 100000000, 0)} SATS`
-    : `${formatNumber(totalBitcoin, 8)} BTC`;
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Total Bitcoin Card */}
-      <Card className="overflow-hidden rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-200 relative">
-        <div className="absolute top-0 right-0 h-16 w-16 overflow-hidden">
-          <div className="bg-bitcoin/30 rounded-full h-24 w-24 -translate-y-8 translate-x-8"></div>
-        </div>
-        <div className="absolute bottom-0 left-0 h-12 w-12 overflow-hidden">
-          <div className="bg-bitcoin/20 rounded-full h-20 w-20 translate-y-10 -translate-x-10"></div>
-        </div>
-        <CardHeader className="flex flex-row items-center justify-between pb-1 p-4 z-10 relative">
-          <div className="flex items-center gap-2">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-bitcoin/10">
-              <Bitcoin className="h-5 w-5 text-bitcoin" />
-            </div>
-            <CardTitle className="text-sm text-gray-500">Total em {displayUnit === 'SATS' ? 'Satoshis' : 'Bitcoin'}</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="p-4 pt-0 z-10 relative">
-          <div className="flex flex-col h-full">
-            <div className="text-sm text-muted-foreground mb-1">
-              {displayUnit === 'SATS' ? 'SATS' : 'BTC'}
-            </div>
-            <div className="text-2xl font-bold mb-1">{formattedTotalBitcoin.split(' ')[0]}</div>
-            <p className="text-xs text-muted-foreground">
-              Valor atual: {currencySymbol} {formatNumber(totalValueCurrent)}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Novo componente de Bitcoin Total */}
+      <BitcoinTotalCard 
+        entries={entries}
+        currentRate={currentRate}
+        selectedCurrency={selectedCurrency}
+        displayUnit={displayUnit}
+      />
       
       {/* Average Price Card */}
       <Card className="overflow-hidden rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-200">

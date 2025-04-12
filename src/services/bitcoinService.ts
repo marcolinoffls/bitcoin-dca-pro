@@ -38,6 +38,29 @@ export const calculateTotalBitcoin = (entries: BitcoinEntry[]): number => {
 };
 
 /**
+ * Calcula o total investido em todos os aportes na moeda selecionada
+ * @param entries Lista de aportes
+ * @param selectedCurrency Moeda selecionada ('BRL' ou 'USD')
+ * @param conversionRate Taxa de conversão entre BRL e USD
+ * @returns Soma total do valor investido
+ */
+export const calculateTotalInvested = (
+  entries: BitcoinEntry[],
+  selectedCurrency: 'BRL' | 'USD',
+  conversionRate: number
+): number => {
+  return entries.reduce((total, entry) => {
+    // Se a moeda do aporte for diferente da selecionada, fazemos a conversão
+    if (entry.currency !== selectedCurrency) {
+      return total + (entry.currency === 'USD' 
+        ? entry.amountInvested * (1 / conversionRate) 
+        : entry.amountInvested * conversionRate);
+    }
+    return total + entry.amountInvested;
+  }, 0);
+};
+
+/**
  * Calcula a variação percentual entre duas taxas
  * @param buyRate Taxa de compra
  * @param currentRate Taxa atual
