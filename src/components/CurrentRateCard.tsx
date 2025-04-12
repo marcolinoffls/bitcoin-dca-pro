@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CurrentRate } from '@/types';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Bitcoin } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatNumber } from '@/lib/utils';
@@ -28,10 +28,15 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
     <Card className="rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-200">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 p-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-bitcoin/10">
-            <Bitcoin className="h-5 w-5 text-bitcoin" />
+          {/* Novo ícone para o card de cotação */}
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center">
+            <img 
+              src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/cotacao2.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvY290YWNhbzIucG5nIiwiaWF0IjoxNzQ0NDk0OTQ3LCJleHAiOjE3NzYwMzA5NDd9.BfI3QoE04vzVymR6NeozvULuTX_6pXHWm51uI5cUZ-U" 
+              alt="Cotação Bitcoin"
+              className="h-full w-full object-contain"
+            />
           </div>
-          <CardTitle className="text-sm text-gray-500">Cotação Atual do Bitcoin</CardTitle>
+          <CardTitle className="text-sm font-medium text-gray-500">Cotação Atual do Bitcoin</CardTitle>
         </div>
       </CardHeader>
       <CardContent className="p-3 pt-0">

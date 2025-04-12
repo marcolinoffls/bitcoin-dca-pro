@@ -21,8 +21,6 @@
 
 import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bitcoin } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
 import DatePickerField from '@/components/form/DatePickerField';
 import CurrencyField from '@/components/form/CurrencyField';
 import AmountField from '@/components/form/AmountField';
@@ -31,6 +29,7 @@ import ExchangeRateField from '@/components/form/ExchangeRateField';
 import OriginSelector from '@/components/form/OriginSelector';
 import FormActions from '@/components/form/FormActions';
 import { useEntryFormLogic } from '@/components/form/EntryFormLogic';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface EntryFormProps {
   onAddEntry: (
@@ -130,7 +129,14 @@ const EntryForm: React.FC<EntryFormProps> = ({
     <Card className="rounded-xl shadow-md hover:shadow-lg transition-all duration-200">
       <CardHeader className={isMobile ? 'pb-2' : 'pb-3'}>
         <CardTitle className={`${isMobile ? 'text-lg' : 'text-xl'} flex items-center gap-2`}>
-          <Bitcoin className={`${isMobile ? 'h-5 w-5' : 'h-6 w-6'} text-bitcoin`} />
+          {/* Novo ícone para o card de Registrar Novo Aporte */}
+          <div className="h-6 w-6">
+            <img 
+              src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/bitcoin%20novo%20aporte.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvYml0Y29pbiBub3ZvIGFwb3J0ZS5wbmciLCJpYXQiOjE3NDQ0OTQ5NzMsImV4cCI6MTc3NjAzMDk3M30.XWJ4YhIcFHwbzD7F3UquWmIzuoqZ743JhN6ygCfd-ME" 
+              alt="Novo Aporte"
+              className="h-full w-full object-contain"
+            />
+          </div>
           {editingEntry ? 'Editar Aporte' : 'Registrar Novo Aporte'}
         </CardTitle>
       </CardHeader>

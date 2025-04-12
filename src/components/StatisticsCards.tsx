@@ -1,9 +1,7 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BitcoinEntry, CurrentRate } from '@/types';
 import { calculateTotalBitcoin, calculateAverageByPeriod } from '@/services/bitcoinService';
-import { Bitcoin, TrendingUp } from 'lucide-react';
 import { formatNumber } from '@/lib/utils';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import BitcoinTotalCard from './BitcoinTotalCard';
@@ -77,10 +75,14 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
       <Card className="overflow-hidden rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-200">
         <CardHeader className="flex flex-row items-center justify-between pb-1 p-4">
           <div className="flex items-center gap-2">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/20">
-              <TrendingUp className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center">
+              <img 
+                src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/bitcoin%20grafico%2064px.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvYml0Y29pbiBncmFmaWNvIDY0cHgucG5nIiwiaWF0IjoxNzQ0NDk0OTkyLCJleHAiOjE3NzYwMzA5OTJ9.LHwThGNSMBU4auNGBV4TbDIu9oeXjYIwcH2jqGxB6oM" 
+                alt="Preço Médio"
+                className="h-full w-full object-contain"
+              />
             </div>
-            <CardTitle className="text-sm text-gray-500">
+            <CardTitle className="text-sm font-medium text-gray-500">
               Preço Médio
             </CardTitle>
           </div>

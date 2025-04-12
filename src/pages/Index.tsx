@@ -5,7 +5,7 @@ import EntryForm from '@/components/EntryForm';
 import EntriesList from '@/components/EntriesList';
 import StatisticsCards from '@/components/StatisticsCards';
 import CurrentRateCard from '@/components/CurrentRateCard';
-import { Bitcoin, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import ToggleDisplayUnit from '@/components/ToggleDisplayUnit';
 import ToggleCurrency from '@/components/ToggleCurrency';
@@ -107,30 +107,41 @@ const Index = () => {
         <header className="mb-6">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-              <Bitcoin size={isMobile ? 28 : 40} className="text-bitcoin" />
+              {/* Substituição do ícone do Bitcoin */}
+              <div className="h-10 w-10">
+                <img 
+                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/bitcoin%20logo%20oficial.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvYml0Y29pbiBsb2dvIG9maWNpYWwucG5nIiwiaWF0IjoxNzQ0NDk0OTI4LCJleHAiOjE3NzYwMzA5Mjh9.jp87rUIo5RXA3xo_VcUYD8JQkm_TEI5pHi6iSWDMA90" 
+                  alt="Bitcoin Logo"
+                  className="h-full w-full object-contain"
+                />
+              </div>
+              {/* Alteração para caixa alta */}
               <h1 className={`${isMobile ? "text-xl" : "text-3xl"} font-bold`}>
-                Bitcoin DCA Pro
+                BITCOIN DCA PRO
               </h1>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={signOut}
-              className="flex items-center gap-1"
-            >
-              <LogOut size={16} />
-              <span className={isMobile ? "hidden" : "inline"}>Sair</span>
-            </Button>
+            <div className="flex flex-col items-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={signOut}
+                className="flex items-center gap-1"
+              >
+                <LogOut size={16} />
+                <span className={isMobile ? "hidden" : "inline"}>Sair</span>
+              </Button>
+              {/* Movendo o texto "Logado como" para baixo do botão */}
+              {user && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Logado como: {user.email}
+                </p>
+              )}
+            </div>
           </div>
           <div className="flex items-center justify-between">
             <p className={`text-muted-foreground ${isMobile ? "text-xs" : ""}`}>
               Stay Humble and Stack Sats
             </p>
-            {user && (
-              <p className="text-xs text-muted-foreground">
-                Logado como: {user.email}
-              </p>
-            )}
           </div>
         </header>
 
