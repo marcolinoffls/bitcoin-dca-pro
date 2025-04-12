@@ -1,9 +1,16 @@
 
 import React from 'react';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Building2, Users } from 'lucide-react';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Bank, Users } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
+/**
+ * Componente que permite selecionar a origem do aporte (corretora ou p2p)
+ * 
+ * Usado no formulário de registro e edição de aportes
+ * Envia o valor selecionado para a coluna origem_aporte no Supabase
+ */
 interface OriginSelectorProps {
   origin: 'corretora' | 'p2p';
   onOriginChange: (origin: 'corretora' | 'p2p') => void;
@@ -16,26 +23,37 @@ const OriginSelector: React.FC<OriginSelectorProps> = ({
   return (
     <div className="flex flex-col space-y-3 mt-6">
       <Label htmlFor="origin">Origem do aporte</Label>
-      <RadioGroup 
+      <ToggleGroup 
+        type="single" 
         value={origin} 
-        onValueChange={(value) => onOriginChange(value as 'corretora' | 'p2p')}
-        className="flex gap-3"
+        onValueChange={(value) => {
+          if (value) onOriginChange(value as 'corretora' | 'p2p');
+        }}
+        className="flex gap-2"
       >
-        <div className="flex items-center space-x-2">
-          <RadioGroupItem value="corretora" id="corretora" />
-          <Label htmlFor="corretora" className="flex items-center gap-1 cursor-pointer">
-            <Building2 className="h-4 w-4" />
-            <span>Corretora</span>
-          </Label>
-        </div>
-        <div className="flex items-center space-x-2">
-          <RadioGroupItem value="p2p" id="p2p" />
-          <Label htmlFor="p2p" className="flex items-center gap-1 cursor-pointer">
-            <Users className="h-4 w-4" />
-            <span>P2P</span>
-          </Label>
-        </div>
-      </RadioGroup>
+        <ToggleGroupItem 
+          value="corretora" 
+          aria-label="Corretora"
+          className={cn(
+            "flex-1 gap-1 rounded-lg data-[state=on]:bg-bitcoin data-[state=on]:text-white",
+            "border border-input bg-muted hover:bg-muted/80"
+          )}
+        >
+          <Bank className="h-4 w-4" />
+          <span>Corretora</span>
+        </ToggleGroupItem>
+        <ToggleGroupItem 
+          value="p2p" 
+          aria-label="P2P"
+          className={cn(
+            "flex-1 gap-1 rounded-lg data-[state=on]:bg-bitcoin data-[state=on]:text-white",
+            "border border-input bg-muted hover:bg-muted/80"
+          )}
+        >
+          <Users className="h-4 w-4" />
+          <span>P2P</span>
+        </ToggleGroupItem>
+      </ToggleGroup>
     </div>
   );
 };
