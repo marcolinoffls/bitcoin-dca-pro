@@ -1,4 +1,7 @@
-
+/**
+ * Campo para informar a cotação do Bitcoin no momento da compra.
+ * Contém botão para preencher com a cotação atual automaticamente.
+ */
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -15,7 +18,6 @@ interface ExchangeRateFieldProps {
 
 const ExchangeRateField: React.FC<ExchangeRateFieldProps> = ({ 
   currency, 
-  exchangeRate, 
   onExchangeRateChange, 
   onUseCurrentRate,
   displayValue 
@@ -46,6 +48,7 @@ const ExchangeRateField: React.FC<ExchangeRateFieldProps> = ({
           onChange={(e) => onExchangeRateChange(e.target.value)}
           className="pl-8 rounded-xl focus-visible:ring-bitcoin focus-visible:border-bitcoin transition-all"
           type="text"
+          inputMode="decimal"
           required
         />
       </div>
