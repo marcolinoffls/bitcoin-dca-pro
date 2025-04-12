@@ -1,3 +1,4 @@
+
 /**
  * Componente EntryEditForm
  *
@@ -57,7 +58,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
   const [exchangeRate, setExchangeRate] = useState(entry.exchangeRate);
   const [exchangeRateDisplay, setExchangeRateDisplay] = useState(formatNumber(entry.exchangeRate));
   const [currency, setCurrency] = useState<'BRL' | 'USD'>(entry.currency);
-  const [origin, setOrigin] = useState<'corretora' | 'p2p'>(entry.origem_aporte || 'corretora');
+  const [origin, setOrigin] = useState<'corretora' | 'p2p'>(entry.origin || 'corretora');
   const [date, setDate] = useState<Date>(entry.date);
   const [tempDate, setTempDate] = useState<Date>(entry.date);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -161,6 +162,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
     toast({
       title: 'Aporte atualizado',
       description: 'Os dados foram atualizados com sucesso.',
+      variant: 'success',
     });
 
     onClose();
@@ -240,14 +242,16 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
               value={amountInvested}
               onChange={(e) => {
                 const input = e.target.value;
-
+                // Substitui pontos por vírgulas para compatibilidade com formato brasileiro
+                const formattedInput = input.replace(/\./g, ',');
+                
                 if (input === '0.') {
                   setAmountInvested('0,');
                   return;
                 }
 
-                setAmountInvested(input);
-                const amount = parseLocalNumber(input);
+                setAmountInvested(formattedInput);
+                const amount = parseLocalNumber(formattedInput);
                 if (!isNaN(amount) && exchangeRate > 0) {
                   const btc = amount / exchangeRate;
                   if (displayUnit === 'SATS') {
@@ -290,8 +294,11 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
             placeholder="0,00"
             value={exchangeRateDisplay}
             onChange={(e) => {
-              setExchangeRateDisplay(e.target.value);
-              const val = parseLocalNumber(e.target.value);
+              // Substitui pontos por vírgulas para compatibilidade com formato brasileiro
+              const formattedInput = e.target.value.replace(/\./g, ',');
+              
+              setExchangeRateDisplay(formattedInput);
+              const val = parseLocalNumber(formattedInput);
               if (!isNaN(val)) {
                 setExchangeRate(val);
               }
