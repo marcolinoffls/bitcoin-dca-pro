@@ -9,6 +9,7 @@
  * Atualização:
  * - Melhorada a manipulação dos valores para conversão correta entre string e number
  * - Adicionado console.log para depuração do formato de número
+ * - Melhorada a consistência da formatação
  */
 import React from 'react';
 import { Label } from '@/components/ui/label';

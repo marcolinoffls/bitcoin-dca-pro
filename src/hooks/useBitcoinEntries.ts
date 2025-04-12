@@ -13,6 +13,7 @@
  * - Corrigido o problema de atualização da data no Supabase
  * - Adicionado log detalhado para acompanhar a atualização dos aportes
  * - Garantida a invalidação do cache de queries após operações
+ * - Melhorada a validação da data para garantir que seja salva corretamente
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -21,6 +22,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { BitcoinEntry, CurrentRate } from '@/types';
 import { fetchCurrentBitcoinRate } from '@/services/bitcoinService';
+import { fetchBitcoinEntries, updateBitcoinEntry, deleteBitcoinEntry } from '@/services/bitcoinEntryService';
 
 // Interface para mapear os dados do Supabase para os tipos da aplicação
 interface SupabaseAporte {
@@ -50,27 +52,15 @@ export const useBitcoinEntries = () => {
     queryKey: ['entries'],
     queryFn: async () => {
       if (!user) return [];
-      const { data, error } = await supabase
-        .from('aportes')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('data_aporte', { ascending: false });
-
-      if (error) throw error;
       
-      // Converte os dados do formato do Supabase para o formato da aplicação
-      const formattedEntries = (data as SupabaseAporte[]).map(item => ({
-        id: item.id,
-        date: new Date(item.data_aporte),
-        amountInvested: item.valor_investido,
-        btcAmount: item.bitcoin,
-        exchangeRate: item.cotacao,
-        currency: item.moeda,
-        origin: item.origem_aporte,
-      })) as BitcoinEntry[];
-      
-      console.log('Aportes carregados do Supabase:', formattedEntries);
-      return formattedEntries;
+      try {
+        const entriesData = await fetchBitcoinEntries();
+        console.log('Aportes carregados do Supabase:', entriesData);
+        return entriesData;
+      } catch (error) {
+        console.error('Erro ao buscar aportes:', error);
+        throw error;
+      }
     },
     enabled: !!user,
   });
@@ -125,49 +115,64 @@ export const useBitcoinEntries = () => {
     console.log('Iniciando atualização do aporte:', entryId);
     console.log('Campos a atualizar:', updatedFields);
     
-    // Converte do formato da aplicação para o formato do Supabase
-    const supabaseData: Partial<SupabaseAporte> = {};
+    // Encontrar a entrada original para preencher os campos faltantes
+    const originalEntry = entries.find(e => e.id === entryId);
+    if (!originalEntry) {
+      console.error('Entrada original não encontrada');
+      throw new Error('Entrada não encontrada');
+    }
     
+    // Garantindo que a data é um objeto Date válido
+    let dateToUpdate: Date;
     if (updatedFields.date) {
-      // Garante que a data seja formatada corretamente para o Supabase (YYYY-MM-DD)
-      const formattedDate = updatedFields.date.toISOString().split('T')[0];
-      supabaseData.data_aporte = formattedDate;
-      console.log('Data formatada para o Supabase:', formattedDate);
+      if (!(updatedFields.date instanceof Date)) {
+        dateToUpdate = new Date(updatedFields.date);
+      } else {
+        dateToUpdate = updatedFields.date;
+      }
+      
+      // Verificar se a data é válida
+      if (isNaN(dateToUpdate.getTime())) {
+        console.error('Data inválida:', updatedFields.date);
+        throw new Error('Data inválida');
+      }
+    } else {
+      dateToUpdate = originalEntry.date;
     }
-    if (updatedFields.amountInvested !== undefined) {
-      supabaseData.valor_investido = updatedFields.amountInvested;
-    }
-    if (updatedFields.btcAmount !== undefined) {
-      supabaseData.bitcoin = updatedFields.btcAmount;
-    }
-    if (updatedFields.exchangeRate !== undefined) {
-      supabaseData.cotacao = updatedFields.exchangeRate;
-    }
-    if (updatedFields.currency) {
-      supabaseData.moeda = updatedFields.currency;
-      supabaseData.cotacao_moeda = updatedFields.currency;
-    }
-    if (updatedFields.origin) {
-      supabaseData.origem_aporte = updatedFields.origin;
-    }
-
-    console.log('Dados preparados para envio ao Supabase:', supabaseData);
-
-    const { error } = await supabase
-      .from('aportes')
-      .update(supabaseData)
-      .eq('id', entryId);
-
-    if (error) {
-      console.error('Erro ao atualizar no Supabase:', error);
+    
+    // Combinar campos originais com atualizados
+    const finalEntry = {
+      amountInvested: updatedFields.amountInvested ?? originalEntry.amountInvested,
+      btcAmount: updatedFields.btcAmount ?? originalEntry.btcAmount,
+      exchangeRate: updatedFields.exchangeRate ?? originalEntry.exchangeRate,
+      currency: updatedFields.currency ?? originalEntry.currency,
+      date: dateToUpdate,
+      origin: updatedFields.origin ?? originalEntry.origin
+    };
+    
+    console.log('Entrada final para atualização:', finalEntry);
+    
+    try {
+      // Usar a função do serviço para atualizar o aporte
+      await updateBitcoinEntry(
+        entryId,
+        finalEntry.amountInvested,
+        finalEntry.btcAmount,
+        finalEntry.exchangeRate,
+        finalEntry.currency,
+        finalEntry.date,
+        finalEntry.origin
+      );
+      
+      console.log('Aporte atualizado com sucesso via serviço');
+      
+      // Força a atualização da lista após edição - CRUCIAL PARA REFLETIR MUDANÇAS
+      await queryClient.invalidateQueries({ queryKey: ['entries'] });
+      setEditingEntry(null); // Limpa estado de edição
+    } catch (error) {
+      console.error('Erro ao atualizar aporte:', error);
       throw error;
     }
-
-    console.log('Aporte atualizado com sucesso no Supabase');
-
-    // Força a atualização da lista após edição - CRUCIAL PARA REFLETIR MUDANÇAS
-    await queryClient.invalidateQueries({ queryKey: ['entries'] });
-    setEditingEntry(null); // Limpa estado de edição
   };
 
   /**
@@ -176,14 +181,13 @@ export const useBitcoinEntries = () => {
   const deleteEntry = async (entryId: string) => {
     if (!user) return;
     
-    const { error } = await supabase
-      .from('aportes')
-      .delete()
-      .eq('id', entryId);
-      
-    if (error) throw error;
-
-    await queryClient.invalidateQueries({ queryKey: ['entries'] }); // Atualiza lista após exclusão
+    try {
+      await deleteBitcoinEntry(entryId);
+      await queryClient.invalidateQueries({ queryKey: ['entries'] }); // Atualiza lista após exclusão
+    } catch (error) {
+      console.error('Erro ao excluir aporte:', error);
+      throw error;
+    }
   };
 
   /**

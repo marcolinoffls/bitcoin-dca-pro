@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -20,6 +20,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
  * - Adicionado estado tempDate para controlar a data temporária selecionada
  * - Adicionado botão de confirmação para aplicar a data selecionada
  * - Corrigido o problema de atualização de data que não era persistida
+ * - Adicionado useEffect para atualizar tempDate quando date prop muda
+ * - Melhorada a persistência da data selecionada
  */
 interface DatePickerFieldProps {
   date: Date;
@@ -32,6 +34,11 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange })
   const calendarPopoverRef = useRef<HTMLButtonElement>(null);
   const isMobile = useIsMobile();
 
+  // Atualiza o estado tempDate quando a prop date mudar
+  useEffect(() => {
+    setTempDate(date);
+  }, [date]);
+
   // Define a data como hoje
   const setToday = () => {
     const today = new Date();
@@ -43,6 +50,7 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange })
   // Controla a seleção temporária de data no calendário
   const handleDateSelect = (newDate: Date | undefined) => {
     if (newDate) {
+      console.log('Data selecionada no calendário:', newDate);
       setTempDate(newDate);
     }
   };
@@ -50,15 +58,11 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange })
   // Confirma a data selecionada e a aplica ao formulário
   const handleConfirm = () => {
     if (tempDate) {
+      console.log('Data confirmada:', tempDate);
       onDateChange(tempDate);
       setIsCalendarOpen(false);
     }
   };
-
-  // Atualiza a data temporária quando a propriedade date mudar
-  React.useEffect(() => {
-    setTempDate(date);
-  }, [date]);
 
   return (
     <div className="flex flex-col space-y-1.5">

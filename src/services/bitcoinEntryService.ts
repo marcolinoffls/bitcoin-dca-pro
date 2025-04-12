@@ -10,6 +10,7 @@
  * - Corrigido problema de atualização da data não ser persistida corretamente
  * - Adicionados logs para monitorar as conversões de data
  * - Melhorada a manipulação dos valores para conversão correta entre string e number
+ * - Adicionada verificação extra para garantir que a data seja formatada corretamente
  */
 
 import { BitcoinEntry, CurrentRate } from '@/types';
@@ -101,28 +102,40 @@ export const updateBitcoinEntry = async (
   date: Date,
   origin: 'corretora' | 'p2p'
 ) => {
+  // Garantir que a data é um objeto Date válido
+  if (!(date instanceof Date) || isNaN(date.getTime())) {
+    console.error('Data inválida:', date);
+    throw new Error('Data inválida fornecida para atualização');
+  }
+  
   // Formata a data para o formato ISO (YYYY-MM-DD)
   const formattedDate = date.toISOString().split('T')[0];
-  console.log('Data sendo enviada para atualização:', formattedDate);
+  console.log('Data sendo enviada para atualização:', formattedDate, 'Objeto Date original:', date);
   
-  const { error } = await supabase
+  const updateData = {
+    data_aporte: formattedDate,
+    moeda: currency,
+    cotacao_moeda: currency,
+    valor_investido: amountInvested,
+    bitcoin: btcAmount,
+    cotacao: exchangeRate,
+    origem_aporte: origin
+  };
+  
+  console.log('Dados completos sendo enviados para atualização:', updateData);
+  
+  const { error, data } = await supabase
     .from('aportes')
-    .update({
-      data_aporte: formattedDate,
-      moeda: currency,
-      cotacao_moeda: currency,
-      valor_investido: amountInvested,
-      bitcoin: btcAmount,
-      cotacao: exchangeRate,
-      origem_aporte: origin
-    })
-    .eq('id', entryId);
+    .update(updateData)
+    .eq('id', entryId)
+    .select();
 
   if (error) {
     console.error('Erro ao atualizar o aporte no Supabase:', error);
     throw error;
   } else {
     console.log('Aporte atualizado com sucesso no Supabase:', entryId);
+    console.log('Resposta do Supabase após atualização:', data);
   }
 };
 

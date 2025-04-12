@@ -18,9 +18,10 @@
  * - Convertidos os campos de string para number para manipulação mais segura
  * - Garantida a atualização da lista de aportes após uma edição
  * - Adicionado console.log para mostrar a data selecionada antes de enviar ao Supabase
+ * - Melhorada a validação e tratamento da data
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { BitcoinEntry, CurrentRate } from '@/types';
@@ -68,6 +69,12 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
   const [origin, setOrigin] = useState<'corretora' | 'p2p'>(entry.origin || 'corretora');
   const [date, setDate] = useState<Date>(entry.date);
 
+  // Atualizamos a data quando o entry mudar, garantindo que seja sempre um objeto Date
+  useEffect(() => {
+    console.log('Entry atualizado, data original:', entry.date);
+    setDate(new Date(entry.date));
+  }, [entry]);
+
   // Função para converter string em formato brasileiro para número
   const parseLocalNumber = (value: string): number => {
     return parseFloat(value.replace(/\./g, '').replace(',', '.'));
@@ -84,7 +91,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
 
   // Função para atualizar a data do aporte
   const handleDateChange = (newDate: Date) => {
-    console.log('Data selecionada:', newDate);
+    console.log('Nova data selecionada:', newDate);
     setDate(newDate);
   };
 
@@ -115,6 +122,16 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
       toast({
         title: 'Erro nos dados',
         description: 'Por favor, verifique os valores inseridos.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Garantir que a data é válida
+    if (!(date instanceof Date) || isNaN(date.getTime())) {
+      toast({
+        title: 'Data inválida',
+        description: 'Por favor, selecione uma data válida.',
         variant: 'destructive',
       });
       return;
