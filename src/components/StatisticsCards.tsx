@@ -29,8 +29,8 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
     
     if (avgPriceLocal <= 0) return 0;
     
-    // If selected currency is USD and the rates are in BRL, convert it
-    if (selectedCurrency === 'USD' && currentRate.usd > 0 && currentRate.brl > 0) {
+    // Adicionando verificação de segurança para currentRate e suas propriedades
+    if (selectedCurrency === 'USD' && currentRate && currentRate.usd > 0 && currentRate.brl > 0) {
       // Convert from BRL to USD using the current exchange rate
       return avgPriceLocal * (currentRate.usd / currentRate.brl);
     }
@@ -48,10 +48,12 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
       ? avgPriceYear 
       : avgPriceAll;
   
-  const currentRateValue = selectedCurrency === 'USD' ? currentRate.usd : currentRate.brl;
+  // Adicionando verificações de segurança
+  const currentRateValue = currentRate && selectedCurrency === 'USD' ? currentRate.usd : currentRate?.brl || 0;
   const currencySymbol = selectedCurrency === 'USD' ? '$' : 'R$';
   
-  const totalValueCurrent = totalBitcoin * currentRateValue;
+  // Garantindo que totalValueCurrent seja calculado apenas se currentRateValue não for nulo
+  const totalValueCurrent = totalBitcoin * (currentRateValue || 0);
 
   // Format total Bitcoin amount based on display unit
   const formattedTotalBitcoin = displayUnit === 'SATS' 

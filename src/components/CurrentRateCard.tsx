@@ -19,6 +19,11 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
   isLoading,
   onRefresh,
 }) => {
+  // Definindo valores seguros para exibição
+  const usdRate = currentRate?.usd || 0;
+  const brlRate = currentRate?.brl || 0;
+  const timestamp = currentRate?.timestamp || new Date();
+
   return (
     <Card className="rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-200">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 p-3">
@@ -35,7 +40,7 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
             <span className="text-sm font-medium mb-1">USD</span>
             <div className="flex items-start">
               <span className="text-sm font-medium">$</span>
-              <span className="text-xl font-bold ml-1">{formatNumber(currentRate.usd)}</span>
+              <span className="text-xl font-bold ml-1">{formatNumber(usdRate)}</span>
             </div>
           </div>
           
@@ -43,14 +48,14 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
             <span className="text-sm font-medium mb-1">BRL</span>
             <div className="flex items-start">
               <span className="text-sm font-medium">R$</span>
-              <span className="text-xl font-bold ml-1">{formatNumber(currentRate.brl)}</span>
+              <span className="text-xl font-bold ml-1">{formatNumber(brlRate)}</span>
             </div>
           </div>
         </div>
         
         <div className="flex items-center justify-between mt-2">
           <p className="text-xs text-muted-foreground">
-            Atualizado: {format(currentRate.timestamp, 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+            Atualizado: {format(timestamp, 'dd/MM/yyyy HH:mm', { locale: ptBR })}
           </p>
           <Button 
             variant="ghost" 

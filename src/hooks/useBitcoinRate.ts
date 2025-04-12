@@ -5,6 +5,7 @@ import { fetchCurrentBitcoinRate } from '@/services/bitcoinService';
 import { useToast } from '@/components/ui/use-toast';
 
 export function useBitcoinRate() {
+  // Inicialização com um timestamp real para evitar erros de formatação
   const [currentRate, setCurrentRate] = useState<CurrentRate>({
     usd: 0,
     brl: 0,
