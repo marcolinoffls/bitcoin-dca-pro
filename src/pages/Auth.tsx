@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Bitcoin, Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const Auth = () => {
@@ -124,7 +124,13 @@ const Auth = () => {
       <Card className="w-full max-w-md rounded-xl shadow-lg border-0">
         <CardHeader className="text-center pb-6">
           <div className="flex items-center justify-center mb-4">
-            <Bitcoin size={40} className="text-bitcoin mr-2" />
+            {/* Substituição do ícone pelo novo link fornecido */}
+            <img 
+              src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/bitcoin.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvYml0Y29pbi5wbmciLCJpYXQiOjE3NDQ0OTkzNDksImV4cCI6MTc3NjAzNTM0OX0.UMcsJt0r9ZhEcYmAtfv2QvtADaIshCKaTmKjD8oCAjo" 
+              alt="Bitcoin" 
+              className="h-10 w-10 mr-2" 
+            />
+            {/* Título em caixa alta */}
             <CardTitle className="text-3xl font-bold">BITCOIN DCA PRO</CardTitle>
           </div>
           <CardDescription>
@@ -132,287 +138,290 @@ const Auth = () => {
           </CardDescription>
         </CardHeader>
         
-        {resetRequested ? (
-          <div className="px-6 pb-6">
-            <Button 
-              variant="outline" 
-              className="mb-4" 
-              onClick={() => {
-                setResetRequested(false);
-                setResetSent(false);
-              }}
-            >
-              &larr; Voltar ao login
-            </Button>
-            
-            <h3 className="text-lg font-medium mb-4">Redefinir senha</h3>
-            
-            {resetSent ? (
-              <Alert className="mb-4">
-                <AlertDescription>
-                  Email enviado! Verifique sua caixa de entrada e siga as instruções para redefinir sua senha.
-                </AlertDescription>
-              </Alert>
-            ) : (
-              <form onSubmit={handleResetPassword}>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="reset-email">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="reset-email"
-                        type="email"
-                        placeholder="seu@email.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                        className="pl-10 rounded-lg"
-                      />
+        {/* Conteúdo com altura mínima fixa para evitar saltos de tamanho */}
+        <div className="min-h-[320px] transition-all duration-300">
+          {resetRequested ? (
+            <div className="px-6 pb-6">
+              <Button 
+                variant="outline" 
+                className="mb-4" 
+                onClick={() => {
+                  setResetRequested(false);
+                  setResetSent(false);
+                }}
+              >
+                &larr; Voltar ao login
+              </Button>
+              
+              <h3 className="text-lg font-medium mb-4">Redefinir senha</h3>
+              
+              {resetSent ? (
+                <Alert className="mb-4">
+                  <AlertDescription>
+                    Email enviado! Verifique sua caixa de entrada e siga as instruções para redefinir sua senha.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <form onSubmit={handleResetPassword}>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="reset-email">Email</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="reset-email"
+                          type="email"
+                          placeholder="seu@email.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          required
+                          className="pl-10 rounded-lg"
+                        />
+                      </div>
                     </div>
+                    
+                    {passwordError && (
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>{passwordError}</AlertDescription>
+                      </Alert>
+                    )}
+                    
+                    <Button
+                      type="submit"
+                      className="w-full bg-bitcoin hover:bg-bitcoin/90 rounded-lg py-3"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <span className="flex items-center">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Enviando...
+                        </span>
+                      ) : 'Enviar link de redefinição'}
+                    </Button>
                   </div>
-                  
-                  {passwordError && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>{passwordError}</AlertDescription>
-                    </Alert>
-                  )}
-                  
-                  <Button
-                    type="submit"
-                    className="w-full bg-bitcoin hover:bg-bitcoin/90 rounded-lg py-3"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      <span className="flex items-center">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Enviando...
-                      </span>
-                    ) : 'Enviar link de redefinição'}
-                  </Button>
-                </div>
-              </form>
-            )}
-          </div>
-        ) : (
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Entrar</TabsTrigger>
-              <TabsTrigger value="register">Criar Conta</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="login">
-              <form onSubmit={handleSignIn}>
-                <CardContent className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                        id="email" 
-                        type="email" 
-                        placeholder="seu@email.com" 
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                        className="pl-10 rounded-lg"
-                      />
+                </form>
+              )}
+            </div>
+          ) : (
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="login">Entrar</TabsTrigger>
+                <TabsTrigger value="register">Criar Conta</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="login" className="mt-4">
+                <form onSubmit={handleSignIn}>
+                  <CardContent className="space-y-4 pt-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                          id="email" 
+                          type="email" 
+                          placeholder="seu@email.com" 
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          required
+                          className="pl-10 rounded-lg"
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <Label htmlFor="password">Senha</Label>
-                      <Button 
-                        variant="link" 
-                        type="button" 
-                        onClick={() => setResetRequested(true)} 
-                        className="p-0 h-auto text-xs text-muted-foreground"
-                      >
-                        Esqueceu a senha?
-                      </Button>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <Label htmlFor="password">Senha</Label>
+                        <Button 
+                          variant="link" 
+                          type="button" 
+                          onClick={() => setResetRequested(true)} 
+                          className="p-0 h-auto text-xs text-muted-foreground"
+                        >
+                          Esqueceu a senha?
+                        </Button>
+                      </div>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                          id="password" 
+                          type={showPassword ? "text" : "password"}
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                          className="pl-10 pr-10 rounded-lg"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={toggleShowPassword}
+                          className="absolute right-0 top-0 h-10 w-10 p-0 text-muted-foreground"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          <span className="sr-only">{showPassword ? "Esconder senha" : "Mostrar senha"}</span>
+                        </Button>
+                      </div>
                     </div>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                        id="password" 
-                        type={showPassword ? "text" : "password"}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        className="pl-10 pr-10 rounded-lg"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={toggleShowPassword}
-                        className="absolute right-0 top-0 h-10 w-10 p-0 text-muted-foreground"
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        <span className="sr-only">{showPassword ? "Esconder senha" : "Mostrar senha"}</span>
-                      </Button>
+                    
+                    {passwordError && (
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>{passwordError}</AlertDescription>
+                      </Alert>
+                    )}
+                  </CardContent>
+                  <CardFooter className="flex flex-col space-y-4">
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-bitcoin hover:bg-bitcoin/90 rounded-lg py-3"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <span className="flex items-center">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Entrando...
+                        </span>
+                      ) : 'Entrar'}
+                    </Button>
+                    
+                    <div className="relative w-full flex items-center justify-center">
+                      <div className="absolute border-t border-gray-200 w-full"></div>
+                      <span className="relative px-2 bg-card text-xs text-muted-foreground">ou continue com</span>
                     </div>
-                  </div>
-                  
-                  {passwordError && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>{passwordError}</AlertDescription>
-                    </Alert>
-                  )}
-                </CardContent>
-                <CardFooter className="flex flex-col space-y-4">
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-bitcoin hover:bg-bitcoin/90 rounded-lg py-3"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      <span className="flex items-center">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Entrando...
-                      </span>
-                    ) : 'Entrar'}
-                  </Button>
-                  
-                  <div className="relative w-full flex items-center justify-center">
-                    <div className="absolute border-t border-gray-200 w-full"></div>
-                    <span className="relative px-2 bg-card text-xs text-muted-foreground">ou continue com</span>
-                  </div>
-                  
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={handleGoogleSignIn}
-                  >
-                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" className="mr-2">
-                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                      <path d="M1 1h22v22H1z" fill="none" />
-                    </svg>
-                    Google
-                  </Button>
-                </CardFooter>
-              </form>
-            </TabsContent>
-            
-            <TabsContent value="register">
-              <form onSubmit={handleSignUp}>
-                <CardContent className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="register-email">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                        id="register-email" 
-                        type="email" 
-                        placeholder="seu@email.com" 
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                        className="pl-10 rounded-lg"
-                      />
+                    
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={handleGoogleSignIn}
+                    >
+                      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" className="mr-2">
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                        <path d="M1 1h22v22H1z" fill="none" />
+                      </svg>
+                      Google
+                    </Button>
+                  </CardFooter>
+                </form>
+              </TabsContent>
+              
+              <TabsContent value="register" className="mt-4">
+                <form onSubmit={handleSignUp}>
+                  <CardContent className="space-y-4 pt-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="register-email">Email</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                          id="register-email" 
+                          type="email" 
+                          placeholder="seu@email.com" 
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          required
+                          className="pl-10 rounded-lg"
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="register-password">Senha</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                        id="register-password" 
-                        type={showPassword ? "text" : "password"}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        className="pl-10 pr-10 rounded-lg"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={toggleShowPassword}
-                        className="absolute right-0 top-0 h-10 w-10 p-0 text-muted-foreground"
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        <span className="sr-only">{showPassword ? "Esconder senha" : "Mostrar senha"}</span>
-                      </Button>
+                    <div className="space-y-2">
+                      <Label htmlFor="register-password">Senha</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                          id="register-password" 
+                          type={showPassword ? "text" : "password"}
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                          className="pl-10 pr-10 rounded-lg"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={toggleShowPassword}
+                          className="absolute right-0 top-0 h-10 w-10 p-0 text-muted-foreground"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          <span className="sr-only">{showPassword ? "Esconder senha" : "Mostrar senha"}</span>
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        A senha deve ter pelo menos 6 caracteres
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      A senha deve ter pelo menos 6 caracteres
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="confirm-password">Confirmar Senha</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                        id="confirm-password" 
-                        type={showPassword ? "text" : "password"}
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        required
-                        className="pl-10 pr-10 rounded-lg"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={toggleShowPassword}
-                        className="absolute right-0 top-0 h-10 w-10 p-0 text-muted-foreground"
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        <span className="sr-only">{showPassword ? "Esconder senha" : "Mostrar senha"}</span>
-                      </Button>
+                    <div className="space-y-2">
+                      <Label htmlFor="confirm-password">Confirmar Senha</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                          id="confirm-password" 
+                          type={showPassword ? "text" : "password"}
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          required
+                          className="pl-10 pr-10 rounded-lg"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={toggleShowPassword}
+                          className="absolute right-0 top-0 h-10 w-10 p-0 text-muted-foreground"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          <span className="sr-only">{showPassword ? "Esconder senha" : "Mostrar senha"}</span>
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                  
-                  {passwordError && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>{passwordError}</AlertDescription>
-                    </Alert>
-                  )}
-                </CardContent>
-                <CardFooter className="flex flex-col space-y-4">
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-bitcoin hover:bg-bitcoin/90 rounded-lg py-3"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      <span className="flex items-center">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Cadastrando...
-                      </span>
-                    ) : 'Criar Conta'}
-                  </Button>
-                  
-                  <div className="relative w-full flex items-center justify-center">
-                    <div className="absolute border-t border-gray-200 w-full"></div>
-                    <span className="relative px-2 bg-card text-xs text-muted-foreground">ou continue com</span>
-                  </div>
-                  
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={handleGoogleSignIn}
-                  >
-                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" className="mr-2">
-                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                      <path d="M1 1h22v22H1z" fill="none" />
-                    </svg>
-                    Google
-                  </Button>
-                </CardFooter>
-              </form>
-            </TabsContent>
-          </Tabs>
-        )}
+                    
+                    {passwordError && (
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>{passwordError}</AlertDescription>
+                      </Alert>
+                    )}
+                  </CardContent>
+                  <CardFooter className="flex flex-col space-y-4">
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-bitcoin hover:bg-bitcoin/90 rounded-lg py-3"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <span className="flex items-center">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Cadastrando...
+                        </span>
+                      ) : 'Criar Conta'}
+                    </Button>
+                    
+                    <div className="relative w-full flex items-center justify-center">
+                      <div className="absolute border-t border-gray-200 w-full"></div>
+                      <span className="relative px-2 bg-card text-xs text-muted-foreground">ou continue com</span>
+                    </div>
+                    
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={handleGoogleSignIn}
+                    >
+                      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" className="mr-2">
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                        <path d="M1 1h22v22H1z" fill="none" />
+                      </svg>
+                      Google
+                    </Button>
+                  </CardFooter>
+                </form>
+              </TabsContent>
+            </Tabs>
+          )}
+        </div>
       </Card>
     </div>
   );
