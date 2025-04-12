@@ -5,8 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import CurrencySelector from '@/components/CurrencySelector';
-import { Bitcoin, CalendarIcon, CalendarCheck, Check } from 'lucide-react';
+import { Bitcoin, CalendarIcon, CalendarCheck, Check, Building2, Users } from 'lucide-react';
 import { formatNumber } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -42,6 +43,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
     formatNumber(entry.exchangeRate)
   );
   const [currency, setCurrency] = useState<'BRL' | 'USD'>(entry.currency);
+  const [origin, setOrigin] = useState<'corretora' | 'p2p'>(entry.origin || 'corretora');
   const [date, setDate] = useState<Date>(entry.date);
   const [tempDate, setTempDate] = useState<Date>(entry.date);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -111,7 +113,8 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
           cotacao_moeda: currency,
           valor_investido: parsedAmount,
           bitcoin: parsedBtc,
-          cotacao: parsedRate
+          cotacao: parsedRate,
+          origem_aporte: origin
         })
         .eq('id', entry.id);
         
@@ -303,6 +306,30 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
             required
           />
         </div>
+      </div>
+      
+      <div className="flex flex-col space-y-1.5 mt-4">
+        <Label htmlFor="editOrigin">Origem do aporte</Label>
+        <RadioGroup 
+          value={origin} 
+          onValueChange={(value) => setOrigin(value as 'corretora' | 'p2p')}
+          className="flex gap-3"
+        >
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="corretora" id="editCorretora" />
+            <Label htmlFor="editCorretora" className="flex items-center gap-1 cursor-pointer">
+              <Building2 className="h-4 w-4" />
+              <span>Corretora</span>
+            </Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="p2p" id="editP2p" />
+            <Label htmlFor="editP2p" className="flex items-center gap-1 cursor-pointer">
+              <Users className="h-4 w-4" />
+              <span>P2P</span>
+            </Label>
+          </div>
+        </RadioGroup>
       </div>
       
       <div className="flex gap-4 pt-4">
