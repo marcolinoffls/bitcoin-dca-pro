@@ -11,8 +11,6 @@ import {
   deleteBitcoinEntry 
 } from '@/services/bitcoinEntryService';
 
-// Removemos o import do CheckCircle, pois não podemos usar JSX diretamente aqui
-
 export function useBitcoinEntries() {
   const [entries, setEntries] = useState<BitcoinEntry[]>([]);
   const [editingEntry, setEditingEntry] = useState<BitcoinEntry | null>(null);
@@ -88,9 +86,9 @@ export function useBitcoinEntries() {
         );
         
         setEntries(updatedEntries);
+        // Limpa o estado de edição explicitamente
         setEditingEntry(null);
         
-        // Usando apenas o objeto de configuração sem JSX
         toast({
           title: 'Aporte atualizado',
           description: 'Seu aporte de Bitcoin foi atualizado com sucesso.',
@@ -118,7 +116,6 @@ export function useBitcoinEntries() {
 
         setEntries(prev => [newEntry, ...prev]);
 
-        // Usando apenas o objeto de configuração sem JSX
         toast({
           title: 'Aporte registrado',
           description: 'Seu aporte de Bitcoin foi registrado com sucesso.',
@@ -143,6 +140,7 @@ export function useBitcoinEntries() {
   };
 
   const cancelEdit = () => {
+    // Certifica-se de limpar completamente o estado de edição
     setEditingEntry(null);
   };
 
@@ -159,6 +157,7 @@ export function useBitcoinEntries() {
       toast({
         title: 'Registro removido',
         description: 'O registro foi removido com sucesso.',
+        variant: 'success',
       });
     } catch (error) {
       console.error('Error deleting entry:', error);

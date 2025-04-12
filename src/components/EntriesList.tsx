@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { BitcoinEntry, CurrentRate } from '@/types';
 import { calculatePercentageChange } from '@/services/bitcoinService';
@@ -57,6 +56,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
 
   const handleEditClose = () => {
     setIsEditDialogOpen(false);
+    onEdit('');
   };
 
   if (entries.length === 0) {
@@ -219,7 +219,12 @@ const EntriesList: React.FC<EntriesListProps> = ({
         </CardContent>
       </Card>
 
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+      <Dialog open={isEditDialogOpen} onOpenChange={(open) => {
+        setIsEditDialogOpen(open);
+        if (!open) {
+          handleEditClose();
+        }
+      }}>
         <DialogContent className="sm:max-w-md rounded-2xl px-6">
           <DialogHeader>
             <DialogTitle>Editar Aporte</DialogTitle>

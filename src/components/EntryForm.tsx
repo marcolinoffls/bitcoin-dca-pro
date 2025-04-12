@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bitcoin } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -63,6 +63,13 @@ const EntryForm: React.FC<EntryFormProps> = ({
     useCurrentRate,
     reset
   } = useEntryFormLogic(editingEntry, currentRate, displayUnit);
+
+  // Quando editingEntry muda para null, resetamos o formulário
+  useEffect(() => {
+    if (!editingEntry) {
+      reset();
+    }
+  }, [editingEntry, reset]);
 
   const resetForm = () => {
     reset();
