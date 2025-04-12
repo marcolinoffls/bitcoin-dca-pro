@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -195,7 +194,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
                 {date ? format(date, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecione uma data</span>}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="center">
+            <PopoverContent className="w-auto p-0" align="start">
               <div className="p-3 rounded-md shadow-sm">
                 <Calendar
                   mode="single"
@@ -209,7 +208,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
                   <Button 
                     type="button" 
                     onClick={confirmDateSelection}
-                    className="rounded-full bg-bitcoin hover:bg-bitcoin/90 text-white w-auto px-4"
+                    className="rounded-full bg-bitcoin hover:bg-bitcoin/90 text-white w-full"
                   >
                     <Check className="h-4 w-4 mr-2" />
                     Confirmar
