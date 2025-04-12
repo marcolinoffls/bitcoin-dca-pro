@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate, useLocation } from 'react-router-dom';
@@ -33,7 +32,6 @@ const Auth = () => {
   }
 
   if (user) {
-    // Get the intended destination from location state, or default to "/"
     const from = location.state?.from?.pathname || "/";
     return <Navigate to={from} replace />;
   }
@@ -181,7 +179,7 @@ const Auth = () => {
                   
                   <Button
                     type="submit"
-                    className="w-full bg-bitcoin hover:bg-bitcoin/90 rounded-lg py-3"
+                    className="w-full bg-bitcoin hover:bg-bitcoin/90 transition-colors w-full max-w-sm py-6 rounded-xl mt-4"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? (
@@ -264,7 +262,7 @@ const Auth = () => {
                 <CardFooter className="flex flex-col space-y-4">
                   <Button 
                     type="submit" 
-                    className="w-full bg-bitcoin hover:bg-bitcoin/90 rounded-lg py-3"
+                    className="w-full bg-bitcoin hover:bg-bitcoin/90 transition-colors w-full max-w-sm py-6 rounded-xl mt-4"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? (
@@ -283,7 +281,7 @@ const Auth = () => {
                   <Button 
                     type="button" 
                     variant="outline" 
-                    className="w-full"
+                    className="w-full max-w-sm py-6 rounded-xl"
                     onClick={handleGoogleSignIn}
                   >
                     <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" className="mr-2">
@@ -377,7 +375,7 @@ const Auth = () => {
                 <CardFooter className="flex flex-col space-y-4">
                   <Button 
                     type="submit" 
-                    className="w-full bg-bitcoin hover:bg-bitcoin/90 rounded-lg py-3"
+                    className="w-full bg-bitcoin hover:bg-bitcoin/90 transition-colors w-full max-w-sm py-6 rounded-xl mt-4"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? (
@@ -396,7 +394,7 @@ const Auth = () => {
                   <Button 
                     type="button" 
                     variant="outline" 
-                    className="w-full"
+                    className="w-full max-w-sm py-6 rounded-xl"
                     onClick={handleGoogleSignIn}
                   >
                     <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" className="mr-2">

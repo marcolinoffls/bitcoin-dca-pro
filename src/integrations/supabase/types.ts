@@ -18,6 +18,7 @@ export type Database = {
           data_aporte: string
           id: string
           moeda: string
+          origem_aporte: string
           user_id: string | null
           valor_investido: number
         }
@@ -29,6 +30,7 @@ export type Database = {
           data_aporte: string
           id?: string
           moeda: string
+          origem_aporte?: string
           user_id?: string | null
           valor_investido: number
         }
@@ -40,35 +42,9 @@ export type Database = {
           data_aporte?: string
           id?: string
           moeda?: string
+          origem_aporte?: string
           user_id?: string | null
           valor_investido?: number
-        }
-        Relationships: []
-      }
-      Aportes: {
-        Row: {
-          Cotação: string | null
-          created_at: string
-          "Data do aporte": string | null
-          id: number
-          "Valor do aporte em dolar": string | null
-          "Valor do aporte em reais": string | null
-        }
-        Insert: {
-          Cotação?: string | null
-          created_at?: string
-          "Data do aporte"?: string | null
-          id?: number
-          "Valor do aporte em dolar"?: string | null
-          "Valor do aporte em reais"?: string | null
-        }
-        Update: {
-          Cotação?: string | null
-          created_at?: string
-          "Data do aporte"?: string | null
-          id?: number
-          "Valor do aporte em dolar"?: string | null
-          "Valor do aporte em reais"?: string | null
         }
         Relationships: []
       }

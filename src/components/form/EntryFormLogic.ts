@@ -26,6 +26,9 @@ export const useEntryFormLogic = (
   const [date, setDate] = useState<Date>(
     editingEntry ? editingEntry.date : new Date()
   );
+  const [originType, setOriginType] = useState<'corretora' | 'p2p'>(
+    editingEntry?.originType || 'corretora'
+  );
 
   const parseLocalNumber = (value: string): number => {
     return parseFloat(value.replace(',', '.'));
@@ -82,6 +85,7 @@ export const useEntryFormLogic = (
     setBtcAmount('');
     setExchangeRate('');
     setDate(new Date());
+    setOriginType('corretora');
   };
 
   return {
@@ -95,6 +99,8 @@ export const useEntryFormLogic = (
     setCurrency,
     date,
     setDate,
+    originType,
+    setOriginType,
     parseLocalNumber,
     handleCurrencyChange,
     calculateFromAmount,

@@ -19,3 +19,26 @@ export function formatNumber(value: number, decimals: number = 2): string {
     maximumFractionDigits: decimals
   });
 }
+
+/**
+ * Formata números locais para exibição
+ * @param value O valor que pode ser string ou número
+ * @returns String formatada com vírgula como separador decimal
+ */
+export function formatNumberDisplay(value: string | number): string {
+  if (typeof value === 'string') {
+    // Trata valor como string
+    return value;
+  }
+  // Formata número para exibição
+  return formatNumber(value);
+}
+
+/**
+ * Parse a string number with comma as decimal separator to a float number
+ * @param value The string number with comma as decimal separator
+ * @returns The float number
+ */
+export function parseLocalNumber(value: string): number {
+  return parseFloat(value.replace(',', '.'));
+}
