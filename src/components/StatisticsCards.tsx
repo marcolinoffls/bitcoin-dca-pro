@@ -77,7 +77,7 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
           <div className="flex items-center gap-2">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center">
               <img 
-                src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/bitcoin%20grafico%2064px.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvYml0Y29pbiBncmFmaWNvIDY0cHgucG5nIiwiaWF0IjoxNzQ0NDk0OTkyLCJleHAiOjE3NzYwMzA5OTJ9.LHwThGNSMBU4auNGBV4TbDIu9oeXjYIwcH2jqGxB6oM" 
+                src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/cotacao2.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvY290YWNhbzIucG5nIiwiaWF0IjoxNzQ0NDk1NjY4LCJleHAiOjE3NzYwMzE2Njh9.f41oc6Aw4_fncoJYnVG0j2fJ0SNpz_hnUxEjtVICI84" 
                 alt="Preço Médio"
                 className="h-full w-full object-contain"
               />
