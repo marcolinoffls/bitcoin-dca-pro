@@ -7,7 +7,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
-import Statistics from "./pages/Statistics";
 import NotFound from "./pages/NotFound";
 import { useState } from "react";
 import { AuthProvider } from "./hooks/useAuth";
@@ -37,11 +36,6 @@ const App = () => {
               <Route path="/" element={
                 <RequireAuth>
                   <Index />
-                </RequireAuth>
-              } />
-              <Route path="/statistics" element={
-                <RequireAuth>
-                  <Statistics />
                 </RequireAuth>
               } />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

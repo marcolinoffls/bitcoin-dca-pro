@@ -1,3 +1,4 @@
+
 export interface BitcoinEntry {
   id: string;
   date: Date;
@@ -5,7 +6,6 @@ export interface BitcoinEntry {
   btcAmount: number;
   exchangeRate: number;
   currency: 'BRL' | 'USD';
-  originType?: 'corretora' | 'p2p';
 }
 
 export interface CurrentRate {

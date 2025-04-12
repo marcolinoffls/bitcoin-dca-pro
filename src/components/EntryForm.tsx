@@ -10,7 +10,6 @@ import BtcAmountField from '@/components/form/BtcAmountField';
 import ExchangeRateField from '@/components/form/ExchangeRateField';
 import FormActions from '@/components/form/FormActions';
 import { useEntryFormLogic } from '@/components/form/EntryFormLogic';
-import OriginField from '@/components/form/OriginField';
 
 interface EntryFormProps {
   onAddEntry: (
@@ -18,8 +17,7 @@ interface EntryFormProps {
     btcAmount: number,
     exchangeRate: number,
     currency: 'BRL' | 'USD',
-    date: Date,
-    originType: 'corretora' | 'p2p'
+    date: Date
   ) => void;
   currentRate: { usd: number; brl: number };
   editingEntry?: {
@@ -29,7 +27,6 @@ interface EntryFormProps {
     btcAmount: number;
     exchangeRate: number;
     currency: 'BRL' | 'USD';
-    originType?: 'corretora' | 'p2p';
   };
   onCancelEdit?: () => void;
   displayUnit?: 'BTC' | 'SATS';
@@ -53,8 +50,6 @@ const EntryForm: React.FC<EntryFormProps> = ({
     currency,
     date,
     setDate,
-    originType,
-    setOriginType,
     parseLocalNumber,
     handleCurrencyChange,
     calculateFromAmount,
@@ -86,7 +81,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
       return;
     }
     
-    onAddEntry(parsedAmount, parsedBtc, parsedRate, currency, date, originType);
+    onAddEntry(parsedAmount, parsedBtc, parsedRate, currency, date);
     
     resetForm();
   };
@@ -130,11 +125,6 @@ const EntryForm: React.FC<EntryFormProps> = ({
             exchangeRate={exchangeRate} 
             onExchangeRateChange={setExchangeRate} 
             onUseCurrentRate={useCurrentRate} 
-          />
-          
-          <OriginField
-            originType={originType}
-            onOriginChange={setOriginType}
           />
           
           <FormActions 

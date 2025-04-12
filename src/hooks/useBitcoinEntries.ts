@@ -61,7 +61,6 @@ export function useBitcoinEntries() {
           btcAmount: Number(entry.bitcoin),
           exchangeRate: Number(entry.cotacao),
           currency: entry.moeda as 'BRL' | 'USD',
-          originType: entry.origem_aporte as 'corretora' | 'p2p'
         }));
         
         setEntries(formattedEntries);
@@ -100,8 +99,7 @@ export function useBitcoinEntries() {
     btcAmount: number,
     exchangeRate: number,
     currency: 'BRL' | 'USD',
-    date: Date,
-    originType: 'corretora' | 'p2p' = 'corretora'
+    date: Date
   ) => {
     if (!user) {
       toast({
@@ -120,11 +118,10 @@ export function useBitcoinEntries() {
           .update({
             data_aporte: date.toISOString().split('T')[0],
             moeda: currency,
-            cotacao_moeda: currency,
+            cotacao_moeda: currency, // Set the currency used for the exchange rate
             valor_investido: amountInvested,
             bitcoin: btcAmount,
-            cotacao: exchangeRate,
-            origem_aporte: originType
+            cotacao: exchangeRate
           })
           .eq('id', editingEntry.id);
 
@@ -139,8 +136,7 @@ export function useBitcoinEntries() {
                 btcAmount,
                 exchangeRate,
                 currency,
-                date,
-                originType
+                date
               }
             : entry
         );
@@ -170,12 +166,11 @@ export function useBitcoinEntries() {
             id: newEntryId,
             data_aporte: date.toISOString().split('T')[0],
             moeda: currency,
-            cotacao_moeda: currency,
+            cotacao_moeda: currency, // Store the currency of the exchange rate
             valor_investido: amountInvested,
             bitcoin: btcAmount,
             cotacao: exchangeRate,
-            origem_aporte: originType,
-            user_id: user.id
+            user_id: user.id // Set the user_id from the authenticated user
           });
 
         if (error) throw error;
@@ -188,7 +183,6 @@ export function useBitcoinEntries() {
           btcAmount,
           exchangeRate,
           currency,
-          originType
         };
 
         setEntries(prev => [newEntry, ...prev]);

@@ -6,8 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import CurrencySelector from '@/components/CurrencySelector';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Bitcoin, CalendarIcon, CalendarCheck, Check, Store, Users } from 'lucide-react';
+import { Bitcoin, CalendarIcon, CalendarCheck, Check } from 'lucide-react';
 import { formatNumber } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -44,7 +43,6 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
   );
   const [currency, setCurrency] = useState<'BRL' | 'USD'>(entry.currency);
   const [date, setDate] = useState<Date>(entry.date);
-  const [originType, setOriginType] = useState<'corretora' | 'p2p'>(entry.originType || 'corretora');
   const [tempDate, setTempDate] = useState<Date>(entry.date);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const calendarPopoverRef = useRef<HTMLButtonElement>(null);
@@ -113,8 +111,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
           cotacao_moeda: currency,
           valor_investido: parsedAmount,
           bitcoin: parsedBtc,
-          cotacao: parsedRate,
-          origem_aporte: originType
+          cotacao: parsedRate
         })
         .eq('id', entry.id);
         
@@ -184,8 +181,8 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
                 {date ? format(date, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecione uma data</span>}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="center">
-              <div className="p-3 rounded-md shadow-sm flex flex-col items-center">
+            <PopoverContent className="w-auto p-0" align="start">
+              <div className="p-3 rounded-md shadow-sm">
                 <Calendar
                   mode="single"
                   selected={tempDate}
@@ -198,7 +195,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
                   <Button 
                     type="button" 
                     onClick={confirmDateSelection}
-                    className="rounded-full bg-bitcoin hover:bg-bitcoin/90 text-white w-auto px-4"
+                    className="rounded-full bg-bitcoin hover:bg-bitcoin/90 text-white w-full"
                   >
                     <Check className="h-4 w-4 mr-2" />
                     Confirmar
@@ -306,35 +303,6 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
             required
           />
         </div>
-      </div>
-      
-      <div className="flex flex-col space-y-1.5 mt-4">
-        <Label>Origem do Aporte</Label>
-        <ToggleGroup 
-          type="single" 
-          value={originType} 
-          onValueChange={(value) => {
-            if (value) {
-              setOriginType(value as 'corretora' | 'p2p');
-            }
-          }}
-          className="justify-start"
-        >
-          <ToggleGroupItem 
-            value="corretora" 
-            className="flex items-center gap-1 data-[state=on]:bg-bitcoin data-[state=on]:text-white rounded-l-xl"
-          >
-            <Store className="h-4 w-4" />
-            <span>Corretora</span>
-          </ToggleGroupItem>
-          <ToggleGroupItem 
-            value="p2p" 
-            className="flex items-center gap-1 data-[state=on]:bg-bitcoin data-[state=on]:text-white rounded-r-xl"
-          >
-            <Users className="h-4 w-4" />
-            <span>P2P</span>
-          </ToggleGroupItem>
-        </ToggleGroup>
       </div>
       
       <div className="flex gap-4 pt-4">

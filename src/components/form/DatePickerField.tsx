@@ -61,8 +61,8 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange })
               {date ? format(date, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecione uma data</span>}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="center">
-            <div className="p-3 rounded-md shadow-sm flex flex-col items-center">
+          <PopoverContent className="w-auto p-0" align="start">
+            <div className="p-3 rounded-md shadow-sm">
               <Calendar
                 mode="single"
                 selected={tempDate}
@@ -71,11 +71,11 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange })
                 locale={ptBR}
                 className="rounded-md border-0 shadow-none pointer-events-auto"
               />
-              <div className="flex justify-center p-2 mt-2 w-full">
+              <div className="flex justify-center p-2 mt-2">
                 <Button 
                   type="button" 
                   onClick={handleConfirm}
-                  className="rounded-full bg-bitcoin hover:bg-bitcoin/90 text-white w-auto px-4"
+                  className="rounded-full bg-bitcoin hover:bg-bitcoin/90 text-white w-full"
                 >
                   <Check className="h-4 w-4 mr-2" />
                   Confirmar
