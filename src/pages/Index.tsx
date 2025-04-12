@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useBitcoinEntries } from '@/hooks/useBitcoinEntries';
 import EntryForm from '@/components/EntryForm';
@@ -60,11 +59,6 @@ const Index = () => {
             <p className={`text-muted-foreground ${isMobile ? "text-xs" : ""}`}>
               Stay Humble and Stack Sats
             </p>
-            {user && (
-              <p className="text-xs text-muted-foreground">
-                Logado como: {user.email}
-              </p>
-            )}
           </div>
         </header>
 

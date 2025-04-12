@@ -1,164 +1,108 @@
 
 import { useState, useEffect } from 'react';
-import { BitcoinEntry } from '@/types';
+import { BitcoinEntry, CurrentRate } from '@/types';
+import { useBitcoinRate } from '@/hooks/useBitcoinRate';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { useBitcoinRate } from '@/hooks/useBitcoinRate';
-import { 
-  fetchBitcoinEntries, 
-  createBitcoinEntry, 
-  updateBitcoinEntry, 
-  deleteBitcoinEntry 
-} from '@/services/bitcoinEntryService';
+import * as entryService from '@/services/bitcoinEntryService';
 
 export function useBitcoinEntries() {
   const [entries, setEntries] = useState<BitcoinEntry[]>([]);
-  const [editingEntry, setEditingEntry] = useState<BitcoinEntry | null>(null);
+  const [editingEntry, setEditingEntry] = useState<BitcoinEntry | undefined>(undefined);
+  const { currentRate, isLoading, updateCurrentRate } = useBitcoinRate();
   const { toast } = useToast();
   const { user } = useAuth();
-  const { currentRate, isLoading, updateCurrentRate } = useBitcoinRate();
 
+  // Carregar entradas ao inicializar
   useEffect(() => {
-    // Only fetch entries if user is logged in
     if (user) {
-      loadEntries();
+      fetchEntries();
     }
   }, [user]);
 
-  const loadEntries = async () => {
-    if (!user) return;
-    
+  const fetchEntries = async () => {
     try {
-      const data = await fetchBitcoinEntries();
-      setEntries(data);
+      const fetchedEntries = await entryService.fetchBitcoinEntries();
+      setEntries(fetchedEntries);
     } catch (error) {
-      console.error('Error fetching entries:', error);
+      console.error('Failed to fetch entries:', error);
       toast({
-        title: 'Erro ao carregar dados',
-        description: 'Não foi possível carregar seus aportes do banco de dados.',
+        title: 'Erro ao buscar dados',
+        description: 'Não foi possível carregar seus aportes.',
         variant: 'destructive',
       });
     }
   };
 
   const addEntry = async (
-    amountInvested: number,
+    amountInvested: number, 
     btcAmount: number,
     exchangeRate: number,
     currency: 'BRL' | 'USD',
     date: Date,
-    origin: 'corretora' | 'p2p' = 'corretora'
+    origin: 'corretora' | 'p2p'
   ) => {
     if (!user) {
       toast({
-        title: 'Erro ao registrar',
-        description: 'Você precisa estar logado para registrar um aporte.',
+        title: 'Acesso negado',
+        description: 'Você precisa estar logado para registrar aportes.',
         variant: 'destructive',
       });
       return;
     }
-
-    if (editingEntry) {
-      try {
-        await updateBitcoinEntry(
-          editingEntry.id,
-          amountInvested,
-          btcAmount,
-          exchangeRate,
-          currency,
-          date,
-          origin
-        );
-
-        // Update local state
-        const updatedEntries = entries.map(entry => 
-          entry.id === editingEntry.id 
-            ? {
-                ...entry,
-                amountInvested,
-                btcAmount,
-                exchangeRate,
-                currency,
-                date,
-                origin
-              }
-            : entry
-        );
-        
-        setEntries(updatedEntries);
-        setEditingEntry(null);
-        
-        toast({
-          title: 'Aporte atualizado',
-          description: 'Seu aporte de Bitcoin foi atualizado com sucesso.',
-        });
-      } catch (error) {
-        console.error('Error updating entry:', error);
-        toast({
-          title: 'Erro ao atualizar',
-          description: 'Ocorreu um erro ao atualizar o aporte.',
-          variant: 'destructive',
-        });
-      }
-    } else {
-      try {
-        const newEntry = await createBitcoinEntry(
-          user.id,
-          amountInvested,
-          btcAmount,
-          exchangeRate,
-          currency,
-          date,
-          origin
-        );
-
-        setEntries(prev => [newEntry, ...prev]);
-
-        toast({
-          title: 'Aporte registrado',
-          description: 'Seu aporte de Bitcoin foi registrado com sucesso.',
-        });
-      } catch (error) {
-        console.error('Error adding entry:', error);
-        toast({
-          title: 'Erro ao registrar',
-          description: 'Ocorreu um erro ao registrar o aporte.',
-          variant: 'destructive',
-        });
-      }
+    
+    try {
+      const newEntry = await entryService.createBitcoinEntry(
+        user.id,
+        amountInvested,
+        btcAmount,
+        exchangeRate,
+        currency,
+        date,
+        origin
+      );
+      
+      setEntries((currentEntries) => [newEntry, ...currentEntries]);
+      
+      toast({
+        title: 'Aporte registrado',
+        description: 'Seu aporte foi registrado com sucesso!',
+      });
+    } catch (error) {
+      console.error('Failed to create entry:', error);
+      toast({
+        title: 'Erro ao registrar',
+        description: 'Não foi possível salvar seu aporte.',
+        variant: 'destructive',
+      });
     }
   };
 
-  const editEntry = (id: string) => {
-    const entry = entries.find(entry => entry.id === id);
-    if (entry) {
-      setEditingEntry(entry);
-    }
+  const editEntry = (entry: BitcoinEntry) => {
+    setEditingEntry(entry);
   };
 
   const cancelEdit = () => {
-    setEditingEntry(null);
+    setEditingEntry(undefined);
   };
 
-  const deleteEntry = async (id: string) => {
-    if (!user) return;
-    
+  const deleteEntry = async (entryId: string) => {
     try {
-      await deleteBitcoinEntry(id);
-
-      // Update local state
-      const updatedEntries = entries.filter((entry) => entry.id !== id);
-      setEntries(updatedEntries);
-
+      await entryService.deleteBitcoinEntry(entryId);
+      
+      setEntries((currentEntries) => 
+        currentEntries.filter((entry) => entry.id !== entryId)
+      );
+      
       toast({
-        title: 'Registro removido',
-        description: 'O registro foi removido com sucesso.',
+        title: 'Aporte removido',
+        description: 'Seu aporte foi removido com sucesso.',
       });
     } catch (error) {
-      console.error('Error deleting entry:', error);
+      console.error('Failed to delete entry:', error);
       toast({
         title: 'Erro ao remover',
-        description: 'Ocorreu um erro ao remover o aporte.',
+        description: 'Não foi possível remover seu aporte.',
         variant: 'destructive',
       });
     }

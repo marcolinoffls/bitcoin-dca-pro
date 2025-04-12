@@ -1,4 +1,3 @@
-
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,6 +19,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const [loginToastShown, setLoginToastShown] = useState(() => {
+    return sessionStorage.getItem('login_shown') !== 'true';
+  });
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -29,11 +31,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(newSession?.user ?? null);
         
         if (event === 'SIGNED_IN') {
-          toast({
-            title: "Login bem-sucedido",
-            description: "Bem-vindo de volta!",
-          });
+          if (loginToastShown) {
+            toast({
+              title: "Login bem-sucedido",
+              description: "Bem-vindo de volta!",
+            });
+            sessionStorage.setItem('login_shown', 'true');
+            setLoginToastShown(false);
+          }
         } else if (event === 'SIGNED_OUT') {
+          // Ao fazer logout, permite que o toast de login seja mostrado novamente na próxima sessão
+          sessionStorage.removeItem('login_shown');
+          setLoginToastShown(true);
+          
           toast({
             title: "Logout efetuado",
             description: "Você saiu com sucesso.",
@@ -62,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, [toast]);
+  }, [toast, loginToastShown]);
 
   const signIn = async (email: string, password: string) => {
     try {
