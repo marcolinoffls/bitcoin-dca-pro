@@ -1,14 +1,10 @@
 
 import { useState, useEffect } from 'react';
 import { BitcoinEntry, CurrentRate } from '@/types';
+import { v4 as uuidv4 } from 'uuid';
 import { useToast } from '@/components/ui/use-toast';
 import { fetchCurrentBitcoinRate } from '@/services/bitcoinService';
-import { 
-  fetchEntriesFromSupabase, 
-  addEntryToSupabase, 
-  updateEntryInSupabase, 
-  deleteEntryFromSupabase 
-} from '@/services/entryService';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
 export function useBitcoinEntries() {
@@ -47,8 +43,29 @@ export function useBitcoinEntries() {
     
     setIsLoading(true);
     try {
-      const formattedEntries = await fetchEntriesFromSupabase(user.id);
-      setEntries(formattedEntries);
+      const { data, error } = await supabase
+        .from('aportes')
+        .select('*')
+        .order('data_aporte', { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data) {
+        // Convert Supabase data to app's BitcoinEntry format
+        const formattedEntries: BitcoinEntry[] = data.map(entry => ({
+          id: entry.id,
+          date: new Date(entry.data_aporte),
+          amountInvested: Number(entry.valor_investido),
+          btcAmount: Number(entry.bitcoin),
+          exchangeRate: Number(entry.cotacao),
+          currency: entry.moeda as 'BRL' | 'USD',
+          origin: entry.origem_aporte as 'corretora' | 'p2p'
+        }));
+        
+        setEntries(formattedEntries);
+      }
     } catch (error) {
       console.error('Error fetching entries:', error);
       toast({
@@ -98,15 +115,20 @@ export function useBitcoinEntries() {
     if (editingEntry) {
       // Update existing entry in Supabase
       try {
-        await updateEntryInSupabase(
-          editingEntry.id,
-          amountInvested,
-          btcAmount,
-          exchangeRate,
-          currency,
-          date,
-          origin
-        );
+        const { error } = await supabase
+          .from('aportes')
+          .update({
+            data_aporte: date.toISOString().split('T')[0],
+            moeda: currency,
+            cotacao_moeda: currency, // Set the currency used for the exchange rate
+            valor_investido: amountInvested,
+            bitcoin: btcAmount,
+            cotacao: exchangeRate,
+            origem_aporte: origin
+          })
+          .eq('id', editingEntry.id);
+
+        if (error) throw error;
 
         // Update local state
         const updatedEntries = entries.map(entry => 
@@ -141,15 +163,33 @@ export function useBitcoinEntries() {
     } else {
       // Add new entry to Supabase
       try {
-        const newEntry = await addEntryToSupabase(
-          user.id,
+        const newEntryId = uuidv4();
+        const { error } = await supabase
+          .from('aportes')
+          .insert({
+            id: newEntryId,
+            data_aporte: date.toISOString().split('T')[0],
+            moeda: currency,
+            cotacao_moeda: currency, // Store the currency of the exchange rate
+            valor_investido: amountInvested,
+            bitcoin: btcAmount,
+            cotacao: exchangeRate,
+            origem_aporte: origin,
+            user_id: user.id // Set the user_id from the authenticated user
+          });
+
+        if (error) throw error;
+
+        // Add to local state
+        const newEntry: BitcoinEntry = {
+          id: newEntryId,
+          date,
           amountInvested,
           btcAmount,
           exchangeRate,
           currency,
-          date,
           origin
-        );
+        };
 
         setEntries(prev => [newEntry, ...prev]);
 
@@ -183,7 +223,12 @@ export function useBitcoinEntries() {
     if (!user) return;
     
     try {
-      await deleteEntryFromSupabase(id);
+      const { error } = await supabase
+        .from('aportes')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
 
       // Update local state
       const updatedEntries = entries.filter((entry) => entry.id !== id);
