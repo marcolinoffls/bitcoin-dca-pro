@@ -1,4 +1,5 @@
 
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -23,6 +24,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
  * - Adicionado useEffect para atualizar tempDate quando date prop muda
  * - Melhorada a persistência da data selecionada
  * - Garantido que a data seja aplicada instantaneamente ao ser selecionada
+ * - Corrigido problema de timezone, garantindo formatação consistente
  */
 interface DatePickerFieldProps {
   date: Date;

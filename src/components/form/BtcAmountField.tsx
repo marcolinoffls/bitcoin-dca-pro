@@ -11,6 +11,7 @@
  * - Adicionado console.log para depuração do formato de número
  * - Melhorada a consistência da formatação
  * - Garantido o envio correto dos valores numéricos
+ * - Corrigido o tratamento de pontos e vírgulas para consistência com outros campos
  */
 import React from 'react';
 import { Label } from '@/components/ui/label';

@@ -20,6 +20,7 @@
  * - Adicionado console.log para mostrar a data selecionada antes de enviar ao Supabase
  * - Melhorada a validação e tratamento da data
  * - Garantido que a data selecionada no calendário seja aplicada imediatamente
+ * - Corrigido problema de timezone, forçando o horário local ao interpretar datas
  */
 
 import React, { useState, useEffect } from 'react';
@@ -46,6 +47,20 @@ interface EntryEditFormProps {
   displayUnit?: 'BTC' | 'SATS';
 }
 
+/**
+ * Converte string de data para objeto Date, forçando o fuso horário local
+ * @param dateInput Data no formato string ou Date
+ * @returns Objeto Date com o fuso horário local
+ */
+const ensureLocalDate = (dateInput: Date | string): Date => {
+  if (dateInput instanceof Date) {
+    return dateInput;
+  }
+  
+  // Adiciona o horário T00:00:00 para forçar a interpretação no fuso horário local
+  return new Date(`${dateInput}T00:00:00`);
+};
+
 const EntryEditForm: React.FC<EntryEditFormProps> = ({
   entry,
   currentRate,
@@ -69,22 +84,20 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
   const [currency, setCurrency] = useState<'BRL' | 'USD'>(entry.currency);
   const [origin, setOrigin] = useState<'corretora' | 'p2p'>(entry.origin || 'corretora');
   
-  // Garantir que a data seja sempre uma instância de Date válida
+  // Garantir que a data seja sempre uma instância de Date válida com fuso horário local
   const [date, setDate] = useState<Date>(() => {
-    const entryDate = entry.date;
-    return entryDate instanceof Date && !isNaN(entryDate.getTime())
-      ? new Date(entryDate)
-      : new Date();
+    return ensureLocalDate(entry.date);
   });
 
-  // Atualizamos a data quando o entry mudar, garantindo que seja sempre um objeto Date
+  // Atualizamos a data quando o entry mudar, garantindo que seja sempre um objeto Date com fuso horário local
   useEffect(() => {
     console.log('Entry atualizado, data original:', entry.date);
     if (entry.date) {
-      const newDate = new Date(entry.date);
+      const newDate = ensureLocalDate(entry.date);
       if (!isNaN(newDate.getTime())) {
         setDate(newDate);
-        console.log('Data do entry convertida e atualizada:', newDate);
+        console.log('Data do entry convertida e atualizada:', newDate, 
+          'Formatada:', format(newDate, "dd/MM/yyyy", { locale: ptBR }));
       }
     }
   }, [entry]);
@@ -106,6 +119,8 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
   // Função para atualizar a data do aporte
   const handleDateChange = (newDate: Date) => {
     console.log('Nova data selecionada em EntryEditForm:', newDate);
+    console.log('Formatada para exibição:', format(newDate, "dd/MM/yyyy", { locale: ptBR }));
+    
     if (newDate instanceof Date && !isNaN(newDate.getTime())) {
       setDate(newDate);
     } else {
@@ -163,6 +178,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
       exchangeRate: exchangeRate,
       currency: currency,
       date: date,
+      formattedDate: format(date, "dd/MM/yyyy", { locale: ptBR }),
       origin: origin
     });
 

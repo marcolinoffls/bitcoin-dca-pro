@@ -12,11 +12,24 @@
  * - Melhorada a manipulação dos valores para conversão correta entre string e number
  * - Adicionada verificação extra para garantir que a data seja formatada corretamente
  * - Melhorada a validação e conversão de datas para garantir persistência no Supabase
+ * - Corrigido problema de timezone, forçando o horário local ao interpretar datas
  */
 
 import { BitcoinEntry, CurrentRate } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
+
+/**
+ * Converte string de data para objeto Date, forçando o fuso horário local
+ * @param dateString String de data no formato 'YYYY-MM-DD'
+ * @returns Objeto Date com o fuso horário local
+ */
+const parseLocalDate = (dateString: string): Date => {
+  // Adiciona o horário T00:00:00 para forçar a interpretação no fuso horário local
+  const localDate = new Date(`${dateString}T00:00:00`);
+  console.log(`Convertendo data string ${dateString} para objeto Date: ${localDate}`);
+  return localDate;
+};
 
 /**
  * Fetches all bitcoin entries from the database
@@ -33,8 +46,8 @@ export const fetchBitcoinEntries = async () => {
 
   // Convert Supabase data to app's BitcoinEntry format
   const formattedEntries: BitcoinEntry[] = data?.map(entry => {
-    // Garantir que a data seja um objeto Date válido
-    const entryDate = new Date(entry.data_aporte);
+    // Garantir que a data seja um objeto Date válido com fuso horário local
+    const entryDate = parseLocalDate(entry.data_aporte);
     console.log(`Convertendo data do aporte ${entry.id}: ${entry.data_aporte} para objeto Date: ${entryDate}`);
     
     return {

@@ -15,6 +15,7 @@
  * - Garantida a invalidação do cache de queries após operações
  * - Melhorada a validação da data para garantir que seja salva corretamente
  * - Melhorado o tratamento de erros e validação de datas
+ * - Corrigido problema de timezone, forçando o horário local ao interpretar datas
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -38,6 +39,18 @@ interface SupabaseAporte {
   cotacao_moeda: string;
   created_at: string;
 }
+
+/**
+ * Converte string de data para objeto Date, forçando o fuso horário local
+ * @param dateString String de data no formato 'YYYY-MM-DD'
+ * @returns Objeto Date com o fuso horário local
+ */
+const parseLocalDate = (dateString: string): Date => {
+  // Adiciona o horário T00:00:00 para forçar a interpretação no fuso horário local
+  const localDate = new Date(`${dateString}T00:00:00`);
+  console.log(`Convertendo data string ${dateString} para objeto Date: ${localDate}`);
+  return localDate;
+};
 
 export const useBitcoinEntries = () => {
   const { user } = useAuth();
@@ -135,7 +148,10 @@ export const useBitcoinEntries = () => {
       if (updatedFields.date instanceof Date) {
         dateToUpdate = updatedFields.date;
       } else {
-        dateToUpdate = new Date(updatedFields.date);
+        // Se for string, converte usando parseLocalDate para garantir timezone local
+        dateToUpdate = typeof updatedFields.date === 'string' 
+          ? parseLocalDate(updatedFields.date) 
+          : new Date(updatedFields.date);
       }
       
       // Verificar se a data é válida
