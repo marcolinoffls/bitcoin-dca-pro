@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { useBitcoinEntries } from '@/hooks/useBitcoinEntries';
+import { useBitcoinRate } from '@/hooks/useBitcoinRate';
 import EntryForm from '@/components/EntryForm';
 import EntriesList from '@/components/EntriesList';
 import StatisticsCards from '@/components/StatisticsCards';
@@ -10,19 +11,24 @@ import ToggleDisplayUnit from '@/components/ToggleDisplayUnit';
 import ToggleCurrency from '@/components/ToggleCurrency';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast'; // ✅ Importa hook para exibir notificações
+import { useToast } from '@/hooks/use-toast';
+import { useBitcoinEntries } from '@/hooks/useBitcoinEntries';
 
 const Index = () => {
   const {
+    currentRate: bitcoinRate,
+    isLoading: isRateLoading,
+    updateCurrentRate: fetchRateUpdate
+  } = useBitcoinRate();
+
+  const {
     entries,
-    currentRate,
-    isLoading,
+    isLoading: isEntriesLoading,
     editingEntry,
     addEntry,
     editEntry,
     cancelEdit,
-    deleteEntry,
-    updateCurrentRate
+    deleteEntry
   } = useBitcoinEntries();
 
   const [selectedCurrency, setSelectedCurrency] = useState<'BRL' | 'USD'>('BRL');
@@ -41,7 +47,7 @@ const Index = () => {
       // Seta a flag para que o toast não apareça novamente nesta sessão
       sessionStorage.setItem('loginSuccessShown', 'true');
     }
-  }, [user]);
+  }, [user, toast]);
 
   const toggleDisplayUnit = (value: 'BTC' | 'SATS') => {
     setDisplayUnit(value);
@@ -49,6 +55,17 @@ const Index = () => {
 
   const toggleCurrency = (value: 'BRL' | 'USD') => {
     setSelectedCurrency(value);
+  };
+
+  const handleAddEntry = (
+    amountInvested: number,
+    btcAmount: number,
+    exchangeRate: number,
+    currency: 'BRL' | 'USD',
+    date: Date,
+    origin: 'corretora' | 'p2p'
+  ) => {
+    addEntry(amountInvested, btcAmount, exchangeRate, currency, date, origin);
   };
 
   return (
@@ -99,7 +116,7 @@ const Index = () => {
           <div className="md:col-span-1">
             <StatisticsCards
               entries={entries}
-              currentRate={currentRate}
+              currentRate={bitcoinRate}
               selectedCurrency={selectedCurrency}
               displayUnit={displayUnit}
             />
@@ -108,15 +125,15 @@ const Index = () => {
           <div className="md:col-span-2">
             <div className="mb-5">
               <CurrentRateCard
-                currentRate={currentRate}
-                isLoading={isLoading}
-                onRefresh={updateCurrentRate}
+                currentRate={bitcoinRate}
+                isLoading={isRateLoading}
+                onRefresh={fetchRateUpdate}
               />
             </div>
             <div>
               <EntryForm
-                onAddEntry={addEntry}
-                currentRate={currentRate}
+                onAddEntry={handleAddEntry}
+                currentRate={bitcoinRate}
                 onCancelEdit={cancelEdit}
                 displayUnit={displayUnit}
                 editingEntry={editingEntry}
@@ -128,7 +145,7 @@ const Index = () => {
         <div>
           <EntriesList
             entries={entries}
-            currentRate={currentRate}
+            currentRate={bitcoinRate}
             onDelete={deleteEntry}
             onEdit={editEntry}
             selectedCurrency={selectedCurrency}

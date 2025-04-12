@@ -1,3 +1,4 @@
+
 /**
  * Hook: useBitcoinEntries
  *
@@ -14,6 +15,21 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { BitcoinEntry, CurrentRate } from '@/types';
+import { fetchCurrentBitcoinRate } from '@/services/bitcoinService';
+
+// Interface para mapear os dados do Supabase para os tipos da aplicação
+interface SupabaseAporte {
+  id: string;
+  data_aporte: string;
+  valor_investido: number;
+  bitcoin: number;
+  cotacao: number;
+  moeda: 'BRL' | 'USD';
+  origem_aporte: 'corretora' | 'p2p';
+  user_id: string;
+  cotacao_moeda: string;
+  created_at: string;
+}
 
 export const useBitcoinEntries = () => {
   const { user } = useAuth();
@@ -36,7 +52,17 @@ export const useBitcoinEntries = () => {
         .order('data_aporte', { ascending: false });
 
       if (error) throw error;
-      return data as BitcoinEntry[];
+      
+      // Converte os dados do formato do Supabase para o formato da aplicação
+      return (data as SupabaseAporte[]).map(item => ({
+        id: item.id,
+        date: new Date(item.data_aporte),
+        amountInvested: item.valor_investido,
+        btcAmount: item.bitcoin,
+        exchangeRate: item.cotacao,
+        currency: item.moeda,
+        origin: item.origem_aporte,
+      })) as BitcoinEntry[];
     },
     enabled: !!user,
   });
@@ -44,15 +70,10 @@ export const useBitcoinEntries = () => {
   /**
    * Busca cotação atual do Bitcoin (USD e BRL)
    */
-  const { data: currentRate } = useQuery<CurrentRate>({
+  const { data: currentRate, refetch: refetchRate } = useQuery<CurrentRate>({
     queryKey: ['currentRate'],
     queryFn: async () => {
-      const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,brl');
-      const result = await response.json();
-      return {
-        usd: result.bitcoin.usd,
-        brl: result.bitcoin.brl,
-      };
+      return await fetchCurrentBitcoinRate();
     },
     staleTime: 1000 * 60, // Atualiza a cada 1 minuto
   });
@@ -60,26 +81,71 @@ export const useBitcoinEntries = () => {
   /**
    * Adiciona um novo aporte
    */
-  const addEntry = async (entry: Partial<BitcoinEntry>) => {
-    const { error } = await supabase.from('aportes').insert([entry]);
+  const addEntry = async (
+    amountInvested: number,
+    btcAmount: number,
+    exchangeRate: number,
+    currency: 'BRL' | 'USD',
+    date: Date,
+    origin: 'corretora' | 'p2p'
+  ) => {
+    if (!user) return;
+    
+    const { error } = await supabase.from('aportes').insert([{
+      user_id: user.id,
+      data_aporte: date.toISOString().split('T')[0],
+      valor_investido: amountInvested,
+      bitcoin: btcAmount,
+      cotacao: exchangeRate,
+      moeda: currency,
+      cotacao_moeda: currency,
+      origem_aporte: origin
+    }]);
+    
     if (error) throw error;
 
-    await queryClient.invalidateQueries(['entries']); // Atualiza lista após inserção
+    // Atualiza lista após inserção
+    await queryClient.invalidateQueries({ queryKey: ['entries'] });
   };
 
   /**
    * Atualiza um aporte existente
    */
   const updateEntry = async (entryId: string, updatedFields: Partial<BitcoinEntry>) => {
+    if (!user) return;
+    
+    // Converte do formato da aplicação para o formato do Supabase
+    const supabaseData: Partial<SupabaseAporte> = {};
+    
+    if (updatedFields.date) {
+      supabaseData.data_aporte = updatedFields.date.toISOString().split('T')[0];
+    }
+    if (updatedFields.amountInvested !== undefined) {
+      supabaseData.valor_investido = updatedFields.amountInvested;
+    }
+    if (updatedFields.btcAmount !== undefined) {
+      supabaseData.bitcoin = updatedFields.btcAmount;
+    }
+    if (updatedFields.exchangeRate !== undefined) {
+      supabaseData.cotacao = updatedFields.exchangeRate;
+    }
+    if (updatedFields.currency) {
+      supabaseData.moeda = updatedFields.currency;
+      supabaseData.cotacao_moeda = updatedFields.currency;
+    }
+    if (updatedFields.origin) {
+      supabaseData.origem_aporte = updatedFields.origin;
+    }
+
     const { error } = await supabase
       .from('aportes')
-      .update(updatedFields)
+      .update(supabaseData)
       .eq('id', entryId);
 
     if (error) throw error;
 
-    // ✅ Força a atualização da lista após edição
-    await queryClient.invalidateQueries(['entries']);
+    // Força a atualização da lista após edição
+    await queryClient.invalidateQueries({ queryKey: ['entries'] });
     setEditingEntry(null); // Limpa estado de edição
   };
 
@@ -87,10 +153,16 @@ export const useBitcoinEntries = () => {
    * Exclui um aporte existente
    */
   const deleteEntry = async (entryId: string) => {
-    const { error } = await supabase.from('aportes').delete().eq('id', entryId);
+    if (!user) return;
+    
+    const { error } = await supabase
+      .from('aportes')
+      .delete()
+      .eq('id', entryId);
+      
     if (error) throw error;
 
-    await queryClient.invalidateQueries(['entries']); // Atualiza lista após exclusão
+    await queryClient.invalidateQueries({ queryKey: ['entries'] }); // Atualiza lista após exclusão
   };
 
   /**
@@ -111,7 +183,7 @@ export const useBitcoinEntries = () => {
    * Atualiza manualmente a cotação do Bitcoin
    */
   const updateCurrentRate = () => {
-    queryClient.invalidateQueries(['currentRate']);
+    queryClient.invalidateQueries({ queryKey: ['currentRate'] });
   };
 
   return {

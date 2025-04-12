@@ -1,4 +1,12 @@
 
+/**
+ * Fornece as funções para interagir com os aportes de Bitcoin no Supabase
+ * - Busca todos os aportes
+ * - Cria novos aportes
+ * - Atualiza aportes existentes
+ * - Exclui aportes
+ */
+
 import { BitcoinEntry, CurrentRate } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
