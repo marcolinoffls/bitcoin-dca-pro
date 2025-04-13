@@ -99,7 +99,7 @@ const Index = () => {
               {/* Reduzindo a altura */}
               <div className="flex items-center gap-0">
                 <img 
-                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/public/fontes//Bitcoin%20dca%20pro%20-%20caixa%20baixa.png" 
+                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/public/fontes//Bitcoin%20dca%20pro%20-%20caixa%20alta%20(1).png" 
                   alt="Bitcoin DCA Pro"
                   className="h-full object-contain"
                 />
