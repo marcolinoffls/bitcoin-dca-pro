@@ -3,6 +3,10 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 
+/**
+ * Interface do componente FormActions
+ * - Atualizada para aceitar origem 'planilha' em conformidade com o sistema
+ */
 interface FormActionsProps {
   isEditing: boolean;
   displayUnit: 'BTC' | 'SATS';

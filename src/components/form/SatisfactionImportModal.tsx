@@ -282,7 +282,7 @@ Você Recebe: 18.959 sats`;
   return (
     <>
       <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] rounded-xl">
           <DialogHeader>
             <DialogTitle>Importar do Satisfaction (P2P)</DialogTitle>
             <DialogDescription>
@@ -295,17 +295,18 @@ Você Recebe: 18.959 sats`;
               placeholder={exampleMessage}
               value={importText}
               onChange={(e) => setImportText(e.target.value)}
-              className="min-h-[150px] rounded-md placeholder:whitespace-pre-line placeholder:text-muted-foreground placeholder:opacity-60 text-foreground"
+              className="min-h-[150px] rounded-md placeholder:whitespace-pre-line placeholder:text-muted-foreground placeholder:opacity-60 text-foreground text-base"
+              style={{ fontSize: '16px' }} // Evita zoom no mobile
             />
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={handleClose}>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={handleClose} className="w-full sm:w-auto">
               Cancelar
             </Button>
             <Button 
               onClick={handleImport}
-              className="bg-bitcoin hover:bg-bitcoin/90"
+              className="bg-bitcoin hover:bg-bitcoin/90 w-full sm:w-auto"
               disabled={!importText.trim()}
             >
               Importar Aporte
@@ -316,20 +317,20 @@ Você Recebe: 18.959 sats`;
 
       {/* Diálogo de confirmação para quando a data não é encontrada */}
       <AlertDialog open={showNoDateDialog} onOpenChange={setShowNoDateDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Data do aporte não identificada</AlertDialogTitle>
             <AlertDialogDescription>
               Preenchemos a data com o dia de hoje. Por favor, confirme se deseja continuar ou volte para ajustar a data manualmente.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setShowNoDateDialog(false)}>
+          <AlertDialogFooter className="flex flex-col sm:flex-row gap-2">
+            <AlertDialogCancel onClick={() => setShowNoDateDialog(false)} className="w-full sm:w-auto">
               Voltar
             </AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleContinueWithoutDate}
-              className="bg-bitcoin hover:bg-bitcoin/90"
+              className="bg-bitcoin hover:bg-bitcoin/90 w-full sm:w-auto"
             >
               Continuar assim mesmo
             </AlertDialogAction>
