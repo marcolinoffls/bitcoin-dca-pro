@@ -19,7 +19,7 @@
  * - Campos de valor e quantidade de BTC são totalmente independentes
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import DatePickerField from '@/components/form/DatePickerField';
 import CurrencyField from '@/components/form/CurrencyField';
@@ -30,6 +30,9 @@ import OriginSelector from '@/components/form/OriginSelector';
 import FormActions from '@/components/form/FormActions';
 import { useEntryFormLogic } from '@/components/form/EntryFormLogic';
 import { useIsMobile } from '@/hooks/use-mobile';
+import SatisfactionImportModal from '@/components/form/SatisfactionImportModal';
+import { Upload } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface EntryFormProps {
   onAddEntry: (
@@ -48,7 +51,7 @@ interface EntryFormProps {
     btcAmount: number;
     exchangeRate: number;
     currency: 'BRL' | 'USD';
-    origin?: 'corretora' | 'p2p';
+    origin?: 'corretora' | 'p2p' | 'planilha';
   };
   onCancelEdit?: () => void;
   displayUnit?: 'BTC' | 'SATS';
@@ -62,6 +65,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
   displayUnit = 'BTC'
 }) => {
   const isMobile = useIsMobile();
+  const [isSatisfactionModalOpen, setIsSatisfactionModalOpen] = useState(false);
 
   // Importa a lógica do formulário (centraliza os estados e handlers)
   const {
@@ -125,6 +129,16 @@ const EntryForm: React.FC<EntryFormProps> = ({
     resetForm();
   };
 
+  // Abrir o modal de importação do Satisfaction
+  const openSatisfactionModal = () => {
+    setIsSatisfactionModalOpen(true);
+  };
+
+  // Fechar o modal de importação do Satisfaction
+  const closeSatisfactionModal = () => {
+    setIsSatisfactionModalOpen(false);
+  };
+
   return (
     <Card className="rounded-xl shadow-md hover:shadow-lg transition-all duration-200">
       <CardHeader className={isMobile ? 'pb-2' : 'pb-3'}>
@@ -184,15 +198,37 @@ const EntryForm: React.FC<EntryFormProps> = ({
           />
 
           {/* Ações: Calcular, Resetar, Confirmar */}
-          <FormActions 
-            isEditing={!!editingEntry} 
-            displayUnit={displayUnit} 
-            onCalculateFromAmount={calculateFromAmount} 
-            onCalculateFromBtc={calculateFromBtc} 
-            onReset={resetForm} 
-          />
+          <div className={`flex flex-col gap-3 mt-6`}>
+            {/* Mostrar botão de importar apenas quando não estiver em modo de edição */}
+            {!editingEntry && (
+              <Button 
+                type="button"
+                variant="outline"
+                className="flex items-center justify-center gap-2 text-bitcoin border-bitcoin/50 hover:bg-bitcoin/10"
+                onClick={openSatisfactionModal}
+              >
+                <Upload className="h-4 w-4" />
+                Importar do Satisfaction (P2P)
+              </Button>
+            )}
+            
+            {/* Componente FormActions existente */}
+            <FormActions 
+              isEditing={!!editingEntry} 
+              displayUnit={displayUnit} 
+              onCalculateFromAmount={calculateFromAmount} 
+              onCalculateFromBtc={calculateFromBtc} 
+              onReset={resetForm} 
+            />
+          </div>
         </form>
       </CardContent>
+
+      {/* Modal de importação do Satisfaction */}
+      <SatisfactionImportModal 
+        isOpen={isSatisfactionModalOpen} 
+        onClose={closeSatisfactionModal} 
+      />
     </Card>
   );
 };
