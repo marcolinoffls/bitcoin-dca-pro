@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 
 /**
@@ -9,6 +10,12 @@ import { useState, useEffect } from 'react';
  * 
  * Este hook é usado tanto por EntryForm quanto EntryEditForm
  */
+
+// Função para formatar valores (movida para o topo para evitar erro "cannot access before initialization")
+const formatValor = (valor: number): string => {
+  return valor.toString().replace(".", ",");
+};
+
 export const useEntryFormLogic = (
   editingEntry?: {
     id: string;
@@ -76,11 +83,6 @@ export const useEntryFormLogic = (
       setExchangeRateDisplay(formatValor(newRate));
     }
   }, [currency, currentRate]);
-
-  // Função para formatar valores
-  const formatValor = (valor: number): string => {
-    return valor.toString().replace(".", ",");
-  };
 
   // Função para converter strings com vírgula para números
   const parseLocalNumber = (valorString: string): number => {
