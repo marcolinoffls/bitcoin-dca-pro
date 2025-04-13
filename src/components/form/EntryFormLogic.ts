@@ -24,6 +24,7 @@ import { formatNumber } from '@/lib/utils';
 
 type Currency = 'BRL' | 'USD';
 type DisplayUnit = 'BTC' | 'SATS';
+type Origin = 'corretora' | 'p2p' | 'planilha';
 
 interface CurrentRate {
   usd: number;
@@ -37,7 +38,7 @@ interface EditingEntry {
   btcAmount: number;
   exchangeRate: number;
   currency: Currency;
-  origin?: 'corretora' | 'p2p' | 'planilha';
+  origin?: Origin;
 }
 
 export const useEntryFormLogic = (
@@ -51,7 +52,7 @@ export const useEntryFormLogic = (
   const [exchangeRate, setExchangeRate] = useState<number>(0);          // número puro para cálculos
   const [exchangeRateDisplay, setExchangeRateDisplay] = useState<string>(''); // string formatada para exibição
   const [currency, setCurrency] = useState<Currency>('BRL');
-  const [origin, setOrigin] = useState<'corretora' | 'p2p'>('corretora');
+  const [origin, setOrigin] = useState<Origin>('corretora');
   const [date, setDate] = useState<Date>(new Date());
 
   /**
@@ -174,7 +175,7 @@ export const useEntryFormLogic = (
     exchangeRate,
     exchangeRateDisplay,
     setExchangeRateDisplay,
-    setExchangeRate, // Nova função exportada
+    setExchangeRate,
     currency,
     origin,
     date,

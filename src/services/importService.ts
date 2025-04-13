@@ -1,4 +1,3 @@
-
 /**
  * Serviço para importação de planilhas
  * 
@@ -20,7 +19,7 @@ import { v4 as uuidv4 } from 'uuid';
  * Interface para mapear dados importados de planilha
  */
 interface RawImportData {
-  data: string;
+  data: string | Date;
   valorInvestido: number;
   bitcoin: number;
   cotacao?: number;

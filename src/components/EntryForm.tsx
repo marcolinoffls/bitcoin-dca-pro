@@ -1,4 +1,3 @@
-
 /**
  * Componente: EntryForm
  * 
@@ -148,6 +147,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
     exchangeRate?: number;
     amountInvested?: number;
     btcAmount?: number;
+    date?: Date;
   }) => {
     // Definir origem como P2P
     handleOriginChange('p2p');
@@ -172,6 +172,11 @@ const EntryForm: React.FC<EntryFormProps> = ({
       } else {
         setBtcAmount(formatNumber(data.btcAmount, 8));
       }
+    }
+    
+    // Preencher a data se disponível
+    if (data.date) {
+      setDate(data.date);
     }
   };
 
