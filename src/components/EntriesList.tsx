@@ -72,13 +72,20 @@ const EntriesList: React.FC<EntriesListProps> = ({
   const [viewCurrency, setViewCurrency] = useState<'BRL' | 'USD'>(selectedCurrency);
   const isMobile = useIsMobile();
   
-  // Estados para os filtros
+  // Estados para os filtros ativos
   const [monthFilter, setMonthFilter] = useState<string | null>(null);
   const [originFilter, setOriginFilter] = useState<'corretora' | 'p2p' | 'planilha' | null>(null);
+  
+  // Estados para os filtros temporários (não aplicados até confirmação)
+  const [tempMonthFilter, setTempMonthFilter] = useState<string | null>(null);
+  const [tempOriginFilter, setTempOriginFilter] = useState<'corretora' | 'p2p' | 'planilha' | null>(null);
+  const [isFilterActive, setIsFilterActive] = useState(false);
+  
   const [rowsToShow, setRowsToShow] = useState<number>(10);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
 
   // Função para acionar o input de arquivo ao clicar no botão
   const handleFileButtonClick = () => {
@@ -177,6 +184,32 @@ const EntriesList: React.FC<EntriesListProps> = ({
     setIsImportDialogOpen(true);
   };
 
+  // Inicializar filtros temporários com os valores atuais quando o popover é aberto
+  const handleFilterPopoverOpenChange = (open: boolean) => {
+    setIsFilterPopoverOpen(open);
+    if (open) {
+      setTempMonthFilter(monthFilter);
+      setTempOriginFilter(originFilter);
+    }
+  };
+
+  // Aplicar filtros ao clicar no botão de confirmar
+  const applyFilters = () => {
+    setMonthFilter(tempMonthFilter);
+    setOriginFilter(tempOriginFilter);
+    setIsFilterActive(tempMonthFilter !== null || tempOriginFilter !== null);
+    setIsFilterPopoverOpen(false);
+  };
+
+  // Função para limpar todos os filtros
+  const clearFilters = () => {
+    setMonthFilter(null);
+    setOriginFilter(null);
+    setTempMonthFilter(null);
+    setTempOriginFilter(null);
+    setIsFilterActive(false);
+  };
+
   // Aplicar filtros nas entradas
   const filteredEntries = useMemo(() => {
     if (!entries) return [];
@@ -205,12 +238,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
       (a, b) => b.date.getTime() - a.date.getTime()
     ).slice(0, rowsToShow);
   }, [filteredEntries, rowsToShow]);
-
-  // Função para limpar todos os filtros
-  const clearFilters = () => {
-    setMonthFilter(null);
-    setOriginFilter(null);
-  };
 
   // Obter meses únicos para o filtro
   const availableMonths = useMemo(() => {
@@ -524,12 +551,19 @@ const EntriesList: React.FC<EntriesListProps> = ({
             
             {/* Botões de ação */}
             <div className="flex items-center gap-2">
-              {/* Botão de filtro */}
-              <Popover>
+              {/* Botão de filtro com indicador visual quando filtro está ativo */}
+              <Popover open={isFilterPopoverOpen} onOpenChange={handleFilterPopoverOpenChange}>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" size={isMobile ? "sm" : "default"} className="flex items-center gap-2">
-                    <Filter size={16} />
+                  <Button 
+                    variant="outline" 
+                    size={isMobile ? "sm" : "default"} 
+                    className={`flex items-center gap-2 ${isFilterActive ? 'border-bitcoin text-bitcoin' : ''}`}
+                  >
+                    <Filter size={16} className={isFilterActive ? 'text-bitcoin' : ''} />
                     {!isMobile && <span>Filtrar</span>}
+                    {isFilterActive && (
+                      <span className="absolute top-0 right-0 h-2 w-2 bg-bitcoin rounded-full"></span>
+                    )}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-80 p-4">
@@ -539,7 +573,10 @@ const EntriesList: React.FC<EntriesListProps> = ({
                     {/* Filtro por mês */}
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Por mês</label>
-                      <Select value={monthFilter || 'all'} onValueChange={(value) => setMonthFilter(value === 'all' ? null : value)}>
+                      <Select 
+                        value={tempMonthFilter || 'all'} 
+                        onValueChange={(value) => setTempMonthFilter(value === 'all' ? null : value)}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Todos os meses" />
                         </SelectTrigger>
@@ -555,7 +592,10 @@ const EntriesList: React.FC<EntriesListProps> = ({
                     {/* Filtro por origem */}
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Por origem</label>
-                      <Select value={originFilter || 'all'} onValueChange={(value) => setOriginFilter(value === 'all' ? null : value as 'corretora' | 'p2p' | 'planilha')}>
+                      <Select 
+                        value={tempOriginFilter || 'all'} 
+                        onValueChange={(value) => setTempOriginFilter(value === 'all' ? null : value as 'corretora' | 'p2p' | 'planilha')}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Todas as origens" />
                         </SelectTrigger>
@@ -568,14 +608,25 @@ const EntriesList: React.FC<EntriesListProps> = ({
                       </Select>
                     </div>
                     
-                    {/* Botão para limpar filtros */}
-                    <Button 
-                      variant="outline" 
-                      className="w-full mt-2" 
-                      onClick={clearFilters}
-                    >
-                      Limpar filtros
-                    </Button>
+                    {/* Botões de ação */}
+                    <div className="flex flex-col gap-2 mt-4">
+                      {/* Botão para aplicar filtros */}
+                      <Button 
+                        className="w-full bg-bitcoin hover:bg-bitcoin/90 text-white" 
+                        onClick={applyFilters}
+                      >
+                        Confirmar filtros
+                      </Button>
+                      
+                      {/* Botão para limpar filtros */}
+                      <Button 
+                        variant="outline" 
+                        className="w-full" 
+                        onClick={clearFilters}
+                      >
+                        Limpar filtros
+                      </Button>
+                    </div>
                   </div>
                 </PopoverContent>
               </Popover>
