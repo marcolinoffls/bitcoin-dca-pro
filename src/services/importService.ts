@@ -245,7 +245,7 @@ export const prepareImportedEntries = (
         cotacao: exchangeRate,
         moeda: item.moeda || 'BRL',
         cotacao_moeda: item.moeda || 'BRL',
-        origem_aporte: 'planilha' // Marcar origem como planilha
+        origem_aporte: item.origem || 'planilha' // Marcar origem como planilha
       };
       
       // Objeto BitcoinEntry para o app
@@ -256,7 +256,7 @@ export const prepareImportedEntries = (
         btcAmount: item.bitcoin,
         exchangeRate,
         currency: item.moeda || 'BRL',
-        origin: 'planilha' // Marcar origem como planilha
+        origin: item.origem || 'planilha' // Marcar origem como planilha
       };
       
       supabaseEntries.push(supabaseEntry);
