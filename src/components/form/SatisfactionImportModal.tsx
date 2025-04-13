@@ -190,8 +190,15 @@ const SatisfactionImportModal: React.FC<SatisfactionImportModalProps> = ({
       
       // Verifica se a data foi encontrada
       if (!extractedData.date) {
-        // Se não encontrou data, mostra aviso e não fecha o modal automaticamente
+        // Se não encontrou data, mostra aviso através de um toast e não fecha o modal automaticamente
         setNoDateWarning(true);
+        
+        // Exibe o toast com aviso visual sobre a data não encontrada
+        toast({
+          title: "❗ Data não identificada",
+          description: "Não foi possível identificar a data do aporte. Ela será preenchida com a data de hoje. Por favor, revise no próximo passo antes de confirmar.",
+          variant: "warning"
+        });
         
         // Adiciona a data atual como fallback
         extractedData.date = new Date();
@@ -266,12 +273,12 @@ Você Recebe: 18.959 sats`;
             placeholder={exampleMessage}
             value={importText}
             onChange={(e) => setImportText(e.target.value)}
-            className="min-h-[150px] text-muted-foreground opacity-60 rounded-md placeholder:whitespace-pre-line"
+            className="min-h-[150px] rounded-md placeholder:whitespace-pre-line placeholder:text-muted-foreground placeholder:opacity-60"
           />
 
           {/* Aviso quando data não foi encontrada */}
           {noDateWarning && (
-            <Alert variant="warning" className="mt-4 bg-amber-50 border-amber-200">
+            <Alert variant="default" className="mt-4 bg-amber-50 border-amber-200">
               <AlertCircle className="h-4 w-4 text-amber-500" />
               <AlertDescription className="text-amber-700">
                 Nenhuma data foi identificada na mensagem. Preenchemos com a data de hoje. Por favor, revise antes de confirmar.
@@ -289,7 +296,7 @@ Você Recebe: 18.959 sats`;
             className="bg-bitcoin hover:bg-bitcoin/90"
             disabled={!importText.trim()}
           >
-            Importar Aporte
+            {noDateWarning ? "Continuar mesmo assim" : "Importar Aporte"}
           </Button>
         </DialogFooter>
       </DialogContent>

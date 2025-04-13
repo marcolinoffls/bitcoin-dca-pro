@@ -1,3 +1,4 @@
+
 export interface BitcoinEntry {
   id: string;
   date: Date;
