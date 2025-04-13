@@ -101,14 +101,14 @@ const Index = () => {
             <div className="flex items-center gap-3">
               <div className="h-10 w-10">
                 <img 
-                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/bitcoin%20logo%20oficial%20sem%20nome%20100px.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvYml0Y29pbiBsb2dvIG9maWNpYWwgc2VtIG5vbWUgMTAwcHgucG5nIiwiaWF0IjoxNzQ0NTc3ODY3LCJleHAiOjE3NzYxMTM4Njd9.j6RrKe8hvdoQXp52OgpfLtpxl84vz46GfXKKY1QdIec" 
+                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/bitcoin%20logo%20oficial%20sem%20nome%20100px.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvYml0Y29pbiBsb2dvIG9maWNpYWwgc2VtIG5vbWUgMTAwcHgucG5nIiwiaWF0IjoxNzQ0NTU4MDQ2LCJleHAiOjE4MDc2MzAwNDZ9.jmzK3PG-1LJ1r-2cqJD7OiOJItfPWA4oD8n0autKJeo" 
                   alt="Bitcoin Logo"
                   className="h-full w-full object-contain"
                 />
               </div>
               <div className="h-8">
                 <img 
-                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/Bitcoin%20dca%20pro%20-%20caixa%20alta.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvQml0Y29pbiBkY2EgcHJvIC0gY2FpeGEgYWx0YS5wbmciLCJpYXQiOjE3NDQ1Nzc5NDgsImV4cCI6MTc3NjExMzk0OH0.JvdEaY7wjEjQc5Fs2v-K9yC9-8Rm1vQbkHkTOdSXROs" 
+                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/public/fontes//Bitcoin%20dca%20pro%20-%20caixa%20baixa.png" 
                   alt="Bitcoin DCA Pro"
                   className="h-full object-contain"
                 />
