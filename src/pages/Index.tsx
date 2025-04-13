@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useBitcoinRate } from '@/hooks/useBitcoinRate';
 import EntryForm from '@/components/EntryForm';
@@ -39,14 +38,12 @@ const Index = () => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
 
-  // 🔔 Exibe o toast de "login bem-sucedido" apenas uma vez por sessão
   useEffect(() => {
     if (user && !sessionStorage.getItem('loginSuccessShown')) {
       toast({
         title: "Login bem-sucedido",
         description: "Bem-vindo de volta!",
       });
-      // Seta a flag para que o toast não apareça novamente nesta sessão
       sessionStorage.setItem('loginSuccessShown', 'true');
     }
   }, [user, toast]);
@@ -59,7 +56,6 @@ const Index = () => {
     setSelectedCurrency(value);
   };
 
-  // Adaptador que converte os parâmetros individuais para o objeto esperado por addEntry
   const handleAddEntry = (
     amountInvested: number,
     btcAmount: number,
@@ -78,9 +74,7 @@ const Index = () => {
     });
   };
 
-  // Adaptador para corrigir incompatibilidade entre tipos BitcoinEntry e string
   const handleDeleteEntry = (entryIdOrEntry: string | { id: string }) => {
-    // Verifica se é uma string ou um objeto com propriedade id
     const id = typeof entryIdOrEntry === 'string' 
       ? entryIdOrEntry 
       : entryIdOrEntry.id;
@@ -88,16 +82,13 @@ const Index = () => {
     deleteEntry(id);
   };
 
-  // Adaptador para corrigir incompatibilidade entre tipos
   const handleEditEntry = (entry: BitcoinEntry | string) => {
-    // Se for um ID (string), precisamos encontrar a entrada correspondente
     if (typeof entry === 'string') {
       const foundEntry = entries.find(e => e.id === entry);
       if (foundEntry) {
         editEntry(foundEntry);
       }
     } else {
-      // Se já for o objeto BitcoinEntry completo
       editEntry(entry);
     }
   };
@@ -108,20 +99,22 @@ const Index = () => {
         <header className="mb-6">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-              {/* Substituição do ícone do Bitcoin */}
               <div className="h-10 w-10">
                 <img 
-                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/bitcoin%20logo%20oficial.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvYml0Y29pbiBsb2dvIG9maWNpYWwucG5nIiwiaWF0IjoxNzQ0NDk0OTI4LCJleHAiOjE3NzYwMzA5Mjh9.jp87rUIo5RXA3xo_VcUYD8JQkm_TEI5pHi6iSWDMA90" 
+                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/bitcoin%20logo%20oficial%20sem%20nome%20100px.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvYml0Y29pbiBsb2dvIG9maWNpYWwgc2VtIG5vbWUgMTAwcHgucG5nIiwiaWF0IjoxNzQ0NTc3ODY3LCJleHAiOjE3NzYxMTM4Njd9.j6RrKe8hvdoQXp52OgpfLtpxl84vz46GfXKKY1QdIec" 
                   alt="Bitcoin Logo"
                   className="h-full w-full object-contain"
                 />
               </div>
-              {/* Alteração para caixa alta */}
-              <h1 className={`${isMobile ? "text-xl" : "text-3xl"} font-bold`}>
-                BITCOIN DCA PRO
-              </h1>
+              <div className="h-8">
+                <img 
+                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/Bitcoin%20dca%20pro%20-%20caixa%20alta.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvQml0Y29pbiBkY2EgcHJvIC0gY2FpeGEgYWx0YS5wbmciLCJpYXQiOjE3NDQ1Nzc5NDgsImV4cCI6MTc3NjExMzk0OH0.JvdEaY7wjEjQc5Fs2v-K9yC9-8Rm1vQbkHkTOdSXROs" 
+                  alt="Bitcoin DCA Pro"
+                  className="h-full object-contain"
+                />
+              </div>
             </div>
-            <div className="flex flex-col items-end">
+            <div className="flex items-center">
               <Button
                 variant="outline"
                 size="sm"
@@ -131,12 +124,6 @@ const Index = () => {
                 <LogOut size={16} />
                 <span className={isMobile ? "hidden" : "inline"}>Sair</span>
               </Button>
-              {/* Movendo o texto "Logado como" para baixo do botão */}
-              {user && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Logado como: {user.email}
-                </p>
-              )}
             </div>
           </div>
           <div className="flex items-center justify-between">
