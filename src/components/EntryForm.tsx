@@ -1,3 +1,4 @@
+
 /**
  * Componente: EntryForm
  * 
@@ -239,7 +240,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
           />
 
           {/* Ações: Calcular, Resetar, Confirmar */}
-          <div className={`flex flex-col gap-3 mt-6`}>
+          <div className="flex flex-col gap-3">
             {/* Mostrar botão de importar apenas quando não estiver em modo de edição */}
             {!editingEntry && (
               <Button 
@@ -253,7 +254,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
               </Button>
             )}
             
-            {/* Componente FormActions existente */}
+            {/* Componente FormActions existente - redução do espaçamento */}
             <FormActions 
               isEditing={!!editingEntry} 
               displayUnit={displayUnit} 

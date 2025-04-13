@@ -19,7 +19,7 @@ const FormActions: React.FC<FormActionsProps> = ({
   const isMobile = useIsMobile();
 
   return (
-    <div className={`flex justify-center mt-6`}>
+    <div className="flex justify-center">
       {!isEditing ? (
         <Button 
           type="submit" 

@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { formatNumber } from '@/lib/utils';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 interface SatisfactionImportModalProps {
   isOpen: boolean;
@@ -109,7 +110,13 @@ const SatisfactionImportModal: React.FC<SatisfactionImportModalProps> = ({
   onDataExtracted 
 }) => {
   const [importText, setImportText] = useState('');
-  const [noDateWarning, setNoDateWarning] = useState(false);
+  const [showNoDateDialog, setShowNoDateDialog] = useState(false);
+  const [extractedData, setExtractedData] = useState<{
+    exchangeRate?: number;
+    amountInvested?: number;
+    btcAmount?: number;
+    date?: Date;
+  } | null>(null);
   const { toast } = useToast();
 
   /**
@@ -176,9 +183,9 @@ const SatisfactionImportModal: React.FC<SatisfactionImportModalProps> = ({
   const handleImport = () => {
     try {
       // Extrair os dados da mensagem
-      const extractedData = extractDataFromMessage(importText);
+      const data = extractDataFromMessage(importText);
       
-      if (!extractedData) {
+      if (!data) {
         // Se não conseguiu extrair nenhum dado, mostrar mensagem de erro
         toast({
           title: "Não foi possível extrair os dados",
@@ -189,49 +196,35 @@ const SatisfactionImportModal: React.FC<SatisfactionImportModalProps> = ({
       }
       
       // Verifica se a data foi encontrada
-      if (!extractedData.date) {
-        // Se não encontrou data, mostra aviso através de um toast e não fecha o modal automaticamente
-        setNoDateWarning(true);
-        
-        // Exibe o toast com aviso visual sobre a data não encontrada
-        toast({
-          title: "❗ Data não identificada",
-          description: "Não foi possível identificar a data do aporte. Ela será preenchida com a data de hoje. Por favor, revise no próximo passo antes de confirmar.",
-          variant: "warning"
-        });
-        
-        // Adiciona a data atual como fallback
-        extractedData.date = new Date();
-      } else {
-        // Se encontrou a data, não precisa mostrar aviso
-        setNoDateWarning(false);
+      if (!data.date) {
+        // Se não encontrou data, armazena os dados para usar depois e mostra o diálogo de confirmação
+        setExtractedData(data);
+        setShowNoDateDialog(true);
+        return;
       }
       
       // Mostrar quais dados foram extraídos
       const extractedFields = [];
-      if (extractedData.exchangeRate) extractedFields.push("cotação");
-      if (extractedData.amountInvested) extractedFields.push("valor");
-      if (extractedData.btcAmount) extractedFields.push("quantidade de Bitcoin");
-      if (extractedData.date) extractedFields.push("data");
+      if (data.exchangeRate) extractedFields.push("cotação");
+      if (data.amountInvested) extractedFields.push("valor");
+      if (data.btcAmount) extractedFields.push("quantidade de Bitcoin");
+      if (data.date) extractedFields.push("data");
       
       // Enviar dados extraídos para o componente pai
       if (onDataExtracted) {
-        onDataExtracted(extractedData);
+        onDataExtracted(data);
       }
       
-      // Se não tiver aviso de data, fecha o modal automaticamente
-      if (!noDateWarning) {
-        // Exibir mensagem de sucesso
-        toast({
-          title: "Dados importados com sucesso",
-          description: `Foram extraídos: ${extractedFields.join(", ")}.`,
-          variant: "success"
-        });
-        
-        // Limpar o campo e fechar o modal
-        setImportText('');
-        onClose();
-      }
+      // Exibir mensagem de sucesso
+      toast({
+        title: "Dados importados com sucesso",
+        description: `Foram extraídos: ${extractedFields.join(", ")}.`,
+        variant: "success"
+      });
+      
+      // Limpar o campo e fechar o modal
+      setImportText('');
+      onClose();
     } catch (error) {
       console.error("Erro ao processar mensagem do Satisfaction:", error);
       
@@ -243,11 +236,39 @@ const SatisfactionImportModal: React.FC<SatisfactionImportModalProps> = ({
     }
   };
 
-  // Quando o modal é fechado, limpa o aviso de data e o texto
+  // Quando o modal é fechado, limpa os estados
   const handleClose = () => {
-    setNoDateWarning(false);
     setImportText('');
+    setShowNoDateDialog(false);
+    setExtractedData(null);
     onClose();
+  };
+
+  // Continua a importação mesmo sem data detectada
+  const handleContinueWithoutDate = () => {
+    if (extractedData && onDataExtracted) {
+      // Adiciona a data atual como fallback
+      const dataWithCurrentDate = {
+        ...extractedData,
+        date: new Date()
+      };
+      
+      // Envia para o componente pai
+      onDataExtracted(dataWithCurrentDate);
+      
+      // Exibe toast informando sobre a data não identificada
+      toast({
+        title: "Dados importados com data atual",
+        description: "Os dados foram importados e a data foi preenchida com o dia de hoje.",
+        variant: "success"
+      });
+      
+      // Limpa e fecha tudo
+      setImportText('');
+      setShowNoDateDialog(false);
+      setExtractedData(null);
+      onClose();
+    }
   };
 
   const exampleMessage = `Expira em: 13/04/25 às 09:02:57
@@ -259,48 +280,63 @@ Taxa Percentual: 2%
 Você Recebe: 18.959 sats`;
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Importar do Satisfaction (P2P)</DialogTitle>
-          <DialogDescription>
-            Cole a mensagem de confirmação recebida do Satisfaction P2P abaixo.
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Importar do Satisfaction (P2P)</DialogTitle>
+            <DialogDescription>
+              Cole a mensagem de confirmação recebida do Satisfaction P2P abaixo.
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className="py-4">
-          <Textarea
-            placeholder={exampleMessage}
-            value={importText}
-            onChange={(e) => setImportText(e.target.value)}
-            className="min-h-[150px] rounded-md placeholder:whitespace-pre-line placeholder:text-muted-foreground placeholder:opacity-60"
-          />
+          <div className="py-4">
+            <Textarea
+              placeholder={exampleMessage}
+              value={importText}
+              onChange={(e) => setImportText(e.target.value)}
+              className="min-h-[150px] rounded-md placeholder:whitespace-pre-line placeholder:text-muted-foreground placeholder:opacity-60 text-foreground"
+            />
+          </div>
 
-          {/* Aviso quando data não foi encontrada */}
-          {noDateWarning && (
-            <Alert variant="default" className="mt-4 bg-amber-50 border-amber-200">
-              <AlertCircle className="h-4 w-4 text-amber-500" />
-              <AlertDescription className="text-amber-700">
-                Nenhuma data foi identificada na mensagem. Preenchemos com a data de hoje. Por favor, revise antes de confirmar.
-              </AlertDescription>
-            </Alert>
-          )}
-        </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleClose}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleImport}
+              className="bg-bitcoin hover:bg-bitcoin/90"
+              disabled={!importText.trim()}
+            >
+              Importar Aporte
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={handleClose}>
-            Cancelar
-          </Button>
-          <Button 
-            onClick={handleImport}
-            className="bg-bitcoin hover:bg-bitcoin/90"
-            disabled={!importText.trim()}
-          >
-            {noDateWarning ? "Continuar mesmo assim" : "Importar Aporte"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      {/* Diálogo de confirmação para quando a data não é encontrada */}
+      <AlertDialog open={showNoDateDialog} onOpenChange={setShowNoDateDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Data do aporte não identificada</AlertDialogTitle>
+            <AlertDialogDescription>
+              Preenchemos a data com o dia de hoje. Por favor, confirme se deseja continuar ou volte para ajustar a data manualmente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowNoDateDialog(false)}>
+              Voltar
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleContinueWithoutDate}
+              className="bg-bitcoin hover:bg-bitcoin/90"
+            >
+              Continuar assim mesmo
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
 
