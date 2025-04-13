@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useBitcoinRate } from '@/hooks/useBitcoinRate';
 import EntryForm from '@/components/EntryForm';
@@ -157,84 +156,27 @@ const Index = () => {
           />
         </div>
 
-        {/* Layout Mobile (não alterar) */}
-        {isMobile && (
-          <>
-            <div className="grid grid-cols-1 gap-5 mb-6">
-              <div>
-                <StatisticsCards
-                  entries={entries}
-                  currentRate={bitcoinRate}
-                  selectedCurrency={selectedCurrency}
-                  displayUnit={displayUnit}
-                  isLoading={isEntriesLoading}
-                />
-              </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+          <div className="md:col-span-1">
+            <StatisticsCards
+              entries={entries}
+              currentRate={bitcoinRate}
+              selectedCurrency={selectedCurrency}
+              displayUnit={displayUnit}
+              isLoading={isEntriesLoading}
+            />
+          </div>
 
-              <div>
-                <div className="mb-5">
-                  <CurrentRateCard
-                    currentRate={bitcoinRate}
-                    priceVariation={priceVariation}
-                    isLoading={isRateLoading}
-                    onRefresh={fetchRateUpdate}
-                  />
-                </div>
-                <div>
-                  <EntryForm
-                    onAddEntry={handleAddEntry}
-                    currentRate={bitcoinRate}
-                    onCancelEdit={cancelEdit}
-                    displayUnit={displayUnit}
-                    editingEntry={editingEntry}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <EntriesList
-                entries={entries}
+          <div className="md:col-span-2">
+            <div className="mb-5">
+              <CurrentRateCard
                 currentRate={bitcoinRate}
-                onDelete={handleDeleteEntry}
-                onEdit={handleEditEntry}
-                selectedCurrency={selectedCurrency}
-                displayUnit={displayUnit}
-                isLoading={isEntriesLoading}
+                priceVariation={priceVariation}
+                isLoading={isRateLoading}
+                onRefresh={fetchRateUpdate}
               />
             </div>
-          </>
-        )}
-
-        {/* Layout Desktop (novo layout) */}
-        {!isMobile && (
-          <>
-            {/* Primeira linha: 3 cards alinhados horizontalmente */}
-            <div className="grid grid-cols-3 gap-5 mb-6">
-              {/* Card Total / Portfólio */}
-              <div>
-                <StatisticsCards
-                  entries={entries}
-                  currentRate={bitcoinRate}
-                  selectedCurrency={selectedCurrency}
-                  displayUnit={displayUnit}
-                  isLoading={isEntriesLoading}
-                />
-              </div>
-              
-              {/* Card Cotação Atual */}
-              <div>
-                <CurrentRateCard
-                  currentRate={bitcoinRate}
-                  priceVariation={priceVariation}
-                  isLoading={isRateLoading}
-                  onRefresh={fetchRateUpdate}
-                />
-              </div>
-            </div>
-
-            {/* Segunda linha: Card Registrar Novo Aporte (largura total) */}
-            <div className="mb-6">
+            <div>
               <EntryForm
                 onAddEntry={handleAddEntry}
                 currentRate={bitcoinRate}
@@ -243,21 +185,20 @@ const Index = () => {
                 editingEntry={editingEntry}
               />
             </div>
+          </div>
+        </div>
 
-            {/* Terceira linha: Card Aportes Registrados */}
-            <div>
-              <EntriesList
-                entries={entries}
-                currentRate={bitcoinRate}
-                onDelete={handleDeleteEntry}
-                onEdit={handleEditEntry}
-                selectedCurrency={selectedCurrency}
-                displayUnit={displayUnit}
-                isLoading={isEntriesLoading}
-              />
-            </div>
-          </>
-        )}
+        <div>
+          <EntriesList
+            entries={entries}
+            currentRate={bitcoinRate}
+            onDelete={handleDeleteEntry}
+            onEdit={handleEditEntry}
+            selectedCurrency={selectedCurrency}
+            displayUnit={displayUnit}
+            isLoading={isEntriesLoading}
+          />
+        </div>
       </div>
     </div>
   );
