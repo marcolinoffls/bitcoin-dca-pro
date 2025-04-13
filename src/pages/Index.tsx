@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useBitcoinRate } from '@/hooks/useBitcoinRate';
 import EntryForm from '@/components/EntryForm';
@@ -36,11 +37,20 @@ const Index = () => {
     isLoading: isEntriesLoading,
     editingEntry,
     addEntry,
-    editEntry,
+    updateEntry,
     cancelEdit,
     deleteEntry,
+    importEntriesFromSpreadsheet,
+    importProgress,
     refetch: refetchEntries
   } = useBitcoinEntries();
+
+  // Estados locais para moeda e unidade de exibição
+  const [selectedCurrency, setSelectedCurrency] = useState<'BRL' | 'USD'>('BRL');
+  const [displayUnit, setDisplayUnit] = useState<'BTC' | 'SATS'>('BTC');
+  const isMobile = useIsMobile();
+  const { signOut } = useAuth();
+  const { toast } = useToast();
 
   // Efeito para garantir que os dados sejam carregados quando o usuário logar
   useEffect(() => {
@@ -53,12 +63,6 @@ const Index = () => {
       }, 100);
     }
   }, [user?.id, refetchEntries]);
-
-  const [selectedCurrency, setSelectedCurrency] = useState<'BRL' | 'USD'>('BRL');
-  const [displayUnit, setDisplayUnit] = useState<'BTC' | 'SATS'>('BTC');
-  const isMobile = useIsMobile();
-  const { signOut } = useAuth();
-  const { toast } = useToast();
 
   const toggleDisplayUnit = (value: 'BTC' | 'SATS') => {
     setDisplayUnit(value);
@@ -74,7 +78,7 @@ const Index = () => {
     exchangeRate: number,
     currency: 'BRL' | 'USD',
     date: Date,
-    origin: 'corretora' | 'p2p'
+    origin: 'corretora' | 'p2p' | 'planilha'
   ) => {
     addEntry({
       amountInvested,
@@ -98,10 +102,21 @@ const Index = () => {
     if (typeof entry === 'string') {
       const foundEntry = entries.find(e => e.id === entry);
       if (foundEntry) {
-        editEntry(foundEntry);
+        updateEntry(entry, foundEntry);
       }
     } else {
-      editEntry(entry);
+      updateEntry(entry.id, entry);
+    }
+  };
+
+  // Função para lidar com a importação de arquivos
+  const handleImportFile = async (file: File) => {
+    try {
+      const result = await importEntriesFromSpreadsheet(file);
+      return result;
+    } catch (error) {
+      console.error('Erro ao importar arquivo:', error);
+      throw error;
     }
   };
 
@@ -197,6 +212,8 @@ const Index = () => {
             selectedCurrency={selectedCurrency}
             displayUnit={displayUnit}
             isLoading={isEntriesLoading}
+            importProgress={importProgress}
+            onImportFile={handleImportFile}
           />
         </div>
       </div>

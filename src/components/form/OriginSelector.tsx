@@ -1,16 +1,17 @@
+
 /**
- * Campo visual de seleção da origem do aporte (Corretora ou P2P).
+ * Campo visual de seleção da origem do aporte (Corretora, P2P ou Planilha).
  * Usado tanto no registro quanto na edição. Controla o valor salvo no Supabase.
  */
 import React from 'react';
 import { Label } from '@/components/ui/label';
-import { Building, Users } from 'lucide-react';
+import { Building, Users, FileSpreadsheet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
 interface OriginSelectorProps {
-  origin: 'corretora' | 'p2p';
-  onOriginChange: (origin: 'corretora' | 'p2p') => void;
+  origin: 'corretora' | 'p2p' | 'planilha';
+  onOriginChange: (origin: 'corretora' | 'p2p' | 'planilha') => void;
 }
 
 const OriginSelector: React.FC<OriginSelectorProps> = ({ origin, onOriginChange }) => {
@@ -43,6 +44,19 @@ const OriginSelector: React.FC<OriginSelectorProps> = ({ origin, onOriginChange 
         >
           <Users className="h-4 w-4" />
           P2P
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          type="button"
+          onClick={() => onOriginChange('planilha')}
+          className={cn(
+            'flex-1 text-xs font-normal gap-1',
+            origin === 'planilha' && 'bg-bitcoin text-white hover:bg-bitcoin/90'
+          )}
+        >
+          <FileSpreadsheet className="h-4 w-4" />
+          Planilha
         </Button>
       </div>
     </div>
