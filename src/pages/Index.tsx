@@ -97,7 +97,7 @@ const Index = () => {
                 />
               </div>
               {/* Reduzindo a altura */}
-             <div className="h-7">
+             <div className="h-8">
                 <img 
                   src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/public/fontes//Bitcoin%20dca%20pro%20-%20caixa%20alta%20(1).png" 
                   alt="Bitcoin DCA Pro"
