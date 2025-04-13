@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CurrentRate, PriceVariation } from '@/types';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, ArrowUp, ArrowDown } from 'lucide-react';
+import { RefreshCw, TriangleUp, TriangleDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatNumber } from '@/lib/utils';
@@ -55,11 +55,11 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
         <span className="text-xs text-muted-foreground mb-1">{label}</span>
         <div className={`flex items-center ${isPositive ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
           {isPositive ? (
-            <ArrowUp className="h-3 w-3 mr-1" />
+            <TriangleUp className="h-3 w-3 mr-1 fill-current" />
           ) : (
-            <ArrowDown className="h-3 w-3 mr-1" />
+            <TriangleDown className="h-3 w-3 mr-1 fill-current" />
           )}
-          <span className="text-sm font-medium">
+          <span className="text-sm font-semibold">
             {formatNumber(Math.abs(value), 2)}%
           </span>
         </div>
@@ -101,10 +101,10 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
           </div>
         </div>
         
-        {/* Novo bloco de variação de preços */}
+        {/* Bloco de variação de preços com novo estilo */}
         {priceVariation && (
           <div className="mt-3 mb-2">
-            <div className="flex flex-wrap justify-between gap-2">
+            <div className="bg-gray-100 p-2 rounded-lg flex flex-wrap justify-between gap-2">
               <PriceVariationItem label="24 horas" value={priceVariation.day} />
               <PriceVariationItem label="7 dias" value={priceVariation.week} />
               <PriceVariationItem label="30 dias" value={priceVariation.month} />
