@@ -82,7 +82,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
   const [exchangeRate, setExchangeRate] = useState(entry.exchangeRate);
   const [exchangeRateDisplay, setExchangeRateDisplay] = useState(formatNumber(entry.exchangeRate));
   const [currency, setCurrency] = useState<'BRL' | 'USD'>(entry.currency);
-  const [origin, setOrigin] = useState<'corretora' | 'p2p' | 'planilha'>(entry.origin || 'corretora');
+  const [origin, setOrigin] = useState<'corretora' | 'p2p'>(entry.origin || 'corretora');
   
   // Garantir que a data seja sempre uma instância de Date válida com fuso horário local
   const [date, setDate] = useState<Date>(() => {

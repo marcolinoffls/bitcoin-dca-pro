@@ -1,17 +1,5 @@
 
-import { SupabaseClient } from '@supabase/supabase-js';
-import { Database } from '@/integrations/supabase/types';
-
-export type supabaseClient = SupabaseClient<Database>;
-export type Tables = Database['public']['Tables'];
-
-export type SidebarNavigationItem = {
-  href: string;
-  title: string;
-  icon: React.ElementType;
-};
-
-export type BitcoinEntry = {
+export interface BitcoinEntry {
   id: string;
   date: Date;
   amountInvested: number;
@@ -19,10 +7,21 @@ export type BitcoinEntry = {
   exchangeRate: number;
   currency: 'BRL' | 'USD';
   origin?: 'corretora' | 'p2p' | 'planilha';
-};
+}
 
-export type CurrentRate = {
-  brl: number;
+export interface CurrentRate {
   usd: number;
-  lastUpdated: Date;
-};
+  brl: number;
+  timestamp: Date;
+}
+
+/**
+ * Interface para representar a variação de preço do Bitcoin em diferentes períodos
+ */
+export interface PriceVariation {
+  day: number;       // Variação nas últimas 24 horas
+  week: number;      // Variação nos últimos 7 dias
+  month: number;     // Variação nos últimos 30 dias
+  year: number;      // Variação no ano atual
+  timestamp: Date;   // Data/hora da última atualização
+}

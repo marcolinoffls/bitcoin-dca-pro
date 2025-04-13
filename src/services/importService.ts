@@ -1,355 +1,341 @@
 
-import { parse as parseCsv } from 'papaparse';
-import { read as readXlsx, utils as xlsxUtils } from 'xlsx';
+/**
+ * Serviço para importação de planilhas
+ * 
+ * Este serviço fornece funções para:
+ * - Ler e processar arquivos CSV e Excel
+ * - Validar dados de aportes
+ * - Enviar dados ao Supabase
+ * 
+ * É usado pelo componente EntriesList para importar aportes a partir
+ * de planilhas fornecidas pelo usuário
+ */
+
+import { supabase } from '@/integrations/supabase/client';
 import { BitcoinEntry } from '@/types';
+import * as XLSX from 'xlsx';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
- * Serviço responsável por importar aportes de Bitcoin
- * a partir de arquivos CSV ou XLSX.
+ * Interface para mapear dados importados de planilha
  */
-
-/**
- * Tipo para representar os dados de um aporte após a leitura inicial do arquivo.
- * Os valores ainda precisarão ser processados para converter tipos.
- */
-interface RawEntry {
-  [key: string]: string;
+interface RawImportData {
+  data: string;
+  valorInvestido: number;
+  bitcoin: number;
+  cotacao?: number;
+  moeda?: 'BRL' | 'USD';
+  origem?: 'corretora' | 'p2p';
 }
 
 /**
- * Normaliza o nome das colunas para um formato padronizado
- * independente de como elas aparecem no arquivo original
- * 
- * @param columnName Nome original da coluna no arquivo
- * @returns Nome normalizado da coluna
+ * Lê arquivo CSV ou Excel e retorna os dados em formato bruto
+ * @param file Arquivo CSV ou Excel a ser processado
+ * @returns Promise com array de dados brutos da planilha
  */
-function normalizeColumnName(columnName: string): string {
-  const name = columnName.toLowerCase().trim();
-  
-  if (/data|date|dt/i.test(name)) {
-    return 'date';
-  }
-  
-  if (/valor|investido|investimento|amount|brl|usd|reais|dolares|valor investido/i.test(name)) {
-    return 'amount';
-  }
-  
-  if (/bitcoin|btc|satoshi|sats|satoshis/i.test(name)) {
-    return 'btc';
-  }
-  
-  if (/cotacao|preco|taxa|price|rate|cotação|exchange rate/i.test(name)) {
-    return 'rate';
-  }
-  
-  if (/moeda|currency|currenc/i.test(name)) {
-    return 'currency';
-  }
-  
-  return name;
-}
-
-/**
- * Detecta o formato de data a partir de uma string e converte para Date
- * 
- * @param dateStr String de data em formato desconhecido
- * @returns Objeto Date ou null se a conversão falhar
- */
-function parseDate(dateStr: string): Date | null {
-  // Limpa a string
-  dateStr = dateStr.trim();
-  
-  // Verifica se é data no Excel (número de dias desde 1/1/1900)
-  if (!isNaN(Number(dateStr)) && Number(dateStr) > 1000) {
-    // Converte número de dias do Excel para timestamp JavaScript
-    const excelDate = Number(dateStr);
-    // Excel usa 1/1/1900 como dia 1, então precisamos ajustar
-    const date = new Date(1900, 0, 1);
-    date.setDate(date.getDate() + excelDate - 2); // -2 para correção do Excel
-    return date;
-  }
-  
-  // Para formato DD/MM/AAAA ou DD-MM-AAAA (brasileiro)
-  const brRegex = /^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/;
-  if (brRegex.test(dateStr)) {
-    const match = dateStr.match(brRegex);
-    if (match) {
-      const day = parseInt(match[1], 10);
-      const month = parseInt(match[2], 10) - 1; // Mês começa de 0 em JavaScript
-      let year = parseInt(match[3], 10);
-      if (year < 100) {
-        year += year < 50 ? 2000 : 1900;
-      }
-      
-      const date = new Date(year, month, day);
-      return date;
-    }
-  }
-  
-  // Para formato MM/DD/AAAA (americano)
-  const usRegex = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
-  if (usRegex.test(dateStr)) {
-    const match = dateStr.match(usRegex);
-    if (match) {
-      const month = parseInt(match[1], 10) - 1;
-      const day = parseInt(match[2], 10);
-      const year = parseInt(match[3], 10);
-      
-      const date = new Date(year, month, day);
-      return date;
-    }
-  }
-  
-  // Para formato AAAA-MM-DD (ISO)
-  const isoRegex = /^(\d{4})-(\d{1,2})-(\d{1,2})$/;
-  if (isoRegex.test(dateStr)) {
-    const match = dateStr.match(isoRegex);
-    if (match) {
-      const year = parseInt(match[1], 10);
-      const month = parseInt(match[2], 10) - 1;
-      const day = parseInt(match[3], 10);
-      
-      const date = new Date(year, month, day);
-      return date;
-    }
-  }
-  
-  // Tenta parse nativo do JavaScript como último recurso
-  const fallbackDate = new Date(dateStr);
-  if (!isNaN(fallbackDate.getTime())) {
-    return fallbackDate;
-  }
-  
-  return null;
-}
-
-/**
- * Normaliza um número a partir de uma string, lidando com diferentes
- * formatos (brasileiro com vírgula, americano com ponto, etc)
- * 
- * @param value String representando um número
- * @returns Número convertido ou null se a conversão falhar
- */
-function parseNumber(value: string): number | null {
-  if (!value || value.trim() === '') {
-    return null;
-  }
-  
-  // Remove todos os símbolos de moeda, espaços e outros caracteres não-numéricos
-  // mantendo apenas números, pontos e vírgulas
-  const sanitized = value.replace(/[^\d.,\-]/g, '');
-  
-  // Verifica se é formato brasileiro (vírgula como decimal)
-  if (sanitized.includes(',') && !sanitized.includes('.')) {
-    return parseFloat(sanitized.replace(',', '.'));
-  }
-  
-  // Se tem vírgula como separador de milhar e ponto como decimal
-  if (sanitized.includes(',') && sanitized.includes('.')) {
-    // Se a vírgula vem antes do último ponto, é separador de milhar
-    const lastDotIndex = sanitized.lastIndexOf('.');
-    const lastCommaIndex = sanitized.lastIndexOf(',');
-    
-    if (lastCommaIndex < lastDotIndex) {
-      return parseFloat(sanitized.replace(/,/g, ''));
-    } else {
-      // Caso contrário, é decimal (formato brasileiro com milhares)
-      return parseFloat(sanitized.replace(/\./g, '').replace(',', '.'));
-    }
-  }
-  
-  // Formato padrão com ponto
-  return parseFloat(sanitized);
-}
-
-/**
- * Processa os dados brutos do arquivo para criar entradas de Bitcoin formatadas
- * 
- * @param rawEntries Dados brutos extraídos do arquivo
- * @returns Array de entradas de Bitcoin processadas
- */
-function processEntries(rawEntries: RawEntry[]): BitcoinEntry[] {
-  return rawEntries
-    .map((rawEntry) => {
-      // Converte nomes de colunas para um formato padrão
-      const normalizedEntry: Record<string, string> = {};
-      Object.keys(rawEntry).forEach((key) => {
-        const normalizedKey = normalizeColumnName(key);
-        normalizedEntry[normalizedKey] = rawEntry[key];
-      });
-      
-      // Extrai e converte valores
-      const dateValue = normalizedEntry.date || '';
-      const date = parseDate(dateValue);
-      
-      if (!date) {
-        console.error(`Data inválida: ${dateValue}`);
-        return null;
-      }
-      
-      const amountValue = normalizedEntry.amount || '';
-      const amount = parseNumber(amountValue);
-      
-      if (amount === null || isNaN(amount)) {
-        console.error(`Valor investido inválido: ${amountValue}`);
-        return null;
-      }
-      
-      const btcValue = normalizedEntry.btc || '';
-      const btcAmount = parseNumber(btcValue);
-      
-      if (btcAmount === null || isNaN(btcAmount)) {
-        console.error(`Quantidade de BTC inválida: ${btcValue}`);
-        return null;
-      }
-      
-      // Detecção de moeda (BRL ou USD)
-      let currency: 'BRL' | 'USD' = 'BRL'; // Padrão BRL
-      if (normalizedEntry.currency) {
-        const currencyStr = normalizedEntry.currency.toUpperCase().trim();
-        if (currencyStr === 'USD' || currencyStr.includes('DOLAR') || currencyStr.includes('$')) {
-          currency = 'USD';
-        }
-      } else if (amountValue.includes('$') && !amountValue.includes('R$')) {
-        currency = 'USD';
-      }
-      
-      // Para calcular a taxa de câmbio se não estiver presente
-      let exchangeRate = 0;
-      if (normalizedEntry.rate) {
-        const rateValue = parseNumber(normalizedEntry.rate);
-        if (rateValue !== null && !isNaN(rateValue)) {
-          exchangeRate = rateValue;
-        }
-      }
-      
-      // Se não tiver taxa, calcula com base no valor e quantidade de BTC
-      if (exchangeRate === 0 && btcAmount > 0) {
-        exchangeRate = amount / btcAmount;
-      }
-      
-      return {
-        id: uuidv4(),
-        date,
-        amountInvested: amount,
-        btcAmount: btcAmount,
-        exchangeRate,
-        currency,
-        origin: 'planilha' as const // Marca a origem como planilha
-      };
-    })
-    .filter((entry): entry is BitcoinEntry => entry !== null);
-}
-
-/**
- * Importa aportes de um arquivo CSV
- * 
- * @param file Arquivo CSV a ser importado
- * @returns Promise com as entradas processadas
- */
-export function importFromCsv(file: File): Promise<BitcoinEntry[]> {
-  return new Promise((resolve, reject) => {
-    parseCsv(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (results) => {
-        if (results.errors.length > 0) {
-          console.error('Erros ao parsear CSV:', results.errors);
-          reject(new Error('Erro ao processar o arquivo CSV. Verifique o formato.'));
-          return;
-        }
-        
-        const entries = processEntries(results.data as RawEntry[]);
-        if (entries.length === 0) {
-          reject(new Error('Nenhum aporte válido encontrado no arquivo.'));
-          return;
-        }
-        
-        resolve(entries);
-      },
-      error: (error) => {
-        console.error('Erro ao parsear CSV:', error);
-        reject(new Error('Erro ao processar o arquivo CSV.'));
-      }
-    });
-  });
-}
-
-/**
- * Importa aportes de um arquivo Excel (XLSX)
- * 
- * @param file Arquivo Excel a ser importado
- * @returns Promise com as entradas processadas
- */
-export function importFromExcel(file: File): Promise<BitcoinEntry[]> {
+export const readSpreadsheetFile = async (file: File): Promise<RawImportData[]> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     
     reader.onload = (e) => {
       try {
-        if (!e.target || typeof e.target.result !== 'string' && !(e.target.result instanceof ArrayBuffer)) {
-          reject(new Error('Erro ao ler o arquivo Excel.'));
+        // Ler arquivo como ArrayBuffer
+        const data = e.target?.result;
+        if (!data) {
+          reject(new Error('Falha ao ler o arquivo'));
           return;
         }
         
-        const data = e.target.result;
-        const workbook = readXlsx(data, { type: 'array' });
-        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-        const jsonData = xlsxUtils.sheet_to_json<RawEntry>(worksheet, { header: 'A' });
+        // Processar com a biblioteca xlsx
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
         
-        // Se a primeira linha for cabeçalho, converte para chaves no objeto
-        const hasHeader = typeof jsonData[0].A === 'string' && 
-                          !jsonData[0].A.match(/^\d/) &&
-                          (jsonData[0].A.toLowerCase().includes('data') || 
-                           jsonData[0].A.toLowerCase().includes('date'));
+        // Converter para JSON
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+        console.log('Dados brutos da planilha:', jsonData);
         
-        let processedData: RawEntry[];
-        
-        if (hasHeader) {
-          // Usa a primeira linha como cabeçalho
-          const headers = Object.values(jsonData[0]);
-          processedData = xlsxUtils.sheet_to_json<RawEntry>(worksheet);
-        } else {
-          // Usa cabeçalhos padrão
-          processedData = xlsxUtils.sheet_to_json<RawEntry>(worksheet, { header: ['date', 'amount', 'btc', 'rate'] });
-        }
-        
-        const entries = processEntries(processedData);
-        if (entries.length === 0) {
-          reject(new Error('Nenhum aporte válido encontrado no arquivo.'));
-          return;
-        }
-        
-        resolve(entries);
+        // Mapear cabeçalhos para nosso formato interno
+        const mappedData = mapSpreadsheetData(jsonData);
+        resolve(mappedData);
       } catch (error) {
-        console.error('Erro ao processar Excel:', error);
-        reject(new Error('Erro ao processar o arquivo Excel.'));
+        console.error('Erro ao processar planilha:', error);
+        reject(new Error('Formato de arquivo inválido ou corrompido'));
       }
     };
     
     reader.onerror = () => {
-      reject(new Error('Erro ao ler o arquivo Excel.'));
+      reject(new Error('Falha ao ler o arquivo'));
     };
     
+    // Ler como array buffer
     reader.readAsArrayBuffer(file);
   });
-}
+};
 
 /**
- * Importa aportes de um arquivo (detecta automaticamente o formato)
- * 
- * @param file Arquivo a ser importado (CSV ou XLSX)
- * @returns Promise com as entradas processadas
+ * Mapeia os dados da planilha para o formato interno
+ * Aceita diferentes formatos de cabeçalho: português, inglês, com/sem acentos
+ * @param jsonData Dados JSON extraídos da planilha
+ * @returns Array de dados mapeados
  */
-export async function importFromFile(file: File): Promise<BitcoinEntry[]> {
-  const fileType = file.name.split('.').pop()?.toLowerCase();
-  
-  if (fileType === 'csv') {
-    return importFromCsv(file);
-  } else if (fileType === 'xlsx' || fileType === 'xls') {
-    return importFromExcel(file);
-  } else {
-    throw new Error('Formato de arquivo não suportado. Use CSV ou XLSX.');
+const mapSpreadsheetData = (jsonData: any[]): RawImportData[] => {
+  if (!jsonData || jsonData.length === 0) {
+    throw new Error('A planilha está vazia ou não contém dados válidos');
   }
-}
+  
+  // Obter a primeira linha para identificar colunas
+  const firstRow = jsonData[0];
+  const headers = Object.keys(firstRow);
+  
+  // Mapear cabeçalhos para nomes padronizados
+  const headerMap: Record<string, string[]> = {
+    data: ['data', 'date', 'data_aporte', 'data aporte', 'dt', 'data do aporte'],
+    valorInvestido: ['valor', 'valor_investido', 'valor investido', 'investimento', 'amount', 'value', 'investimento', 'investimento (brl)'],
+    bitcoin: ['btc', 'bitcoin', 'quantidade', 'quantia', 'amount', 'sats', 'satoshis'],
+    cotacao: ['cotacao', 'cotação', 'preco', 'preço', 'rate', 'exchange', 'preco_btc', 'preço btc'],
+    moeda: ['moeda', 'currency', 'coin', 'cambio', 'câmbio'],
+    origem: ['origem', 'origin', 'source', 'tipo', 'type']
+  };
+  
+  // Função para encontrar o nome da coluna com base nos cabeçalhos possíveis
+  const findColumnName = (possibleNames: string[]): string | null => {
+    const columnName = headers.find(header => 
+      possibleNames.includes(header.toLowerCase().trim())
+    );
+    return columnName || null;
+  };
+  
+  // Mapear colunas da planilha para nossas propriedades
+  const dataColumn = findColumnName(headerMap.data);
+  const valorColumn = findColumnName(headerMap.valorInvestido);
+  const bitcoinColumn = findColumnName(headerMap.bitcoin);
+  const cotacaoColumn = findColumnName(headerMap.cotacao);
+  const moedaColumn = findColumnName(headerMap.moeda);
+  const origemColumn = findColumnName(headerMap.origem);
+  
+  // Verificar colunas obrigatórias
+  if (!dataColumn || !valorColumn || !bitcoinColumn) {
+    const missingColumns = [];
+    if (!dataColumn) missingColumns.push('Data');
+    if (!valorColumn) missingColumns.push('Valor Investido');
+    if (!bitcoinColumn) missingColumns.push('Bitcoin');
+    
+    throw new Error(`Colunas obrigatórias não encontradas: ${missingColumns.join(', ')}`);
+  }
+  
+  // Mapear todos os dados
+  return jsonData.map((row: any): RawImportData => {
+    // Processar valores para garantir tipos corretos
+    let valorInvestido = parseFloat(String(row[valorColumn]).replace(',', '.'));
+    let bitcoin = parseFloat(String(row[bitcoinColumn]).replace(',', '.'));
+    
+    // Validar valores
+    if (isNaN(valorInvestido)) {
+      throw new Error(`Valor investido inválido na linha: ${JSON.stringify(row)}`);
+    }
+    if (isNaN(bitcoin)) {
+      throw new Error(`Quantidade de Bitcoin inválida na linha: ${JSON.stringify(row)}`);
+    }
+    
+    // Processar data
+    let dataValue = row[dataColumn];
+    
+    return {
+      data: dataValue,
+      valorInvestido,
+      bitcoin,
+      cotacao: cotacaoColumn ? parseFloat(String(row[cotacaoColumn]).replace(',', '.')) : undefined,
+      moeda: moedaColumn ? normalizeValorMoeda(row[moedaColumn]) : 'BRL',
+      origem: origemColumn ? normalizeValorOrigem(row[origemColumn]) : 'corretora'
+    };
+  });
+};
+
+/**
+ * Normaliza o valor da moeda para o formato aceito pelo sistema
+ * @param valor Valor da moeda na planilha
+ * @returns Moeda normalizada (BRL ou USD)
+ */
+const normalizeValorMoeda = (valor: any): 'BRL' | 'USD' => {
+  const strValor = String(valor).toUpperCase().trim();
+  
+  if (['USD', 'DOLAR', 'DÓLAR', '$', 'US$', 'DOLLAR'].includes(strValor)) {
+    return 'USD';
+  }
+  
+  return 'BRL'; // Valor padrão
+};
+
+/**
+ * Normaliza o valor da origem para o formato aceito pelo sistema
+ * @param valor Valor da origem na planilha
+ * @returns Origem normalizada (corretora ou p2p)
+ */
+const normalizeValorOrigem = (valor: any): 'corretora' | 'p2p' => {
+  const strValor = String(valor).toLowerCase().trim();
+  
+  if (['p2p', 'peer', 'peer-to-peer', 'p2p', 'pessoal', 'pessoa-pessoa'].includes(strValor)) {
+    return 'p2p';
+  }
+  
+  return 'corretora'; // Valor padrão
+};
+
+/**
+ * Converte dados brutos importados em objetos BitcoinEntry prontos para inserção
+ * @param rawData Dados brutos mapeados da planilha
+ * @param userId ID do usuário atual
+ * @returns Array de objetos prontos para inserção no Supabase
+ */
+export const prepareImportedEntries = (
+  rawData: RawImportData[], 
+  userId: string
+): { supabaseEntries: any[], appEntries: BitcoinEntry[] } => {
+  const supabaseEntries: any[] = [];
+  const appEntries: BitcoinEntry[] = [];
+  
+  for (const item of rawData) {
+    try {
+      // Processar data no formato DD/MM/AAAA, MM/DD/AAAA ou Date
+      let entryDate: Date;
+      
+      if (item.data instanceof Date) {
+        entryDate = item.data;
+      } else {
+        // Tentar formatos comuns
+        const dateParts = String(item.data).split(/[/.-]/);
+        
+        // Verificar formato DD/MM/AAAA (ou com separadores - ou .)
+        if (dateParts.length === 3) {
+          // Se parece com DD/MM/AAAA (dias geralmente < 31, meses < 12)
+          if (parseInt(dateParts[0]) <= 31 && parseInt(dateParts[1]) <= 12) {
+            entryDate = new Date(`${dateParts[2]}-${dateParts[1]}-${dateParts[0]}T00:00:00`);
+          } else {
+            // Assumir MM/DD/AAAA (formato americano)
+            entryDate = new Date(`${dateParts[2]}-${dateParts[0]}-${dateParts[1]}T00:00:00`);
+          }
+        } else {
+          // Tentar analisar como string de data
+          entryDate = new Date(String(item.data));
+        }
+      }
+      
+      // Verificar se a data é válida
+      if (isNaN(entryDate.getTime())) {
+        throw new Error(`Data inválida: ${item.data}`);
+      }
+      
+      // Formatar para ISO String YYYY-MM-DD
+      const formattedDate = entryDate.toISOString().split('T')[0];
+      
+      // Calcular cotação se não fornecida
+      const exchangeRate = item.cotacao || (item.valorInvestido / item.bitcoin);
+      
+      // Gerar ID único
+      const id = uuidv4();
+      
+      // Objeto para inserção no Supabase
+      const supabaseEntry = {
+        id,
+        user_id: userId,
+        data_aporte: formattedDate,
+        valor_investido: item.valorInvestido,
+        bitcoin: item.bitcoin,
+        cotacao: exchangeRate,
+        moeda: item.moeda || 'BRL',
+        cotacao_moeda: item.moeda || 'BRL',
+        origem_aporte: item.origem || 'planilha' // Marcar origem como planilha
+      };
+      
+      // Objeto BitcoinEntry para o app
+      const appEntry: BitcoinEntry = {
+        id,
+        date: entryDate,
+        amountInvested: item.valorInvestido,
+        btcAmount: item.bitcoin,
+        exchangeRate,
+        currency: item.moeda || 'BRL',
+        origin: item.origem || 'planilha' // Marcar origem como planilha
+      };
+      
+      supabaseEntries.push(supabaseEntry);
+      appEntries.push(appEntry);
+    } catch (error) {
+      console.error('Erro ao processar linha:', error);
+      throw error;
+    }
+  }
+  
+  return { supabaseEntries, appEntries };
+};
+
+/**
+ * Importa dados para o Supabase
+ * @param entries Entradas preparadas para inserção
+ * @returns Resultado da operação com contagem de registros inseridos
+ */
+export const importEntriesToSupabase = async (entries: any[]): Promise<{ count: number }> => {
+  if (!entries.length) {
+    throw new Error('Nenhum dado válido para importar');
+  }
+  
+  // Inserir em lotes de 100 para evitar limite de tamanho da requisição
+  const batchSize = 100;
+  let inserted = 0;
+  
+  for (let i = 0; i < entries.length; i += batchSize) {
+    const batch = entries.slice(i, i + batchSize);
+    
+    const { error } = await supabase
+      .from('aportes')
+      .insert(batch);
+    
+    if (error) {
+      console.error('Erro ao importar lote para Supabase:', error);
+      throw new Error(`Erro ao salvar dados: ${error.message}`);
+    }
+    
+    inserted += batch.length;
+  }
+  
+  return { count: inserted };
+};
+
+/**
+ * Executa o processo completo de importação
+ * @param file Arquivo CSV/Excel a ser importado
+ * @param userId ID do usuário atual
+ * @param onProgress Callback para atualização de progresso
+ * @returns Resultado da importação com contagem e entradas
+ */
+export const importSpreadsheet = async (
+  file: File,
+  userId: string,
+  onProgress?: (progress: number, stage: string) => void
+): Promise<{ count: number, entries: BitcoinEntry[] }> => {
+  try {
+    // Fase 1: Leitura do arquivo (25%)
+    onProgress?.(25, 'Lendo arquivo...');
+    const rawData = await readSpreadsheetFile(file);
+    
+    // Fase 2: Processamento e validação (50%)
+    onProgress?.(50, 'Processando dados...');
+    const { supabaseEntries, appEntries } = prepareImportedEntries(rawData, userId);
+    
+    // Fase 3: Importação para o Supabase (75%)
+    onProgress?.(75, 'Enviando ao servidor...');
+    const result = await importEntriesToSupabase(supabaseEntries);
+    
+    // Fase 4: Concluído (100%)
+    onProgress?.(100, 'Concluído!');
+    
+    return {
+      count: result.count,
+      entries: appEntries
+    };
+  } catch (error) {
+    console.error('Erro durante importação:', error);
+    throw error;
+  }
+};
