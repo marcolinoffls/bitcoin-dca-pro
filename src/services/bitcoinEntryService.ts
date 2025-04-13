@@ -19,6 +19,7 @@
 import { BitcoinEntry, CurrentRate } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
+import { format, isValid } from 'date-fns';
 
 /**
  * Converte string de data para objeto Date, forçando o fuso horário local
@@ -78,13 +79,13 @@ export const createBitcoinEntry = async (
   origin: 'corretora' | 'p2p' | 'planilha'
 ) => {
   // Validar se a data é válida
-  if (!(date instanceof Date) || isNaN(date.getTime())) {
+  if (!isValid(date)) {
     console.error('Data inválida para criação:', date);
     throw new Error('Data inválida fornecida para criação');
   }
   
   // Formata a data para o formato ISO (YYYY-MM-DD)
-  const formattedDate = date.toISOString().split('T')[0];
+  const formattedDate = format(date, 'yyyy-MM-dd');
   console.log('Data sendo enviada para criação:', formattedDate);
   
   const newEntryId = uuidv4();
@@ -130,13 +131,13 @@ export const updateBitcoinEntry = async (
   origin: 'corretora' | 'p2p' | 'planilha'
 ) => {
   // Garantir que a data é um objeto Date válido
-  if (!(date instanceof Date) || isNaN(date.getTime())) {
+  if (!isValid(date)) {
     console.error('Data inválida para atualização:', date);
     throw new Error('Data inválida fornecida para atualização');
   }
   
   // Formata a data para o formato ISO (YYYY-MM-DD)
-  const formattedDate = date.toISOString().split('T')[0];
+  const formattedDate = format(date, 'yyyy-MM-dd');
   console.log('Data sendo enviada para atualização:', formattedDate, 'Objeto Date original:', date);
   
   const updateData = {
