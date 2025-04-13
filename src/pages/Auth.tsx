@@ -131,7 +131,7 @@ const Auth = () => {
                 className="h-full w-full object-contain"
               />
             </div>
-            <div className="h-8 ml-3">
+            <div className="h-7 ml-3">
               <img 
                 src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/public/fontes//Bitcoin%20dca%20pro%20-%20caixa%20alta%20(1).png" 
                 alt="Bitcoin DCA Pro"
