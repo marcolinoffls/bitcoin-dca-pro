@@ -30,7 +30,7 @@ export const fetchCurrentBitcoinRate = async (): Promise<CurrentRate> => {
 
 /**
  * Busca as variações de preço do Bitcoin em diferentes períodos
- * Retorna a variação percentual para 24h, 7d, 30d, 90d e o ano atual
+ * Retorna a variação percentual para 24h, 7d, 30d, e 1 ano
  */
 export const fetchBitcoinPriceVariation = async (): Promise<PriceVariation> => {
   try {
@@ -47,7 +47,6 @@ export const fetchBitcoinPriceVariation = async (): Promise<PriceVariation> => {
       day: marketData.price_change_percentage_24h || 0,
       week: marketData.price_change_percentage_7d || 0,
       month: marketData.price_change_percentage_30d || 0,
-      quarter: marketData.price_change_percentage_60d || 0, // API não tem 90d, usando 60d como aproximação
       year: marketData.price_change_percentage_1y || 0,
       timestamp: new Date()
     };
@@ -58,7 +57,6 @@ export const fetchBitcoinPriceVariation = async (): Promise<PriceVariation> => {
       day: 0,
       week: 0,
       month: 0,
-      quarter: 0,
       year: 0,
       timestamp: new Date()
     };

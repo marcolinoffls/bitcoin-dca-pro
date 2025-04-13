@@ -19,7 +19,7 @@ interface CurrentRateCardProps {
  * Componente que exibe o card de cotação atual do Bitcoin
  * 
  * Mostra o preço atual em USD e BRL, além das variações percentuais
- * em diferentes períodos (24h, 7d, 30d, 90d, ano atual)
+ * em diferentes períodos (24h, 7d, 30, 1 ano)
  * 
  * @param currentRate Objeto com as cotações atuais
  * @param priceVariation Objeto com as variações percentuais
@@ -108,8 +108,7 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
               <PriceVariationItem label="24 horas" value={priceVariation.day} />
               <PriceVariationItem label="7 dias" value={priceVariation.week} />
               <PriceVariationItem label="30 dias" value={priceVariation.month} />
-              <PriceVariationItem label="90 dias" value={priceVariation.quarter} />
-              <PriceVariationItem label="AA" value={priceVariation.year} />
+              <PriceVariationItem label="1 ano" value={priceVariation.year} />
             </div>
           </div>
         )}

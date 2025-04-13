@@ -21,7 +21,6 @@ export interface PriceVariation {
   day: number;       // Variação nas últimas 24 horas
   week: number;      // Variação nos últimos 7 dias
   month: number;     // Variação nos últimos 30 dias
-  quarter: number;   // Variação nos últimos 90 dias
   year: number;      // Variação no ano atual
   timestamp: Date;   // Data/hora da última atualização
 }

@@ -17,7 +17,6 @@ export function useBitcoinRate() {
     day: 0,
     week: 0,
     month: 0,
-    quarter: 0,
     year: 0,
     timestamp: new Date(),
   });
