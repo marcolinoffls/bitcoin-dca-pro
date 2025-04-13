@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate, useLocation } from 'react-router-dom';
@@ -33,7 +32,6 @@ const Auth = () => {
   }
 
   if (user) {
-    // Get the intended destination from location state, or default to "/"
     const from = location.state?.from?.pathname || "/";
     return <Navigate to={from} replace />;
   }
@@ -123,22 +121,29 @@ const Auth = () => {
     <div className="container flex items-center justify-center min-h-screen py-8">
       <Card className="w-full max-w-md rounded-xl shadow-lg border-0">
         <CardHeader className="text-center pb-6">
+          <h1 className="sr-only">Bitcoin DCA PRO</h1>
+          
           <div className="flex items-center justify-center mb-4">
-            {/* Substituição do ícone pelo novo link fornecido */}
-            <img 
-              src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/bitcoin.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvYml0Y29pbi5wbmciLCJpYXQiOjE3NDQ0OTkzNDksImV4cCI6MTc3NjAzNTM0OX0.UMcsJt0r9ZhEcYmAtfv2QvtADaIshCKaTmKjD8oCAjo" 
-              alt="Bitcoin" 
-              className="h-10 w-10 mr-2" 
-            />
-            {/* Título em caixa alta */}
-            <CardTitle className="text-3xl font-bold">BITCOIN DCA PRO</CardTitle>
+            <div className="h-8 w-8">
+              <img 
+                src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/bitcoin%20logo%20oficial%20sem%20nome%20100px.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvYml0Y29pbiBsb2dvIG9maWNpYWwgc2VtIG5vbWUgMTAwcHgucG5nIiwiaWF0IjoxNzQ0NTU4MDQ2LCJleHAiOjE4MDc2MzAwNDZ9.jmzK3PG-1LJ1r-2cqJD7OiOJItfPWA4oD8n0autKJeo" 
+                alt="Bitcoin Logo"
+                className="h-full w-full object-contain"
+              />
+            </div>
+            <div className="h-5 ml-3">
+              <img 
+                src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/public/fontes//Bitcoin%20dca%20pro%20-%20caixa%20alta%20(1).png" 
+                alt="Bitcoin DCA Pro"
+                className="h-full object-contain"
+              />
+            </div>
           </div>
           <CardDescription>
             Gerencie seus aportes de Bitcoin com facilidade e segurança
           </CardDescription>
         </CardHeader>
         
-        {/* Conteúdo com altura mínima fixa para evitar saltos de tamanho */}
         <div className="min-h-[320px] transition-all duration-300">
           {resetRequested ? (
             <div className="px-6 pb-6">
