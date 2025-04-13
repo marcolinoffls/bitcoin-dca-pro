@@ -39,17 +39,6 @@ interface EntriesListProps {
   onImportFile?: (file: File) => Promise<{ count: number, entries: BitcoinEntry[] }>;
 }
 
-/**
- * Componente que exibe a lista de aportes do usuário em formato de tabela
- * 
- * Funcionalidades:
- * - Visualização de aportes em BRL ou USD
- * - Edição e exclusão de aportes
- * - Filtragem por mês, moeda e origem
- * - Controle de linhas visíveis
- * - Resumo dos totais na parte inferior
- * - Importação de planilhas CSV e Excel
- */
 const EntriesList: React.FC<EntriesListProps> = ({
   entries,
   currentRate,
@@ -375,241 +364,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
     return totals;
   };
 
-  const handleFileButtonClick = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
-
-  // Função para lidar com a seleção de arquivo
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0] || null;
-    if (file) {
-      // Verifica se o arquivo é do tipo .csv ou .xlsx
-      const fileType = file.name.split('.').pop()?.toLowerCase();
-      if (fileType === 'csv' || fileType === 'xlsx') {
-        setSelectedFile(file);
-        console.log('Arquivo selecionado:', file.name);
-      } else {
-        // Feedback para o usuário sobre tipo de arquivo não suportado
-        toast({
-          title: "Tipo de arquivo não suportado",
-          description: "Por favor, selecione um arquivo .csv ou .xlsx",
-          variant: "destructive",
-        });
-        // Limpar o input
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
-      }
-    }
-  };
-
-  // Função para iniciar a importação do arquivo
-  const handleStartImport = async () => {
-    if (!selectedFile || !onImportFile) {
-      return;
-    }
-    
-    try {
-      setIsImporting(true);
-      
-      // Chamar função de importação passada via props
-      const result = await onImportFile(selectedFile);
-      
-      // Mostrar toast de sucesso
-      toast({
-        title: "Importação concluída!",
-        description: `Foram adicionados ${result.count} aportes à sua carteira.`,
-        variant: "success",
-      });
-      
-      // Fechar o modal e limpar o arquivo selecionado
-      setIsImportDialogOpen(false);
-      setSelectedFile(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-      
-    } catch (error) {
-      // Mostrar toast de erro
-      toast({
-        title: "Erro na importação",
-        description: error instanceof Error ? error.message : "Ocorreu um erro ao importar a planilha",
-        variant: "destructive",
-      });
-    } finally {
-      setIsImporting(false);
-    }
-  };
-
-  const handleEditClick = (id: string) => {
-    setSelectedEntryId(id);
-    onEdit(id);
-    setIsEditDialogOpen(true);
-  };
-
-  const handleDeleteClick = (id: string) => {
-    setSelectedEntryId(id);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const handleConfirmDelete = () => {
-    if (selectedEntryId) {
-      onDelete(selectedEntryId);
-      setIsDeleteDialogOpen(false);
-    }
-  };
-
-  const handleEditClose = () => {
-    setIsEditDialogOpen(false);
-    onEdit('');
-  };
-
-  // Funções para abrir e fechar o modal de importação
-  const openImportDialog = () => {
-    setIsImportDialogOpen(true);
-  };
-
-  // Inicializar filtros temporários com os valores atuais quando o popover é aberto
-  const handleFilterPopoverOpenChange = (open: boolean) => {
-    setIsFilterPopoverOpen(open);
-    if (open) {
-      setTempMonthFilter(monthFilter);
-      setTempOriginFilter(originFilter);
-    }
-  };
-
-  // Aplicar filtros ao clicar no botão de confirmar
-  const applyFilters = () => {
-    setMonthFilter(tempMonthFilter);
-    setOriginFilter(tempOriginFilter);
-    setIsFilterActive(tempMonthFilter !== null || tempOriginFilter !== null);
-    setIsFilterPopoverOpen(false);
-  };
-
-  // Função para limpar todos os filtros
-  const clearFilters = () => {
-    setMonthFilter(null);
-    setOriginFilter(null);
-    setTempMonthFilter(null);
-    setTempOriginFilter(null);
-    setIsFilterActive(false);
-  };
-
-  // Aplicar filtros nas entradas
-  const filteredEntries = useMemo(() => {
-    if (!entries) return [];
-    
-    return entries.filter(entry => {
-      // Filtro por mês
-      if (monthFilter) {
-        const entryMonth = format(entry.date, 'yyyy-MM');
-        if (entryMonth !== monthFilter) {
-          return false;
-        }
-      }
-      
-      // Filtro por origem
-      if (originFilter && entry.origin !== originFilter) {
-        return false;
-      }
-      
-      return true;
-    });
-  }, [entries, monthFilter, originFilter]);
-  
-  // Ordenar entradas por data (mais recentes primeiro)
-  const sortedEntries = useMemo(() => {
-    return [...filteredEntries].sort(
-      (a, b) => b.date.getTime() - a.date.getTime()
-    ).slice(0, rowsToShow);
-  }, [filteredEntries, rowsToShow]);
-
-  // Obter meses únicos para o filtro
-  const availableMonths = useMemo(() => {
-    const months: {[key: string]: string} = {};
-    
-    entries.forEach(entry => {
-      const monthKey = format(entry.date, 'yyyy-MM');
-      const monthLabel = format(entry.date, 'MMMM yyyy', { locale: ptBR });
-      months[monthKey] = monthLabel;
-    });
-    
-    return Object.entries(months).map(([key, label]) => ({
-      value: key,
-      label: label.charAt(0).toUpperCase() + label.slice(1)
-    }));
-  }, [entries]);
-
-  if (isLoading) {
-    return (
-      <Card className="mt-6">
-        <CardHeader className="pb-3">
-          <CardTitle className={isMobile ? "text-lg" : "text-xl"}>
-            <div className="flex items-center gap-2">
-              <div className="h-6 w-6">
-                <img 
-                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/aportes.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvYXBvcnRlcy5wbmciLCJpYXQiOjE3NDQ0OTc3MTMsImV4cCI6MTc3NjAzMzcxM30.ofk3Ocv9aFS_BI19nsngxNbJYjw10do5u3RjTgWrOTo" 
-                  alt="Aportes Registrados"
-                  className="h-full w-full object-contain"
-                />
-              </div>
-              Aportes Registrados
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center py-8">
-            <svg className="animate-spin h-8 w-8 text-bitcoin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span className="ml-2 text-sm text-muted-foreground">Carregando seus aportes...</span>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (entries.length === 0) {
-    return (
-      <Card className="mt-6">
-        <CardHeader className="pb-3">
-          <CardTitle className={isMobile ? "text-lg" : "text-xl"}>
-            <div className="flex items-center gap-2">
-              <div className="h-6 w-6">
-                <img 
-                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/aportes.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvYXBvcnRlcy5wbmciLCJpYXQiOjE3NDQ0OTc3MTMsImV4cCI6MTc3NjAzMzcxM30.ofk3Ocv9aFS_BI19nsngxNbJYjw10do5u3RjTgWrOTo" 
-                  alt="Aportes Registrados"
-                  className="h-full w-full object-contain"
-                />
-              </div>
-              Aportes Registrados
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-center text-muted-foreground py-6">
-            Você ainda não registrou nenhum aporte de Bitcoin.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const selectedEntry = selectedEntryId 
-    ? entries.find(entry => entry.id === selectedEntryId) 
-    : null;
-
-  const formatBitcoinAmount = (amount: number) => {
-    if (displayUnit === 'SATS') {
-      const satoshis = amount * 100000000;
-      return formatNumber(satoshis, 0);
-    }
-    return formatNumber(amount, 8);
-  };
-
   const renderEntriesTable = (currencyView: 'BRL' | 'USD') => {
     const totals = calculateTotals(currencyView);
     
@@ -737,4 +491,267 @@ const EntriesList: React.FC<EntriesListProps> = ({
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className={`text-right ${isMobile ? "
+                  <TableCell className="text-right">
+                    <div className="flex justify-end space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEditClick(entry.id)}
+                        title="Editar Aporte"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteClick(entry.id)}
+                        title="Excluir Aporte"
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+    );
+  };
+
+  return (
+    <Card className="mt-6">
+      <CardHeader className="pb-3">
+        <div className="flex flex-wrap items-center justify-between">
+          <CardTitle className={isMobile ? "text-lg" : "text-xl"}>
+            <div className="flex items-center gap-2">
+              <div className="h-6 w-6">
+                <img 
+                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/aportes.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvYXBvcnRlcy5wbmciLCJpYXQiOjE3NDQ0OTc3MTMsImV4cCI6MTc3NjAzMzcxM30.ofk3Ocv9aFS_BI19nsngxNbJYjw10do5u3RjTgWrOTo" 
+                  alt="Aportes Registrados"
+                  className="h-full w-full object-contain"
+                />
+              </div>
+              Aportes Registrados
+            </div>
+          </CardTitle>
+          <div className="flex flex-wrap md:flex-nowrap gap-2 items-center mt-2 md:mt-0">
+            <input 
+              type="file" 
+              accept=".csv,.xlsx" 
+              ref={fileInputRef} 
+              onChange={handleFileChange} 
+              className="hidden" 
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex gap-2 mr-2"
+              onClick={openImportDialog}
+            >
+              <Upload className="h-4 w-4 text-green-500" />
+              <span>Importar</span>
+            </Button>
+            <Popover open={isFilterPopoverOpen} onOpenChange={handleFilterPopoverOpenChange}>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className={`flex gap-2 mr-2 ${isFilterActive ? 'border-green-500 text-green-500' : ''}`}
+                >
+                  <Filter className={`h-4 w-4 ${isFilterActive ? 'text-green-500' : ''}`} />
+                  <span>Filtrar</span>
+                  {isFilterActive && (
+                    <span className="inline-flex h-2 w-2 rounded-full bg-green-500" />
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80">
+                <div className="grid gap-4">
+                  <div className="space-y-2">
+                    <h4 className="font-medium leading-none">Filtrar aportes</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Selecione os critérios desejados e clique em confirmar.
+                    </p>
+                  </div>
+                  <div className="grid gap-2">
+                    <div className="grid gap-1">
+                      <label htmlFor="month" className="text-sm">
+                        Por mês
+                      </label>
+                      <Select
+                        value={tempMonthFilter || ''}
+                        onValueChange={(value) => setTempMonthFilter(value || null)}
+                      >
+                        <SelectTrigger id="month">
+                          <SelectValue placeholder="Selecione um mês" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Todos os meses</SelectItem>
+                          {availableMonths.map((month) => (
+                            <SelectItem key={month.value} value={month.value}>
+                              {month.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-1">
+                      <label htmlFor="origin" className="text-sm">
+                        Por origem
+                      </label>
+                      <Select
+                        value={tempOriginFilter || ''}
+                        onValueChange={(value) => 
+                          setTempOriginFilter(value ? value as 'corretora' | 'p2p' | 'planilha' : null)
+                        }
+                      >
+                        <SelectTrigger id="origin">
+                          <SelectValue placeholder="Selecione uma origem" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Todas as origens</SelectItem>
+                          <SelectItem value="corretora">Corretora</SelectItem>
+                          <SelectItem value="p2p">P2P</SelectItem>
+                          <SelectItem value="planilha">Planilha</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex justify-between mt-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={clearFilters}
+                        className="mt-2"
+                      >
+                        Limpar filtros
+                      </Button>
+                      <Button 
+                        variant="default" 
+                        size="sm"
+                        onClick={applyFilters}
+                        className="mt-2"
+                      >
+                        Confirmar filtros
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+            <Tabs 
+              defaultValue={selectedCurrency} 
+              value={viewCurrency}
+              onValueChange={(val) => setViewCurrency(val as 'BRL' | 'USD')}
+              className="w-auto"
+            >
+              <TabsList className="grid w-28 grid-cols-2 h-8">
+                <TabsTrigger value="BRL" className="text-xs">BRL</TabsTrigger>
+                <TabsTrigger value="USD" className="text-xs">USD</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="all" className="w-full">
+          <TabsContent value="all" className="mt-0">
+            {renderEntriesTable(viewCurrency)}
+          </TabsContent>
+        </Tabs>
+        
+        <div className="flex justify-between items-center mt-4">
+          <div className="text-sm text-muted-foreground">
+            Mostrando {Math.min(sortedEntries.length, rowsToShow)} de {filteredEntries.length} aportes
+          </div>
+          
+          {filteredEntries.length > rowsToShow && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setRowsToShow(prev => prev + 10)}
+            >
+              Mostrar mais
+            </Button>
+          )}
+        </div>
+      </CardContent>
+
+      {/* Modal de Exclusão */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar exclusão</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir este aporte? Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDelete}>
+              Excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Edição */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Editar Aporte</DialogTitle>
+            <DialogDescription>
+              Altere os dados do seu aporte de Bitcoin.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedEntry && (
+            <EntryEditForm
+              entry={selectedEntry}
+              onClose={handleEditClose}
+              currentRate={currentRate}
+              displayUnit={displayUnit}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Importação */}
+      <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Importar Aportes</DialogTitle>
+            <DialogDescription>
+              Importe seus aportes a partir de um arquivo CSV ou XLSX.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            {importProgress.isImporting ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">{importProgress.stage}</span>
+                  <span className="text-sm text-muted-foreground">{importProgress.progress}%</span>
+                </div>
+                <Progress value={importProgress.progress} className="h-2" />
+              </div>
+            ) : (
+              <>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:bg-gray-50 transition-colors" onClick={handleFileButtonClick}>
+                  <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                  <p className="text-sm text-muted-foreground">
+                    Clique para selecionar um arquivo ou arraste e solte aqui
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Arquivos CSV ou XLSX
+                  </p>
+                </div>
+                
+                {selectedFile && (
+                  <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-md border border-gray-200">
+                    <div className="flex-1 truncate">
+                      <p className="text-sm font-medium">{selectedFile.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {(
