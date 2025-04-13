@@ -621,8 +621,19 @@ const EntriesList: React.FC<EntriesListProps> = ({
                 <li>• A planilha deve conter as colunas: <span className="font-semibold">Data, Valor Investido e Bitcoin</span></li>
                 <li>• O campo cotação é opcional - será calculado automaticamente se ausente</li>
                 <li>• Formato de data recomendado: DD/MM/AAAA</li>
-                <li>• Use ponto (.) como separador decimal</li>
+                <li>• Use vírgula ( , ) como separador decimal</li>
               </ul>
+              
+              <div className="mt-3">
+                <a 
+                  href="https://docs.google.com/spreadsheets/d/1gQXqirgJdUdA7ljN-IdTGHUeEAixTdBhiyCeJ9OKvvk/edit?usp=sharing" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="inline-flex items-center text-bitcoin hover:underline text-sm"
+                >
+                  📄 Acessar modelo de planilha no Google Sheets
+                </a>
+              </div>
             </div>
             
             <div className="border rounded-lg p-8 flex flex-col items-center justify-center">
