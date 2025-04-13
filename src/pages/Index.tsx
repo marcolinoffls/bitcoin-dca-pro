@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useBitcoinRate } from '@/hooks/useBitcoinRate';
 import EntryForm from '@/components/EntryForm';
@@ -15,6 +14,12 @@ import { useToast } from '@/hooks/use-toast';
 import { useBitcoinEntries } from '@/hooks/useBitcoinEntries';
 import { BitcoinEntry } from '@/types';
 
+/**
+ * Página principal do aplicativo
+ * 
+ * Responsável por exibir todos os componentes da dashboard e gerenciar
+ * o estado global da aplicação (aportes, cotação atual, moeda selecionada, etc.)
+ */
 const Index = () => {
   const {
     currentRate: bitcoinRate,
@@ -113,8 +118,7 @@ const Index = () => {
                   className="h-full w-full object-contain"
                 />
               </div>
-              {/* Reduzindo a altura */}
-             <div className="h-5">
+              <div className="h-5">
                 <img 
                   src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/public/fontes//Bitcoin%20dca%20pro%20-%20caixa%20alta%20(1).png" 
                   alt="Bitcoin DCA Pro"
@@ -152,7 +156,6 @@ const Index = () => {
           />
         </div>
 
-        {/* Adicionado indicador de carregamento quando os aportes estão sendo buscados */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
           <div className="md:col-span-1">
             <StatisticsCards
