@@ -1,3 +1,4 @@
+
 /**
  * Campo visual de seleção da origem do aporte (Corretora ou P2P).
  * Usado tanto no registro quanto na edição. Controla o valor salvo no Supabase.
@@ -9,8 +10,8 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
 interface OriginSelectorProps {
-  origin: 'corretora' | 'p2p';
-  onOriginChange: (origin: 'corretora' | 'p2p') => void;
+  origin: 'corretora' | 'p2p' | 'planilha';
+  onOriginChange: (origin: 'corretora' | 'p2p' | 'planilha') => void;
 }
 
 const OriginSelector: React.FC<OriginSelectorProps> = ({ origin, onOriginChange }) => {
