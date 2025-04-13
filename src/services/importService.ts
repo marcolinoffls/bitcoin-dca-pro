@@ -15,14 +15,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { BitcoinEntry } from '@/types';
 import * as XLSX from 'xlsx';
 import { v4 as uuidv4 } from 'uuid';
-import { format, isValid, parse } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 
 /**
  * Interface para mapear dados importados de planilha
  */
 interface RawImportData {
-  data: string | Date;
+  data: string;
   valorInvestido: number;
   bitcoin: number;
   cotacao?: number;
@@ -127,17 +125,17 @@ const mapSpreadsheetData = (jsonData: any[]): RawImportData[] => {
   }
   
   // Mapear todos os dados
-  return jsonData.map((row: any, index: number): RawImportData => {
+  return jsonData.map((row: any): RawImportData => {
     // Processar valores para garantir tipos corretos
     let valorInvestido = parseFloat(String(row[valorColumn]).replace(',', '.'));
     let bitcoin = parseFloat(String(row[bitcoinColumn]).replace(',', '.'));
     
     // Validar valores
     if (isNaN(valorInvestido)) {
-      throw new Error(`Valor investido inválido na linha ${index + 2}: ${JSON.stringify(row)}`);
+      throw new Error(`Valor investido inválido na linha: ${JSON.stringify(row)}`);
     }
     if (isNaN(bitcoin)) {
-      throw new Error(`Quantidade de Bitcoin inválida na linha ${index + 2}: ${JSON.stringify(row)}`);
+      throw new Error(`Quantidade de Bitcoin inválida na linha: ${JSON.stringify(row)}`);
     }
     
     // Processar data
@@ -185,91 +183,6 @@ const normalizeValorOrigem = (valor: any): 'corretora' | 'p2p' => {
 };
 
 /**
- * Tenta analisar uma string de data em vários formatos comuns
- * @param dateStr String da data a ser convertida
- * @returns Date objeto ou null se não for possível converter
- */
-const parseDateString = (dateStr: string): Date | null => {
-  console.log(`Tentando converter string de data: "${dateStr}"`);
-  
-  // Se vazio ou não é string, retornar null
-  if (!dateStr || typeof dateStr !== 'string') {
-    console.error('Data inválida: vazia ou não é string');
-    return null;
-  }
-  
-  // Remover espaços extras
-  dateStr = dateStr.trim();
-  
-  // Tentar diferentes formatos comuns de data
-  const formatosData = [
-    // Formatos DD/MM/YYYY
-    'dd/MM/yyyy',
-    'd/MM/yyyy',
-    'dd/M/yyyy',
-    'd/M/yyyy',
-    // Formatos DD-MM-YYYY
-    'dd-MM-yyyy',
-    'd-MM-yyyy',
-    'dd-M-yyyy',
-    'd-M-yyyy',
-    // Formatos DD.MM.YYYY
-    'dd.MM.yyyy',
-    'd.MM.yyyy',
-    'dd.M.yyyy',
-    'd.M.yyyy',
-    // Formatos USA MM/DD/YYYY
-    'MM/dd/yyyy',
-    'M/dd/yyyy',
-    'MM/d/yyyy',
-    'M/d/yyyy',
-    // Formatos ISO
-    'yyyy-MM-dd',
-    'yyyy/MM/dd',
-    'yyyy.MM.dd'
-  ];
-  
-  // Tentar cada formato
-  for (const formatoData of formatosData) {
-    try {
-      const parsedDate = parse(dateStr, formatoData, new Date());
-      
-      // Verificar se a data é válida e recente (posterior a 1970)
-      if (isValid(parsedDate) && parsedDate.getFullYear() > 1970 && parsedDate.getFullYear() < 2100) {
-        console.log(`Data convertida com sucesso usando formato ${formatoData}: ${parsedDate.toISOString()}`);
-        return parsedDate;
-      }
-    } catch (error) {
-      // Continua tentando outros formatos
-    }
-  }
-  
-  // Se chegou aqui, tentar como timestamp ou formato nativo de Date
-  try {
-    // Verificar se é um timestamp (número)
-    if (!isNaN(Number(dateStr))) {
-      const timestamp = Number(dateStr);
-      const dateParsed = new Date(timestamp);
-      
-      if (isValid(dateParsed) && dateParsed.getFullYear() > 1970 && dateParsed.getFullYear() < 2100) {
-        return dateParsed;
-      }
-    }
-    
-    // Tentar como formato de data nativo
-    const dateParsed = new Date(dateStr);
-    if (isValid(dateParsed) && dateParsed.getFullYear() > 1970 && dateParsed.getFullYear() < 2100) {
-      return dateParsed;
-    }
-  } catch (error) {
-    console.error('Erro ao converter data:', error);
-  }
-  
-  console.error(`Não foi possível converter a data: "${dateStr}"`);
-  return null;
-};
-
-/**
  * Converte dados brutos importados em objetos BitcoinEntry prontos para inserção
  * @param rawData Dados brutos mapeados da planilha
  * @param userId ID do usuário atual
@@ -278,74 +191,46 @@ const parseDateString = (dateStr: string): Date | null => {
 export const prepareImportedEntries = (
   rawData: RawImportData[], 
   userId: string
-): { supabaseEntries: any[], appEntries: BitcoinEntry[], invalidRows: {row: number, reason: string}[] } => {
+): { supabaseEntries: any[], appEntries: BitcoinEntry[] } => {
   const supabaseEntries: any[] = [];
   const appEntries: BitcoinEntry[] = [];
-  const invalidRows: {row: number, reason: string}[] = [];
   
-  for (let i = 0; i < rawData.length; i++) {
+  for (const item of rawData) {
     try {
-      const item = rawData[i];
+      // Processar data no formato DD/MM/AAAA, MM/DD/AAAA ou Date
+      let entryDate: Date;
       
-      // Processar e validar a data
-      let entryDate: Date | null = null;
-      
-      // Se já for um objeto Date
-      if (item.data instanceof Date && isValid(item.data)) {
+      if (item.data instanceof Date) {
         entryDate = item.data;
       } else {
-        // Tentar converter a string para data
-        entryDate = parseDateString(String(item.data));
+        // Tentar formatos comuns
+        const dateParts = String(item.data).split(/[/.-]/);
+        
+        // Verificar formato DD/MM/AAAA (ou com separadores - ou .)
+        if (dateParts.length === 3) {
+          // Se parece com DD/MM/AAAA (dias geralmente < 31, meses < 12)
+          if (parseInt(dateParts[0]) <= 31 && parseInt(dateParts[1]) <= 12) {
+            entryDate = new Date(`${dateParts[2]}-${dateParts[1]}-${dateParts[0]}T00:00:00`);
+          } else {
+            // Assumir MM/DD/AAAA (formato americano)
+            entryDate = new Date(`${dateParts[2]}-${dateParts[0]}-${dateParts[1]}T00:00:00`);
+          }
+        } else {
+          // Tentar analisar como string de data
+          entryDate = new Date(String(item.data));
+        }
       }
       
       // Verificar se a data é válida
-      if (!entryDate) {
-        invalidRows.push({
-          row: i + 2, // +2 porque temos o cabeçalho (1) e o array é 0-indexed
-          reason: `Data inválida: "${item.data}"`
-        });
-        continue; // Pular para o próximo item
+      if (isNaN(entryDate.getTime())) {
+        throw new Error(`Data inválida: ${item.data}`);
       }
       
-      // Verificar se a data está dentro de um intervalo razoável (1990-2100)
-      if (entryDate.getFullYear() < 1990 || entryDate.getFullYear() > 2100) {
-        invalidRows.push({
-          row: i + 2,
-          reason: `Ano fora de intervalo válido: ${entryDate.getFullYear()}`
-        });
-        continue;
-      }
-      
-      // Formatação segura para ISO String (YYYY-MM-DD)
-      const formattedDate = format(entryDate, 'yyyy-MM-dd');
-      
-      // Validar valores numéricos
-      if (item.valorInvestido <= 0) {
-        invalidRows.push({
-          row: i + 2,
-          reason: 'Valor investido deve ser maior que zero'
-        });
-        continue;
-      }
-      
-      if (item.bitcoin <= 0) {
-        invalidRows.push({
-          row: i + 2,
-          reason: 'Quantidade de Bitcoin deve ser maior que zero'
-        });
-        continue;
-      }
+      // Formatar para ISO String YYYY-MM-DD
+      const formattedDate = entryDate.toISOString().split('T')[0];
       
       // Calcular cotação se não fornecida
       const exchangeRate = item.cotacao || (item.valorInvestido / item.bitcoin);
-      
-      if (exchangeRate <= 0 || !isFinite(exchangeRate)) {
-        invalidRows.push({
-          row: i + 2,
-          reason: 'Cotação inválida ou resultou em valor inválido'
-        });
-        continue;
-      }
       
       // Gerar ID único
       const id = uuidv4();
@@ -371,21 +256,18 @@ export const prepareImportedEntries = (
         btcAmount: item.bitcoin,
         exchangeRate,
         currency: item.moeda || 'BRL',
-        origin: 'planilha' // Marcar origem como planilha
+        origin: item.origem || 'planilha' // Marcar origem como planilha
       };
       
       supabaseEntries.push(supabaseEntry);
       appEntries.push(appEntry);
     } catch (error) {
-      console.error(`Erro ao processar linha ${i + 2}:`, error);
-      invalidRows.push({
-        row: i + 2,
-        reason: `Erro interno: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
-      });
+      console.error('Erro ao processar linha:', error);
+      throw error;
     }
   }
   
-  return { supabaseEntries, appEntries, invalidRows };
+  return { supabaseEntries, appEntries };
 };
 
 /**
@@ -431,7 +313,7 @@ export const importSpreadsheet = async (
   file: File,
   userId: string,
   onProgress?: (progress: number, stage: string) => void
-): Promise<{ count: number, entries: BitcoinEntry[], invalidRows?: {row: number, reason: string}[] }> => {
+): Promise<{ count: number, entries: BitcoinEntry[] }> => {
   try {
     // Fase 1: Leitura do arquivo (25%)
     onProgress?.(25, 'Lendo arquivo...');
@@ -439,12 +321,7 @@ export const importSpreadsheet = async (
     
     // Fase 2: Processamento e validação (50%)
     onProgress?.(50, 'Processando dados...');
-    const { supabaseEntries, appEntries, invalidRows } = prepareImportedEntries(rawData, userId);
-    
-    // Se não houver nenhuma entrada válida, lançar erro
-    if (supabaseEntries.length === 0) {
-      throw new Error('Nenhum dado válido encontrado na planilha. Por favor, verifique o formato.');
-    }
+    const { supabaseEntries, appEntries } = prepareImportedEntries(rawData, userId);
     
     // Fase 3: Importação para o Supabase (75%)
     onProgress?.(75, 'Enviando ao servidor...');
@@ -455,12 +332,10 @@ export const importSpreadsheet = async (
     
     return {
       count: result.count,
-      entries: appEntries,
-      invalidRows: invalidRows.length > 0 ? invalidRows : undefined
+      entries: appEntries
     };
   } catch (error) {
     console.error('Erro durante importação:', error);
     throw error;
   }
 };
-

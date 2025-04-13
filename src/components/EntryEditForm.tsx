@@ -21,7 +21,6 @@
  * - Melhorada a validação e tratamento da data
  * - Garantido que a data selecionada no calendário seja aplicada imediatamente
  * - Corrigido problema de timezone, forçando o horário local ao interpretar datas
- * - Suporte ao tipo 'planilha' como origem do aporte
  */
 
 import React, { useState, useEffect } from 'react';
@@ -83,8 +82,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
   const [exchangeRate, setExchangeRate] = useState(entry.exchangeRate);
   const [exchangeRateDisplay, setExchangeRateDisplay] = useState(formatNumber(entry.exchangeRate));
   const [currency, setCurrency] = useState<'BRL' | 'USD'>(entry.currency);
-  // Atualizado para suportar 'planilha'
-  const [origin, setOrigin] = useState<'corretora' | 'p2p' | 'planilha'>(entry.origin || 'corretora');
+  const [origin, setOrigin] = useState<'corretora' | 'p2p'>(entry.origin || 'corretora');
   
   // Garantir que a data seja sempre uma instância de Date válida com fuso horário local
   const [date, setDate] = useState<Date>(() => {
@@ -128,11 +126,6 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
     } else {
       console.error('Data inválida recebida:', newDate);
     }
-  };
-
-  // Função específica para lidar com mudanças na origem
-  const handleOriginChange = (newOrigin: 'corretora' | 'p2p' | 'planilha') => {
-    setOrigin(newOrigin);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -287,8 +280,8 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
         </div>
       </div>
 
-      {/* Origem do aporte - Passou o handler correto para suportar 'planilha' */}
-      <OriginSelector origin={origin} onOriginChange={handleOriginChange} />
+      {/* Origem do aporte */}
+      <OriginSelector origin={origin} onOriginChange={setOrigin} />
 
       {/* Botões de ação */}
       <div className="flex gap-4 pt-4">
