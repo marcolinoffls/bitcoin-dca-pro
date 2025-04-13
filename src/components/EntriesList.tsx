@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useRef } from 'react';
 import { BitcoinEntry, CurrentRate } from '@/types';
 import { calculatePercentageChange } from '@/services/bitcoinService';
@@ -113,17 +114,14 @@ const EntriesList: React.FC<EntriesListProps> = ({
   // Função para iniciar a importação do arquivo
   const handleStartImport = async () => {
     if (!selectedFile || !onImportFile) {
-      console.log('Importação não iniciada: arquivo ou função de importação não disponível');
       return;
     }
     
     try {
-      console.log('Iniciando importação do arquivo:', selectedFile.name);
       setIsImporting(true);
       
       // Chamar função de importação passada via props
       const result = await onImportFile(selectedFile);
-      console.log('Resultado da importação:', result);
       
       // Mostrar toast de sucesso
       toast({
@@ -140,7 +138,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
       }
       
     } catch (error) {
-      console.error('Erro na importação:', error);
       // Mostrar toast de erro
       toast({
         title: "Erro na importação",
@@ -775,7 +772,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
               className="bg-bitcoin hover:bg-bitcoin/90 text-white"
               disabled={!selectedFile || importProgress.isImporting}
               onClick={handleStartImport}
-              type="button"
             >
               {importProgress.isImporting ? 'Importando...' : 'Iniciar importação'}
             </Button>

@@ -1,202 +1,202 @@
-
-/**
- * Página Index
- * 
- * Este é o componente principal da aplicação que exibe:
- * - Os cards com estatísticas (total acumulado, preço médio)
- * - A cotação atual do Bitcoin
- * - O formulário para adicionar novos aportes de Bitcoin
- * - A lista de aportes registrados
- * 
- * Utiliza os hooks personalizados para gerenciar dados e estado da aplicação.
- * Organiza o layout em grid responsivo para diferentes tamanhos de tela.
- */
-import React from 'react';
-import EntriesList from '@/components/EntriesList';
-import { useBitcoinEntries } from '@/hooks/useBitcoinEntries';
+import React, { useState, useEffect } from 'react';
+import { useBitcoinRate } from '@/hooks/useBitcoinRate';
 import EntryForm from '@/components/EntryForm';
-import { Toaster } from '@/components/ui/toaster';
-import { Card, CardContent } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useIsMobile } from '@/hooks/use-mobile';
+import EntriesList from '@/components/EntriesList';
 import StatisticsCards from '@/components/StatisticsCards';
 import CurrentRateCard from '@/components/CurrentRateCard';
-import CurrencySelector from '@/components/CurrencySelector';
+import { LogOut } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import ToggleDisplayUnit from '@/components/ToggleDisplayUnit';
+import ToggleCurrency from '@/components/ToggleCurrency';
+import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { useBitcoinEntries } from '@/hooks/useBitcoinEntries';
+import { BitcoinEntry } from '@/types';
 
-const IndexPage: React.FC = () => {
-  const { 
-    entries, 
-    isLoading, 
-    currentRate, 
-    addEntry, 
-    updateEntry, 
+/**
+ * Página principal do aplicativo
+ * 
+ * Responsável por exibir todos os componentes da dashboard e gerenciar
+ * o estado global da aplicação (aportes, cotação atual, moeda selecionada, etc.)
+ */
+const Index = () => {
+  const {
+    currentRate: bitcoinRate,
+    priceVariation,
+    isLoading: isRateLoading,
+    updateCurrentRate: fetchRateUpdate
+  } = useBitcoinRate();
+
+  const { user } = useAuth();
+  
+  // Forçar refetch quando o componente montar ou o usuário mudar
+  const {
+    entries,
+    isLoading: isEntriesLoading,
+    editingEntry,
+    addEntry,
+    editEntry,
+    cancelEdit,
     deleteEntry,
-    importProgress,
-    importEntriesFromSpreadsheet,
-    refetch,
-    selectedCurrency, 
-    setSelectedCurrency,
-    displayUnit,
-    setDisplayUnit
+    refetch: refetchEntries
   } = useBitcoinEntries();
-  const { toast } = useToast();
-  const isMobile = useIsMobile();
 
-  const handleAddEntry = async (
+  // Efeito para garantir que os dados sejam carregados quando o usuário logar
+  useEffect(() => {
+    if (user) {
+      console.log('Usuário autenticado detectado no Index, forçando refetch de aportes');
+      // Pequeno timeout para garantir que a UI tenha tempo de renderizar
+      // antes de iniciar a requisição de dados
+      setTimeout(() => {
+        refetchEntries();
+      }, 100);
+    }
+  }, [user?.id, refetchEntries]);
+
+  const [selectedCurrency, setSelectedCurrency] = useState<'BRL' | 'USD'>('BRL');
+  const [displayUnit, setDisplayUnit] = useState<'BTC' | 'SATS'>('BTC');
+  const isMobile = useIsMobile();
+  const { signOut } = useAuth();
+  const { toast } = useToast();
+
+  const toggleDisplayUnit = (value: 'BTC' | 'SATS') => {
+    setDisplayUnit(value);
+  };
+
+  const toggleCurrency = (value: 'BRL' | 'USD') => {
+    setSelectedCurrency(value);
+  };
+
+  const handleAddEntry = (
     amountInvested: number,
     btcAmount: number,
     exchangeRate: number,
     currency: 'BRL' | 'USD',
     date: Date,
-    origin: 'corretora' | 'p2p' | 'planilha'
+    origin: 'corretora' | 'p2p'
   ) => {
-    try {
-      await addEntry({
-        amountInvested,
-        btcAmount,
-        exchangeRate,
-        currency,
-        date,
-        origin
-      });
-      toast({
-        title: "Aporte adicionado!",
-        description: "Seu aporte foi registrado com sucesso.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Erro ao adicionar aporte",
-        description: error.message || "Ocorreu um erro ao registrar o aporte.",
-        variant: "destructive",
-      });
-    }
+    addEntry({
+      amountInvested,
+      btcAmount,
+      exchangeRate,
+      currency,
+      date,
+      origin
+    });
   };
 
-  const handleEditEntry = async (id: string, entry: any) => {
-    try {
-      await updateEntry(id, entry);
-      toast({
-        title: "Aporte atualizado!",
-        description: "Seu aporte foi atualizado com sucesso.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Erro ao atualizar aporte",
-        description: error.message || "Ocorreu um erro ao atualizar o aporte.",
-        variant: "destructive",
-      });
-    }
+  const handleDeleteEntry = (entryIdOrEntry: string | { id: string }) => {
+    const id = typeof entryIdOrEntry === 'string' 
+      ? entryIdOrEntry 
+      : entryIdOrEntry.id;
+    
+    deleteEntry(id);
   };
 
-  const handleDeleteEntry = async (id: string) => {
-    try {
-      await deleteEntry(id);
-      toast({
-        title: "Aporte excluído!",
-        description: "Seu aporte foi excluído com sucesso.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Erro ao excluir aporte",
-        description: error.message || "Ocorreu um erro ao excluir o aporte.",
-        variant: "destructive",
-      });
-    }
-  };
-  
-  const handleImportFile = async (file: File) => {
-    try {
-      const result = await importEntriesFromSpreadsheet(file);
-      toast({
-        title: "Importação concluída!",
-        description: `Foram adicionados ${result.count} aportes à sua carteira.`,
-        variant: "success",
-      });
-      refetch(); // Atualiza a lista de aportes
-      return result;
-    } catch (error: any) {
-      toast({
-        title: "Erro na importação",
-        description: error.message || "Ocorreu um erro ao importar a planilha",
-        variant: "destructive",
-      });
-      throw error;
+  const handleEditEntry = (entry: BitcoinEntry | string) => {
+    if (typeof entry === 'string') {
+      const foundEntry = entries.find(e => e.id === entry);
+      if (foundEntry) {
+        editEntry(foundEntry);
+      }
+    } else {
+      editEntry(entry);
     }
   };
 
   return (
-    <div className="container mx-auto px-4 py-6 md:py-8 max-w-6xl">
-      <Toaster />
-      
-      {/* Cabeçalho com seleção de moeda e unidade */}
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold mb-4 sm:mb-0">Bitcoin DCA Pro</h1>
-        <div className="flex gap-2 items-center">
-          <CurrencySelector 
-            selectedCurrency={selectedCurrency}
-            onCurrencyChange={setSelectedCurrency}
-          />
-          <ToggleDisplayUnit 
-            displayUnit={displayUnit}
-            onDisplayUnitChange={setDisplayUnit}
-          />
-        </div>
-      </div>
-      
-      {/* Layout principal em grid responsivo */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Coluna esquerda: Cards de estatísticas e cotação */}
-        <div className="lg:col-span-4 space-y-6">
-          {/* Cards de estatísticas: Total de BTC e Preço Médio */}
-          <StatisticsCards 
-            entries={entries}
-            currentRate={currentRate}
-            selectedCurrency={selectedCurrency}
-            displayUnit={displayUnit}
-            isLoading={isLoading}
-          />
-          
-          {/* Card de cotação atual */}
-          <CurrentRateCard 
-            currentRate={currentRate} 
-            selectedCurrency={selectedCurrency}
-          />
-        </div>
-        
-        {/* Coluna direita: Formulário de entrada */}
-        <div className="lg:col-span-8">
-          <Card>
-            <CardContent className="p-6">
-              {currentRate ? (
-                <EntryForm 
-                  onAddEntry={handleAddEntry} 
-                  currentRate={currentRate} 
-                  displayUnit={displayUnit}
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="container mx-auto py-6 px-4">
+        <header className="mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8">
+                <img 
+                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/bitcoin%20logo%20oficial%20sem%20nome%20100px.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvYml0Y29pbiBsb2dvIG9maWNpYWwgc2VtIG5vbWUgMTAwcHgucG5nIiwiaWF0IjoxNzQ0NTU4MDQ2LCJleHAiOjE4MDc2MzAwNDZ9.jmzK3PG-1LJ1r-2cqJD7OiOJItfPWA4oD8n0autKJeo" 
+                  alt="Bitcoin Logo"
+                  className="h-full w-full object-contain"
                 />
-              ) : (
-                <div className="flex flex-col items-center justify-center py-8">
-                  <Skeleton className="h-8 w-24 mb-2" />
-                  <Skeleton className="h-4 w-48" />
-                </div>
-              )}
-            </CardContent>
-          </Card>
+              </div>
+              <div className="h-5">
+                <img 
+                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/public/fontes//Bitcoin%20dca%20pro%20-%20caixa%20alta%20(1).png" 
+                  alt="Bitcoin DCA Pro"
+                  className="h-full object-contain"
+                />
+              </div>
+            </div>
+            <div className="flex items-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={signOut}
+                className="flex items-center gap-1"
+              >
+                <LogOut size={16} />
+                <span className={isMobile ? "hidden" : "inline"}>Sair</span>
+              </Button>
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <p className={`text-muted-foreground ${isMobile ? "text-xs" : ""}`}>
+              Stay Humble and Stack Sats
+            </p>
+          </div>
+        </header>
+
+        <div className="flex justify-center gap-4 mb-6">
+          <ToggleDisplayUnit
+            displayUnit={displayUnit}
+            onToggle={toggleDisplayUnit}
+          />
+          <ToggleCurrency
+            selectedCurrency={selectedCurrency}
+            onToggle={toggleCurrency}
+          />
         </div>
-        
-        {/* Lista de aportes em toda a largura */}
-        <div className="lg:col-span-12">
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+          <div className="md:col-span-1">
+            <StatisticsCards
+              entries={entries}
+              currentRate={bitcoinRate}
+              selectedCurrency={selectedCurrency}
+              displayUnit={displayUnit}
+              isLoading={isEntriesLoading}
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <div className="mb-5">
+              <CurrentRateCard
+                currentRate={bitcoinRate}
+                priceVariation={priceVariation}
+                isLoading={isRateLoading}
+                onRefresh={fetchRateUpdate}
+              />
+            </div>
+            <div>
+              <EntryForm
+                onAddEntry={handleAddEntry}
+                currentRate={bitcoinRate}
+                onCancelEdit={cancelEdit}
+                displayUnit={displayUnit}
+                editingEntry={editingEntry}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div>
           <EntriesList
             entries={entries}
-            currentRate={currentRate}
+            currentRate={bitcoinRate}
             onDelete={handleDeleteEntry}
             onEdit={handleEditEntry}
             selectedCurrency={selectedCurrency}
             displayUnit={displayUnit}
-            isLoading={isLoading}
-            importProgress={importProgress}
-            onImportFile={handleImportFile}
+            isLoading={isEntriesLoading}
           />
         </div>
       </div>
@@ -204,4 +204,4 @@ const IndexPage: React.FC = () => {
   );
 };
 
-export default IndexPage;
+export default Index;

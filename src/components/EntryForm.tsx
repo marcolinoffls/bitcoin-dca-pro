@@ -17,11 +17,10 @@
  * - Agora, ao cancelar a edição, o formulário principal é **resetado** e retorna ao modo original.
  * - Removido o botão "Usar cotação atual" para evitar inconsistências
  * - Campos de valor e quantidade de BTC são totalmente independentes
- * - Adicionado suporte para origem "planilha"
  */
 
-import React, { useEffect, useState } from 'react';
-import { CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import DatePickerField from '@/components/form/DatePickerField';
 import CurrencyField from '@/components/form/CurrencyField';
 import AmountField from '@/components/form/AmountField';
@@ -39,7 +38,7 @@ interface EntryFormProps {
     exchangeRate: number,
     currency: 'BRL' | 'USD',
     date: Date,
-    origin: 'corretora' | 'p2p' | 'planilha'
+    origin: 'corretora' | 'p2p'
   ) => void;
   currentRate: { usd: number; brl: number };
   editingEntry?: {
@@ -49,7 +48,7 @@ interface EntryFormProps {
     btcAmount: number;
     exchangeRate: number;
     currency: 'BRL' | 'USD';
-    origin?: 'corretora' | 'p2p' | 'planilha';
+    origin?: 'corretora' | 'p2p';
   };
   onCancelEdit?: () => void;
   displayUnit?: 'BTC' | 'SATS';
@@ -74,31 +73,21 @@ const EntryForm: React.FC<EntryFormProps> = ({
     exchangeRateDisplay,
     handleExchangeRateChange,
     currency,
-    // Renomeamos a variável `origin` que vem do hook para evitar conflito
-    origin: entryOrigin,
+    origin,
     date,
     setDate,
     parseLocalNumber,
     handleCurrencyChange,
-    // Renomeamos o handler que vem do hook para evitar conflito
-    handleOriginChange: entryHandleOriginChange,
+    handleOriginChange,
     calculateFromAmount,
     calculateFromBtc,
     reset
   } = useEntryFormLogic(editingEntry, currentRate, displayUnit);
 
-  // Estado de origin local com suporte para "planilha"
-  const [origin, setOrigin] = useState<'corretora' | 'p2p' | 'planilha'>(
-    (editingEntry?.origin || 'corretora') as 'corretora' | 'p2p' | 'planilha'
-  );
-
   // Corrige o bug: limpa o formulário quando o modo de edição é encerrado
   useEffect(() => {
     if (!editingEntry) {
       reset(); // reseta os campos
-    } else if (editingEntry.origin) {
-      // Se estiver editando, atualiza a origem com o valor do aporte
-      setOrigin(editingEntry.origin as 'corretora' | 'p2p' | 'planilha');
     }
   }, [editingEntry, reset]);
 
@@ -136,35 +125,24 @@ const EntryForm: React.FC<EntryFormProps> = ({
     resetForm();
   };
 
-  // Handler para atualizar a origem (incluindo "planilha")
-  const handleOriginChange = (newOrigin: 'corretora' | 'p2p' | 'planilha') => {
-    setOrigin(newOrigin);
-    // Atualiza também no hook se o tipo for compatível 
-    if (newOrigin === 'corretora' || newOrigin === 'p2p') {
-      entryHandleOriginChange(newOrigin);
-    }
-  };
-
   return (
-    <div className="w-full">
-      <CardHeader className="pb-4 px-0">
+    <Card className="rounded-xl shadow-md hover:shadow-lg transition-all duration-200">
+      <CardHeader className={isMobile ? 'pb-2' : 'pb-3'}>
         <CardTitle className={`${isMobile ? 'text-lg' : 'text-xl'} flex items-center gap-2`}>
-          {/* Ícone para o card de Registrar Novo Aporte */}
-          <div className="h-8 w-8 flex-shrink-0">
+          {/* Novo ícone para o card de Registrar Novo Aporte */}
+          <div className="h-8 w-8">
             <img 
               src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/novo-aporte.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvbm92by1hcG9ydGUucG5nIiwiaWF0IjoxNzQ0NDk3MTY4LCJleHAiOjE3NzYwMzMxNjh9.gSYsPjL3OqW6iNLDHtvyuoYh6SBlJUm30UL16I4NPI8" 
               alt="Novo Aporte"
               className="h-full w-full object-contain"
             />
           </div>
-          <span className="flex-grow text-left">
-            {editingEntry ? 'Editar Aporte' : 'Registrar Novo Aporte'}
-          </span>
+          {editingEntry ? 'Editar Aporte' : 'Registrar Novo Aporte'}
         </CardTitle>
       </CardHeader>
 
-      <div className="px-0">
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <CardContent className={isMobile ? 'pb-3' : ''}>
+        <form onSubmit={handleSubmit} className={`space-y-${isMobile ? '3' : '4'}`}>
           {/* Campo de Data */}
           <DatePickerField 
             date={date} 
@@ -178,7 +156,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
           />
 
           {/* Valores: Investimento e BTC */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <AmountField 
               currency={currency} 
               amount={amountInvested} 
@@ -199,25 +177,23 @@ const EntryForm: React.FC<EntryFormProps> = ({
             onExchangeRateChange={handleExchangeRateChange} 
           />
 
-          {/* Origem (Corretora, P2P ou Planilha) */}
+          {/* Origem (Corretora ou P2P) */}
           <OriginSelector
             origin={origin}
             onOriginChange={handleOriginChange}
           />
 
           {/* Ações: Calcular, Resetar, Confirmar */}
-          <div className="pt-2">
-            <FormActions 
-              isEditing={!!editingEntry} 
-              displayUnit={displayUnit} 
-              onCalculateFromAmount={calculateFromAmount} 
-              onCalculateFromBtc={calculateFromBtc} 
-              onReset={resetForm} 
-            />
-          </div>
+          <FormActions 
+            isEditing={!!editingEntry} 
+            displayUnit={displayUnit} 
+            onCalculateFromAmount={calculateFromAmount} 
+            onCalculateFromBtc={calculateFromBtc} 
+            onReset={resetForm} 
+          />
         </form>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

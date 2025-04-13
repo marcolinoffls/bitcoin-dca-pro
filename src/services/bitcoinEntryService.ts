@@ -1,101 +1,181 @@
-import { supabase } from '@/integrations/supabase/client';
-import { BitcoinEntry } from '@/types';
 
 /**
- * Busca todos os aportes de Bitcoin do usuário logado no Supabase.
- * @returns Uma Promise com a lista de aportes ou um erro.
+ * Fornece as funções para interagir com os aportes de Bitcoin no Supabase
+ * - Busca todos os aportes
+ * - Cria novos aportes
+ * - Atualiza aportes existentes
+ * - Exclui aportes
+ * 
+ * Atualizações:
+ * - Corrigido problema de atualização da data não ser persistida corretamente
+ * - Adicionados logs para monitorar as conversões de data
+ * - Melhorada a manipulação dos valores para conversão correta entre string e number
+ * - Adicionada verificação extra para garantir que a data seja formatada corretamente
+ * - Melhorada a validação e conversão de datas para garantir persistência no Supabase
+ * - Corrigido problema de timezone, forçando o horário local ao interpretar datas
+ * - Atualizado para suportar novos tipos de origem (planilha) nos aportes
  */
-export const fetchBitcoinEntries = async (): Promise<BitcoinEntry[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('aportes')
-      .select('*')
-      .order('data_aporte', { ascending: false });
 
-    if (error) {
-      console.error("Erro ao buscar aportes:", error);
-      throw new Error(error.message);
-    }
+import { BitcoinEntry, CurrentRate } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
+import { v4 as uuidv4 } from 'uuid';
 
-    // Mapeia os dados do Supabase para o tipo BitcoinEntry
-    const bitcoinEntries: BitcoinEntry[] = data.map(entry => ({
-      id: entry.id,
-      date: new Date(entry.data_aporte),
-      amountInvested: entry.valor_investido,
-      btcAmount: entry.bitcoin,
-      exchangeRate: entry.cotacao,
-      currency: entry.moeda as 'BRL' | 'USD',
-      origin: entry.origem_aporte as 'corretora' | 'p2p' | 'planilha'
-    }));
-
-    return bitcoinEntries;
-  } catch (error: any) {
-    console.error("Erro ao buscar aportes:", error);
-    throw new Error(error.message);
-  }
+/**
+ * Converte string de data para objeto Date, forçando o fuso horário local
+ * @param dateString String de data no formato 'YYYY-MM-DD'
+ * @returns Objeto Date com o fuso horário local
+ */
+const parseLocalDate = (dateString: string): Date => {
+  // Adiciona o horário T00:00:00 para forçar a interpretação no fuso horário local
+  const localDate = new Date(`${dateString}T00:00:00`);
+  console.log(`Convertendo data string ${dateString} para objeto Date: ${localDate}`);
+  return localDate;
 };
 
 /**
- * Atualiza um aporte de Bitcoin existente no Supabase.
- * @param id ID do aporte a ser atualizado.
- * @param amountInvested Novo valor investido.
- * @param bitcoinAmount Nova quantidade de Bitcoin.
- * @param exchangeRate Nova cotação do Bitcoin.
- * @param currency Moeda utilizada ('BRL' ou 'USD').
- * @param date Nova data do aporte.
- * @param origin Nova origem do aporte.
- * @returns Uma Promise que resolve se a atualização for bem-sucedida ou rejeita com um erro.
+ * Fetches all bitcoin entries from the database
  */
-export const updateBitcoinEntry = async (
-  id: string,
+export const fetchBitcoinEntries = async () => {
+  const { data, error } = await supabase
+    .from('aportes')
+    .select('*')
+    .order('data_aporte', { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  // Convert Supabase data to app's BitcoinEntry format
+  const formattedEntries: BitcoinEntry[] = data?.map(entry => {
+    // Garantir que a data seja um objeto Date válido com fuso horário local
+    const entryDate = parseLocalDate(entry.data_aporte);
+    console.log(`Convertendo data do aporte ${entry.id}: ${entry.data_aporte} para objeto Date: ${entryDate}`);
+    
+    return {
+      id: entry.id,
+      date: entryDate,
+      amountInvested: Number(entry.valor_investido),
+      btcAmount: Number(entry.bitcoin),
+      exchangeRate: Number(entry.cotacao),
+      currency: entry.moeda as 'BRL' | 'USD',
+      origin: entry.origem_aporte as 'corretora' | 'p2p' | 'planilha',
+    };
+  }) || [];
+  
+  return formattedEntries;
+};
+
+/**
+ * Creates a new bitcoin entry in the database
+ */
+export const createBitcoinEntry = async (
+  userId: string,
   amountInvested: number,
-  bitcoinAmount: number,
+  btcAmount: number,
   exchangeRate: number,
   currency: 'BRL' | 'USD',
   date: Date,
   origin: 'corretora' | 'p2p' | 'planilha'
-): Promise<void> => {
-  try {
-    const { error } = await supabase
-      .from('aportes')
-      .update({
-        valor_investido: amountInvested,
-        bitcoin: bitcoinAmount,
-        cotacao: exchangeRate,
-        moeda: currency,
-        data_aporte: date.toISOString().split('T')[0],
-        origem_aporte: origin
-      })
-      .eq('id', id);
+) => {
+  // Validar se a data é válida
+  if (!(date instanceof Date) || isNaN(date.getTime())) {
+    console.error('Data inválida para criação:', date);
+    throw new Error('Data inválida fornecida para criação');
+  }
+  
+  // Formata a data para o formato ISO (YYYY-MM-DD)
+  const formattedDate = date.toISOString().split('T')[0];
+  console.log('Data sendo enviada para criação:', formattedDate);
+  
+  const newEntryId = uuidv4();
+  const { error } = await supabase
+    .from('aportes')
+    .insert({
+      id: newEntryId,
+      data_aporte: formattedDate,
+      moeda: currency,
+      cotacao_moeda: currency,
+      valor_investido: amountInvested,
+      bitcoin: btcAmount,
+      cotacao: exchangeRate,
+      origem_aporte: origin,
+      user_id: userId
+    });
 
-    if (error) {
-      console.error("Erro ao atualizar aporte:", error);
-      throw new Error(error.message);
-    }
-  } catch (error: any) {
-    console.error("Erro ao atualizar aporte:", error);
-    throw new Error(error.message);
+  if (error) {
+    throw error;
+  }
+
+  return {
+    id: newEntryId,
+    date,
+    amountInvested,
+    btcAmount,
+    exchangeRate,
+    currency,
+    origin,
+  };
+};
+
+/**
+ * Updates an existing bitcoin entry in the database
+ */
+export const updateBitcoinEntry = async (
+  entryId: string,
+  amountInvested: number,
+  btcAmount: number,
+  exchangeRate: number,
+  currency: 'BRL' | 'USD',
+  date: Date,
+  origin: 'corretora' | 'p2p' | 'planilha'
+) => {
+  // Garantir que a data é um objeto Date válido
+  if (!(date instanceof Date) || isNaN(date.getTime())) {
+    console.error('Data inválida para atualização:', date);
+    throw new Error('Data inválida fornecida para atualização');
+  }
+  
+  // Formata a data para o formato ISO (YYYY-MM-DD)
+  const formattedDate = date.toISOString().split('T')[0];
+  console.log('Data sendo enviada para atualização:', formattedDate, 'Objeto Date original:', date);
+  
+  const updateData = {
+    data_aporte: formattedDate,
+    moeda: currency,
+    cotacao_moeda: currency,
+    valor_investido: amountInvested,
+    bitcoin: btcAmount,
+    cotacao: exchangeRate,
+    origem_aporte: origin
+  };
+  
+  console.log('Dados completos sendo enviados para atualização:', updateData);
+  
+  const { error, data } = await supabase
+    .from('aportes')
+    .update(updateData)
+    .eq('id', entryId)
+    .select();
+
+  if (error) {
+    console.error('Erro ao atualizar o aporte no Supabase:', error);
+    throw error;
+  } else {
+    console.log('Aporte atualizado com sucesso no Supabase:', entryId);
+    console.log('Resposta do Supabase após atualização:', data);
   }
 };
 
 /**
- * Deleta um aporte de Bitcoin do Supabase.
- * @param id ID do aporte a ser deletado.
- * @returns Uma Promise que resolve se a exclusão for bem-sucedida ou rejeita com um erro.
+ * Deletes a bitcoin entry from the database
  */
-export const deleteBitcoinEntry = async (id: string): Promise<void> => {
-  try {
-    const { error } = await supabase
-      .from('aportes')
-      .delete()
-      .eq('id', id);
+export const deleteBitcoinEntry = async (entryId: string) => {
+  const { error } = await supabase
+    .from('aportes')
+    .delete()
+    .eq('id', entryId);
 
-    if (error) {
-      console.error("Erro ao excluir aporte:", error);
-      throw new Error(error.message);
-    }
-  } catch (error: any) {
-    console.error("Erro ao excluir aporte:", error);
-    throw new Error(error.message);
+  if (error) {
+    throw error;
   }
 };

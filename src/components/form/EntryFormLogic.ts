@@ -16,7 +16,6 @@
  * Atualização:
  * - Convertido valores string para number para manipulação mais segura
  * - Mantido formato de exibição para o usuário com strings formatadas
- * - Adicionado suporte para origem "planilha"
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -24,7 +23,6 @@ import { formatNumber } from '@/lib/utils';
 
 type Currency = 'BRL' | 'USD';
 type DisplayUnit = 'BTC' | 'SATS';
-type OriginType = 'corretora' | 'p2p' | 'planilha';
 
 interface CurrentRate {
   usd: number;
@@ -38,7 +36,7 @@ interface EditingEntry {
   btcAmount: number;
   exchangeRate: number;
   currency: Currency;
-  origin?: OriginType;
+  origin?: 'corretora' | 'p2p';
 }
 
 export const useEntryFormLogic = (
@@ -52,7 +50,7 @@ export const useEntryFormLogic = (
   const [exchangeRate, setExchangeRate] = useState<number>(0);          // número puro para cálculos
   const [exchangeRateDisplay, setExchangeRateDisplay] = useState<string>(''); // string formatada para exibição
   const [currency, setCurrency] = useState<Currency>('BRL');
-  const [origin, setOrigin] = useState<OriginType>('corretora');
+  const [origin, setOrigin] = useState<'corretora' | 'p2p'>('corretora');
   const [date, setDate] = useState<Date>(new Date());
 
   /**
@@ -122,13 +120,6 @@ export const useEntryFormLogic = (
   };
 
   /**
-   * Atualiza o tipo de origem do aporte
-   */
-  const handleOriginChange = (newOrigin: OriginType) => {
-    setOrigin(newOrigin);
-  };
-
-  /**
    * Calcula manualmente o valor em BTC ou SATS com base no valor investido
    * Esta função agora só é chamada quando o usuário clica no botão de calcular,
    * e não mais automaticamente quando o valor investido é alterado
@@ -191,7 +182,7 @@ export const useEntryFormLogic = (
     handleExchangeRateChange,
     calculateFromAmount,
     calculateFromBtc,
-    handleOriginChange,
+    handleOriginChange: setOrigin,
     reset
   };
 };
