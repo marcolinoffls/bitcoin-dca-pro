@@ -17,6 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
+import { Textarea } from '@/components/ui/textarea';
 
 /**
  * Interface que define as propriedades do componente EntriesList
@@ -86,6 +87,12 @@ const EntriesList: React.FC<EntriesListProps> = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
+  
+  // Estado para controlar a aba ativa no modal de importação
+  const [importTab, setImportTab] = useState<'planilha' | 'p2p'>('planilha');
+  
+  // Estado para o campo de texto do Satisfaction P2P
+  const [satisfactionText, setSatisfactionText] = useState<string>('');
 
   // Função para acionar o input de arquivo ao clicar no botão
   const handleFileButtonClick = () => {
@@ -154,6 +161,30 @@ const EntriesList: React.FC<EntriesListProps> = ({
     } finally {
       setIsImporting(false);
     }
+  };
+  
+  // Função para lidar com a importação de dados do Satisfaction P2P
+  const handleSatisfactionImport = () => {
+    // Por enquanto apenas mostra uma mensagem de sucesso
+    // A lógica de extração dos dados e envio para o Supabase será implementada futuramente
+    if (satisfactionText.trim() === '') {
+      toast({
+        title: "Campo vazio",
+        description: "Por favor, cole os dados do Satisfaction P2P",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    toast({
+      title: "Dados recebidos",
+      description: "A funcionalidade de importação do Satisfaction P2P será implementada em breve!",
+      variant: "success",
+    });
+    
+    // Fechar o modal e limpar o texto
+    setIsImportDialogOpen(false);
+    setSatisfactionText('');
   };
 
   const handleEditClick = (id: string) => {
@@ -715,12 +746,13 @@ const EntriesList: React.FC<EntriesListProps> = ({
         </DialogContent>
       </Dialog>
       
-      {/* Modal de importação de planilha */}
+      {/* Modal de importação (redesenhado com abas) */}
       <Dialog open={isImportDialogOpen} onOpenChange={(open) => {
         if (!importProgress.isImporting) {
           setIsImportDialogOpen(open);
           if (!open) {
             setSelectedFile(null);
+            setSatisfactionText('');
             if (fileInputRef.current) {
               fileInputRef.current.value = '';
             }
@@ -729,104 +761,153 @@ const EntriesList: React.FC<EntriesListProps> = ({
       }}>
         <DialogContent className="sm:max-w-lg rounded-2xl px-6">
           <DialogHeader>
-            <DialogTitle>Importar Planilha</DialogTitle>
+            <DialogTitle>Importar Aportes</DialogTitle>
             <DialogDescription>
-              Importe seus aportes a partir de uma planilha no formato CSV ou Excel.
+              Importe seus aportes a partir de diferentes fontes.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="rounded-lg border p-4 bg-gray-50">
-              <h3 className="text-sm font-medium mb-2">Instruções de preenchimento</h3>
-              <ul className="text-sm space-y-1">
-                <li>• A planilha deve conter as colunas: <span className="font-semibold">Data, Valor Investido e Bitcoin</span></li>
-                <li>• O campo cotação é opcional - será calculado automaticamente se ausente</li>
-                <li>• Formato de data recomendado: DD/MM/AAAA</li>
-                <li>• Use vírgula ( , ) como separador decimal</li>
-              </ul>
-              
-              <div className="mt-3">
-                <a 
-                  href="https://docs.google.com/spreadsheets/d/1gQXqirgJdUdA7ljN-IdTGHUeEAixTdBhiyCeJ9OKvvk/edit?usp=sharing" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="inline-flex items-center text-bitcoin hover:underline text-sm"
-                >
-                  📄 Acessar modelo de planilha no Google Sheets
-                </a>
-              </div>
-            </div>
-            
-            <div className="border rounded-lg p-8 flex flex-col items-center justify-center">
-              <Download className="h-10 w-10 text-muted-foreground mb-2" />
-              <p className="text-center text-sm text-muted-foreground mb-4">
-                Arraste e solte seu arquivo aqui, ou clique para selecionar
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Suporta CSV (.csv) e Excel (.xlsx)
-              </p>
-              
-              {/* Input file oculto */}
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                className="hidden" 
-                accept=".csv,.xlsx" 
-                onChange={handleFileChange}
-              />
-              
-              {/* Botão estilizado que ativa o input file */}
-              <Button 
-                variant="outline" 
-                className="mt-4 w-full"
-                onClick={handleFileButtonClick}
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                Selecionar arquivo
-              </Button>
-              
-              {/* Exibir o nome do arquivo selecionado, se houver */}
-              {selectedFile && (
-                <p className="text-xs text-muted-foreground mt-2">
-                  Arquivo selecionado: {selectedFile.name}
-                </p>
-              )}
-            </div>
-            
-            {/* Barra de progresso para importação */}
-            {importProgress.isImporting && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">{importProgress.stage}</span>
-                  <span className="text-sm">{importProgress.progress}%</span>
+          
+          <Tabs defaultValue="planilha" className="w-full" onValueChange={(value) => setImportTab(value as 'planilha' | 'p2p')}>
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="planilha">
+                <div className="flex items-center gap-2">
+                  <Download size={16} />
+                  <span>Importar Planilha</span>
                 </div>
-                <Progress value={importProgress.progress} className="h-2" />
+              </TabsTrigger>
+              <TabsTrigger value="p2p">
+                <div className="flex items-center gap-2">
+                  <img 
+                    src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/public/icones/satisfaction-icon.svg" 
+                    alt="Satisfaction P2P"
+                    className="h-4 w-4"
+                  />
+                  <span>Importar do Satisfaction (P2P)</span>
+                </div>
+              </TabsTrigger>
+            </TabsList>
+            
+            {/* Conteúdo da aba Planilha */}
+            <TabsContent value="planilha" className="space-y-4">
+              <div className="rounded-lg border p-3 bg-gray-50">
+                <h3 className="text-sm font-medium mb-1">Instruções de preenchimento</h3>
+                <ul className="text-xs space-y-1 text-muted-foreground">
+                  <li>• A planilha deve conter as colunas: <span className="font-semibold">Data, Valor Investido e Bitcoin</span></li>
+                  <li>• O campo cotação é opcional - será calculado automaticamente se ausente</li>
+                  <li>• Formato de data recomendado: DD/MM/AAAA</li>
+                </ul>
+                
+                <div className="mt-2">
+                  <a 
+                    href="https://docs.google.com/spreadsheets/d/1gQXqirgJdUdA7ljN-IdTGHUeEAixTdBhiyCeJ9OKvvk/edit?usp=sharing" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="inline-flex items-center text-bitcoin hover:underline text-xs"
+                  >
+                    📄 Acessar modelo de planilha
+                  </a>
+                </div>
               </div>
-            )}
-          </div>
-          <DialogFooter className="flex justify-end gap-3">
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                if (!importProgress.isImporting) {
-                  setIsImportDialogOpen(false);
-                  setSelectedFile(null);
-                  if (fileInputRef.current) {
-                    fileInputRef.current.value = '';
-                  }
-                }
-              }}
-              disabled={importProgress.isImporting}
-            >
-              Cancelar
-            </Button>
-            <Button 
-              className="bg-bitcoin hover:bg-bitcoin/90 text-white"
-              disabled={!selectedFile || importProgress.isImporting}
-              onClick={handleStartImport}
-            >
-              {importProgress.isImporting ? 'Importando...' : 'Iniciar importação'}
-            </Button>
-          </DialogFooter>
+              
+              {importProgress.isImporting ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">{importProgress.stage}</span>
+                    <span className="text-sm text-muted-foreground">{importProgress.progress}%</span>
+                  </div>
+                  <Progress value={importProgress.progress} className="h-2" />
+                </div>
+              ) : (
+                <>
+                  <div 
+                    className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:bg-gray-50 transition-colors" 
+                    onClick={handleFileButtonClick}
+                  >
+                    <Upload className="h-6 w-6 mx-auto mb-2 text-gray-400" />
+                    <p className="text-sm text-muted-foreground">
+                      Clique para selecionar um arquivo ou arraste e solte aqui
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Suporta CSV (.csv) e Excel (.xlsx)
+                    </p>
+                  </div>
+                  
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    accept=".csv,.xlsx" 
+                    onChange={handleFileChange}
+                  />
+                  
+                  {selectedFile && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <span>Arquivo selecionado:</span>
+                      <span className="font-medium">{selectedFile.name}</span>
+                    </div>
+                  )}
+                </>
+              )}
+              
+              <DialogFooter className="mt-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsImportDialogOpen(false)}
+                  disabled={importProgress.isImporting}
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  className="bg-bitcoin hover:bg-bitcoin/90 text-white"
+                  disabled={!selectedFile || importProgress.isImporting}
+                  onClick={handleStartImport}
+                >
+                  {importProgress.isImporting ? 'Importando...' : 'Iniciar importação'}
+                </Button>
+              </DialogFooter>
+            </TabsContent>
+            
+            {/* Conteúdo da aba Satisfaction P2P */}
+            <TabsContent value="p2p" className="space-y-4">
+              <div className="rounded-lg border p-3 bg-gray-50">
+                <h3 className="text-sm font-medium mb-1">Como importar aportes do Satisfaction?</h3>
+                <ul className="text-xs space-y-1 text-muted-foreground">
+                  <li>• Cole abaixo a mensagem recebida do Satisfaction após a compra</li>
+                  <li>• O sistema irá extrair automaticamente o valor, cotação e quantidade de sats</li>
+                  <li>• A data do aporte será registrada como a data atual</li>
+                </ul>
+              </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="satisfaction-text" className="text-sm font-medium">
+                  Cole a mensagem do Satisfaction:
+                </label>
+                <Textarea
+                  id="satisfaction-text"
+                  placeholder={`Exemplo:\nExpira em: 13/04/25 às 09:02:57\nCotação BTC/BRL: R$506.358 | Fonte: Sideswap\nValor: R$ 100,00\nTaxa Fixa: R$ 2,00\nTaxa Percentual: 2%\nVocê Recebe: 18.959 sats`}
+                  value={satisfactionText}
+                  onChange={(e) => setSatisfactionText(e.target.value)}
+                  className="min-h-[150px] resize-none font-mono text-sm"
+                />
+              </div>
+              
+              <DialogFooter className="mt-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsImportDialogOpen(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  className="bg-bitcoin hover:bg-bitcoin/90 text-white"
+                  disabled={!satisfactionText.trim()}
+                  onClick={handleSatisfactionImport}
+                >
+                  Importar Aporte
+                </Button>
+              </DialogFooter>
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
     </>
