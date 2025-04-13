@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { BitcoinEntry, CurrentRate } from '@/types';
 import { calculatePercentageChange } from '@/services/bitcoinService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -50,6 +50,9 @@ const EntriesList: React.FC<EntriesListProps> = ({
   displayUnit,
   isLoading = false,
 }) => {
+  // Referência para o input de arquivo
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
@@ -61,6 +64,35 @@ const EntriesList: React.FC<EntriesListProps> = ({
   const [originFilter, setOriginFilter] = useState<'corretora' | 'p2p' | null>(null);
   const [rowsToShow, setRowsToShow] = useState<number>(10);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  // Função para acionar o input de arquivo ao clicar no botão
+  const handleFileButtonClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  // Função para lidar com a seleção de arquivo
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] || null;
+    if (file) {
+      // Verifica se o arquivo é do tipo .csv ou .xlsx
+      const fileType = file.name.split('.').pop()?.toLowerCase();
+      if (fileType === 'csv' || fileType === 'xlsx') {
+        setSelectedFile(file);
+        console.log('Arquivo selecionado:', file.name);
+        // Aqui você poderia adicionar lógica adicional, como exibir o nome do arquivo selecionado
+      } else {
+        // Feedback para o usuário sobre tipo de arquivo não suportado
+        console.error('Tipo de arquivo não suportado. Por favor, selecione um arquivo .csv ou .xlsx');
+        // Limpar o input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }
+    }
+  };
 
   const handleEditClick = (id: string) => {
     setSelectedEntryId(id);
@@ -602,22 +634,49 @@ const EntriesList: React.FC<EntriesListProps> = ({
                 Suporta CSV (.csv) e Excel (.xlsx)
               </p>
               
-              <Button variant="outline" className="mt-4 w-full">
+              {/* Input file oculto */}
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                className="hidden" 
+                accept=".csv,.xlsx" 
+                onChange={handleFileChange}
+              />
+              
+              {/* Botão estilizado que ativa o input file */}
+              <Button 
+                variant="outline" 
+                className="mt-4 w-full"
+                onClick={handleFileButtonClick}
+              >
                 <Upload className="h-4 w-4 mr-2" />
                 Selecionar arquivo
               </Button>
+              
+              {/* Exibir o nome do arquivo selecionado, se houver */}
+              {selectedFile && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Arquivo selecionado: {selectedFile.name}
+                </p>
+              )}
             </div>
           </div>
           <DialogFooter className="flex justify-end gap-3">
             <Button 
               variant="outline" 
-              onClick={() => setIsImportDialogOpen(false)}
+              onClick={() => {
+                setIsImportDialogOpen(false);
+                setSelectedFile(null);
+                if (fileInputRef.current) {
+                  fileInputRef.current.value = '';
+                }
+              }}
             >
               Cancelar
             </Button>
             <Button 
               className="bg-bitcoin hover:bg-bitcoin/90 text-white"
-              disabled={true}
+              disabled={!selectedFile}
             >
               Iniciar importação
             </Button>
