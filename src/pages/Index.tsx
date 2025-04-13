@@ -1,3 +1,4 @@
+
 import React from 'react';
 import EntriesList from '@/components/EntriesList';
 import { useBitcoinEntries } from '@/hooks/useBitcoinEntries';
@@ -23,9 +24,23 @@ const IndexPage: React.FC = () => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
-  const handleAddEntry = async (entry: any) => {
+  const handleAddEntry = async (
+    amountInvested: number,
+    btcAmount: number,
+    exchangeRate: number,
+    currency: 'BRL' | 'USD',
+    date: Date,
+    origin: 'corretora' | 'p2p' | 'planilha'
+  ) => {
     try {
-      await addEntry(entry);
+      await addEntry({
+        amountInvested,
+        btcAmount,
+        exchangeRate,
+        currency,
+        date,
+        origin
+      });
       toast({
         title: "Aporte adicionado!",
         description: "Seu aporte foi registrado com sucesso.",
@@ -98,7 +113,7 @@ const IndexPage: React.FC = () => {
         <Card>
           <CardContent>
             {currentRate ? (
-              <EntryForm onSubmit={handleAddEntry} currentRate={currentRate} />
+              <EntryForm onAddEntry={handleAddEntry} currentRate={currentRate} />
             ) : (
               <div className="flex flex-col items-center justify-center py-8">
                 <Skeleton className="h-8 w-24 mb-2" />

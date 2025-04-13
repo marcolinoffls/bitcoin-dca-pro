@@ -1,3 +1,4 @@
+
 /**
  * Componente: EntryForm
  * 
@@ -16,6 +17,7 @@
  * - Agora, ao cancelar a edição, o formulário principal é **resetado** e retorna ao modo original.
  * - Removido o botão "Usar cotação atual" para evitar inconsistências
  * - Campos de valor e quantidade de BTC são totalmente independentes
+ * - Adicionado suporte para origem "planilha"
  */
 
 import React, { useEffect, useState } from 'react';
@@ -37,7 +39,7 @@ interface EntryFormProps {
     exchangeRate: number,
     currency: 'BRL' | 'USD',
     date: Date,
-    origin: 'corretora' | 'p2p'
+    origin: 'corretora' | 'p2p' | 'planilha'
   ) => void;
   currentRate: { usd: number; brl: number };
   editingEntry?: {
@@ -47,7 +49,7 @@ interface EntryFormProps {
     btcAmount: number;
     exchangeRate: number;
     currency: 'BRL' | 'USD';
-    origin?: 'corretora' | 'p2p';
+    origin?: 'corretora' | 'p2p' | 'planilha';
   };
   onCancelEdit?: () => void;
   displayUnit?: 'BTC' | 'SATS';
@@ -72,24 +74,31 @@ const EntryForm: React.FC<EntryFormProps> = ({
     exchangeRateDisplay,
     handleExchangeRateChange,
     currency,
-    origin,
+    // Renomeamos a variável `origin` que vem do hook para evitar conflito
+    origin: entryOrigin,
     date,
     setDate,
     parseLocalNumber,
     handleCurrencyChange,
-    handleOriginChange,
+    // Renomeamos o handler que vem do hook para evitar conflito
+    handleOriginChange: entryHandleOriginChange,
     calculateFromAmount,
     calculateFromBtc,
     reset
   } = useEntryFormLogic(editingEntry, currentRate, displayUnit);
 
-  // Atualizar o tipo do estado de "origin" para incluir "planilha"
-  const [origin, setOrigin] = useState<'corretora' | 'p2p' | 'planilha'>('corretora');
+  // Estado de origin local com suporte para "planilha"
+  const [origin, setOrigin] = useState<'corretora' | 'p2p' | 'planilha'>(
+    (editingEntry?.origin || 'corretora') as 'corretora' | 'p2p' | 'planilha'
+  );
 
   // Corrige o bug: limpa o formulário quando o modo de edição é encerrado
   useEffect(() => {
     if (!editingEntry) {
       reset(); // reseta os campos
+    } else if (editingEntry.origin) {
+      // Se estiver editando, atualiza a origem com o valor do aporte
+      setOrigin(editingEntry.origin as 'corretora' | 'p2p' | 'planilha');
     }
   }, [editingEntry, reset]);
 
@@ -127,9 +136,13 @@ const EntryForm: React.FC<EntryFormProps> = ({
     resetForm();
   };
 
-  // Atualizar o handler para aceitar o novo tipo
+  // Handler para atualizar a origem (incluindo "planilha")
   const handleOriginChange = (newOrigin: 'corretora' | 'p2p' | 'planilha') => {
     setOrigin(newOrigin);
+    // Atualiza também no hook se o tipo for compatível 
+    if (newOrigin === 'corretora' || newOrigin === 'p2p') {
+      entryHandleOriginChange(newOrigin);
+    }
   };
 
   return (
@@ -184,7 +197,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
             onExchangeRateChange={handleExchangeRateChange} 
           />
 
-          {/* Origem (Corretora ou P2P) */}
+          {/* Origem (Corretora, P2P ou Planilha) */}
           <OriginSelector
             origin={origin}
             onOriginChange={handleOriginChange}
