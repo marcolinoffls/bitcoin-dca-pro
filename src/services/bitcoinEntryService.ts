@@ -13,6 +13,7 @@
  * - Adicionada verificação extra para garantir que a data seja formatada corretamente
  * - Melhorada a validação e conversão de datas para garantir persistência no Supabase
  * - Corrigido problema de timezone, forçando o horário local ao interpretar datas
+ * - Atualizado para suportar novos tipos de origem (planilha) nos aportes
  */
 
 import { BitcoinEntry, CurrentRate } from '@/types';
@@ -57,7 +58,7 @@ export const fetchBitcoinEntries = async () => {
       btcAmount: Number(entry.bitcoin),
       exchangeRate: Number(entry.cotacao),
       currency: entry.moeda as 'BRL' | 'USD',
-      origin: entry.origem_aporte as 'corretora' | 'p2p',
+      origin: entry.origem_aporte as 'corretora' | 'p2p' | 'planilha',
     };
   }) || [];
   
@@ -74,7 +75,7 @@ export const createBitcoinEntry = async (
   exchangeRate: number,
   currency: 'BRL' | 'USD',
   date: Date,
-  origin: 'corretora' | 'p2p'
+  origin: 'corretora' | 'p2p' | 'planilha'
 ) => {
   // Validar se a data é válida
   if (!(date instanceof Date) || isNaN(date.getTime())) {
@@ -126,7 +127,7 @@ export const updateBitcoinEntry = async (
   exchangeRate: number,
   currency: 'BRL' | 'USD',
   date: Date,
-  origin: 'corretora' | 'p2p'
+  origin: 'corretora' | 'p2p' | 'planilha'
 ) => {
   // Garantir que a data é um objeto Date válido
   if (!(date instanceof Date) || isNaN(date.getTime())) {

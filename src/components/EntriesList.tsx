@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useRef } from 'react';
 import { BitcoinEntry, CurrentRate } from '@/types';
 import { calculatePercentageChange } from '@/services/bitcoinService';
@@ -14,6 +15,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Progress } from '@/components/ui/progress';
+import { useToast } from '@/hooks/use-toast';
 
 /**
  * Interface que define as propriedades do componente EntriesList
@@ -28,7 +31,13 @@ interface EntriesListProps {
   onEdit: (id: string) => void;
   selectedCurrency: 'BRL' | 'USD';
   displayUnit: 'BTC' | 'SATS';
-  isLoading?: boolean; // Adicionada propriedade de loading
+  isLoading?: boolean;
+  importProgress?: {
+    progress: number;
+    stage: string;
+    isImporting: boolean;
+  };
+  onImportFile?: (file: File) => Promise<{ count: number, entries: BitcoinEntry[] }>;
 }
 
 /**
@@ -40,6 +49,7 @@ interface EntriesListProps {
  * - Filtragem por mês, moeda e origem
  * - Controle de linhas visíveis
  * - Resumo dos totais na parte inferior
+ * - Importação de planilhas CSV e Excel
  */
 const EntriesList: React.FC<EntriesListProps> = ({
   entries,
@@ -49,9 +59,12 @@ const EntriesList: React.FC<EntriesListProps> = ({
   selectedCurrency,
   displayUnit,
   isLoading = false,
+  importProgress = { progress: 0, stage: '', isImporting: false },
+  onImportFile
 }) => {
   // Referência para o input de arquivo
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
   
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -61,10 +74,11 @@ const EntriesList: React.FC<EntriesListProps> = ({
   
   // Estados para os filtros
   const [monthFilter, setMonthFilter] = useState<string | null>(null);
-  const [originFilter, setOriginFilter] = useState<'corretora' | 'p2p' | null>(null);
+  const [originFilter, setOriginFilter] = useState<'corretora' | 'p2p' | 'planilha' | null>(null);
   const [rowsToShow, setRowsToShow] = useState<number>(10);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   // Função para acionar o input de arquivo ao clicar no botão
   const handleFileButtonClick = () => {
@@ -82,15 +96,56 @@ const EntriesList: React.FC<EntriesListProps> = ({
       if (fileType === 'csv' || fileType === 'xlsx') {
         setSelectedFile(file);
         console.log('Arquivo selecionado:', file.name);
-        // Aqui você poderia adicionar lógica adicional, como exibir o nome do arquivo selecionado
       } else {
         // Feedback para o usuário sobre tipo de arquivo não suportado
-        console.error('Tipo de arquivo não suportado. Por favor, selecione um arquivo .csv ou .xlsx');
+        toast({
+          title: "Tipo de arquivo não suportado",
+          description: "Por favor, selecione um arquivo .csv ou .xlsx",
+          variant: "destructive",
+        });
         // Limpar o input
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
       }
+    }
+  };
+
+  // Função para iniciar a importação do arquivo
+  const handleStartImport = async () => {
+    if (!selectedFile || !onImportFile) {
+      return;
+    }
+    
+    try {
+      setIsImporting(true);
+      
+      // Chamar função de importação passada via props
+      const result = await onImportFile(selectedFile);
+      
+      // Mostrar toast de sucesso
+      toast({
+        title: "Importação concluída!",
+        description: `Foram adicionados ${result.count} aportes à sua carteira.`,
+        variant: "success",
+      });
+      
+      // Fechar o modal e limpar o arquivo selecionado
+      setIsImportDialogOpen(false);
+      setSelectedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      
+    } catch (error) {
+      // Mostrar toast de erro
+      toast({
+        title: "Erro na importação",
+        description: error instanceof Error ? error.message : "Ocorreu um erro ao importar a planilha",
+        variant: "destructive",
+      });
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -326,6 +381,9 @@ const EntriesList: React.FC<EntriesListProps> = ({
                 <TableRow key={entry.id}>
                   <TableCell className={isMobile ? "text-xs py-2" : ""}>
                     {format(entry.date, 'dd/MM/yyyy', { locale: ptBR })}
+                    {entry.origin === 'planilha' && (
+                      <span className="ml-1 text-xs text-muted-foreground">(planilha)</span>
+                    )}
                   </TableCell>
                   <TableCell className={isMobile ? "text-xs py-2" : ""}>
                     {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(investedValue)}
@@ -497,7 +555,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
                     {/* Filtro por origem */}
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Por origem</label>
-                      <Select value={originFilter || 'all'} onValueChange={(value) => setOriginFilter(value === 'all' ? null : value as 'corretora' | 'p2p')}>
+                      <Select value={originFilter || 'all'} onValueChange={(value) => setOriginFilter(value === 'all' ? null : value as 'corretora' | 'p2p' | 'planilha')}>
                         <SelectTrigger>
                           <SelectValue placeholder="Todas as origens" />
                         </SelectTrigger>
@@ -505,6 +563,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
                           <SelectItem value="all">Todas as origens</SelectItem>
                           <SelectItem value="corretora">Corretora</SelectItem>
                           <SelectItem value="p2p">P2P</SelectItem>
+                          <SelectItem value="planilha">Planilha</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -606,7 +665,17 @@ const EntriesList: React.FC<EntriesListProps> = ({
       </Dialog>
       
       {/* Modal de importação de planilha */}
-      <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+      <Dialog open={isImportDialogOpen} onOpenChange={(open) => {
+        if (!importProgress.isImporting) {
+          setIsImportDialogOpen(open);
+          if (!open) {
+            setSelectedFile(null);
+            if (fileInputRef.current) {
+              fileInputRef.current.value = '';
+            }
+          }
+        }
+      }}>
         <DialogContent className="sm:max-w-lg rounded-2xl px-6">
           <DialogHeader>
             <DialogTitle>Importar Planilha</DialogTitle>
@@ -671,25 +740,40 @@ const EntriesList: React.FC<EntriesListProps> = ({
                 </p>
               )}
             </div>
+            
+            {/* Barra de progresso para importação */}
+            {importProgress.isImporting && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">{importProgress.stage}</span>
+                  <span className="text-sm">{importProgress.progress}%</span>
+                </div>
+                <Progress value={importProgress.progress} className="h-2" />
+              </div>
+            )}
           </div>
           <DialogFooter className="flex justify-end gap-3">
             <Button 
               variant="outline" 
               onClick={() => {
-                setIsImportDialogOpen(false);
-                setSelectedFile(null);
-                if (fileInputRef.current) {
-                  fileInputRef.current.value = '';
+                if (!importProgress.isImporting) {
+                  setIsImportDialogOpen(false);
+                  setSelectedFile(null);
+                  if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                  }
                 }
               }}
+              disabled={importProgress.isImporting}
             >
               Cancelar
             </Button>
             <Button 
               className="bg-bitcoin hover:bg-bitcoin/90 text-white"
-              disabled={!selectedFile}
+              disabled={!selectedFile || importProgress.isImporting}
+              onClick={handleStartImport}
             >
-              Iniciar importação
+              {importProgress.isImporting ? 'Importando...' : 'Iniciar importação'}
             </Button>
           </DialogFooter>
         </DialogContent>

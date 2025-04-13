@@ -5,6 +5,7 @@
  * Gerencia toda a lógica de aportes:
  * - Busca aportes no Supabase
  * - Permite adicionar, editar e excluir aportes
+ * - Importação de planilhas CSV/Excel
  * - Integra com a cotação atual do Bitcoin
  *
  * Utiliza React Query para cache e atualização reativa
@@ -19,6 +20,7 @@
  * - Melhorada a validação da data para garantir que seja salva corretamente
  * - Melhorado o tratamento de erros e validação de datas
  * - Corrigido problema de timezone, forçando o horário local ao interpretar datas
+ * - Adicionada funcionalidade de importação de planilhas
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -28,6 +30,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { BitcoinEntry, CurrentRate } from '@/types';
 import { fetchCurrentBitcoinRate } from '@/services/bitcoinService';
 import { fetchBitcoinEntries, updateBitcoinEntry, deleteBitcoinEntry } from '@/services/bitcoinEntryService';
+import { importSpreadsheet } from '@/services/importService';
 
 // Interface para mapear os dados do Supabase para os tipos da aplicação
 interface SupabaseAporte {
@@ -37,7 +40,7 @@ interface SupabaseAporte {
   bitcoin: number;
   cotacao: number;
   moeda: 'BRL' | 'USD';
-  origem_aporte: 'corretora' | 'p2p';
+  origem_aporte: 'corretora' | 'p2p' | 'planilha';
   user_id: string;
   cotacao_moeda: string;
   created_at: string;
@@ -61,6 +64,17 @@ export const useBitcoinEntries = () => {
 
   // Estado local para armazenar o aporte sendo editado
   const [editingEntry, setEditingEntry] = useState<BitcoinEntry | null>(null);
+  
+  // Estado para controlar o progresso de importação
+  const [importProgress, setImportProgress] = useState<{
+    progress: number;
+    stage: string;
+    isImporting: boolean;
+  }>({
+    progress: 0,
+    stage: '',
+    isImporting: false
+  });
 
   // Efeito para limpar o cache quando o usuário muda
   useEffect(() => {
@@ -230,6 +244,58 @@ export const useBitcoinEntries = () => {
       throw error;
     }
   };
+  
+  /**
+   * Importa aportes a partir de um arquivo de planilha
+   */
+  const importEntriesFromSpreadsheet = async (file: File) => {
+    if (!user) {
+      throw new Error('Usuário não autenticado');
+    }
+    
+    try {
+      setImportProgress({
+        progress: 0,
+        stage: 'Iniciando importação...',
+        isImporting: true
+      });
+      
+      // Chamar função de importação com callback de progresso
+      const result = await importSpreadsheet(
+        file, 
+        user.id,
+        (progress, stage) => {
+          setImportProgress({
+            progress,
+            stage,
+            isImporting: true
+          });
+        }
+      );
+      
+      // Atualizar o cache de queries para exibir os novos dados
+      await queryClient.invalidateQueries({ queryKey: ['entries'] });
+      
+      // Finalizar o progresso
+      setImportProgress({
+        progress: 100,
+        stage: 'Concluído',
+        isImporting: false
+      });
+      
+      return result;
+    } catch (error) {
+      // Em caso de erro, resetar o progresso
+      setImportProgress({
+        progress: 0,
+        stage: '',
+        isImporting: false
+      });
+      
+      console.error('Erro na importação:', error);
+      throw error;
+    }
+  };
 
   /**
    * Coloca um aporte em modo de edição
@@ -257,12 +323,14 @@ export const useBitcoinEntries = () => {
     isLoading,
     currentRate,
     editingEntry,
+    importProgress,
     addEntry,
     updateEntry,
     deleteEntry,
     editEntry,
     cancelEdit,
     updateCurrentRate,
+    importEntriesFromSpreadsheet,
     refetch,
   };
 };
