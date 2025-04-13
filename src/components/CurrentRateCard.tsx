@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CurrentRate, PriceVariation } from '@/types';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, TriangleUp, TriangleDown } from 'lucide-react';
+import { RefreshCw, Triangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatNumber } from '@/lib/utils';
@@ -47,7 +46,7 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
     value: number; 
     className?: string;
   }) => {
-    // Determina se a variação é positiva ou negativa
+    // Determine if the variation is positive or negative
     const isPositive = value >= 0;
     
     return (
@@ -55,9 +54,17 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
         <span className="text-xs text-muted-foreground mb-1">{label}</span>
         <div className={`flex items-center ${isPositive ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
           {isPositive ? (
-            <TriangleUp className="h-3 w-3 mr-1 fill-current" />
+            <Triangle 
+              className="h-3 w-3 mr-1 fill-current" 
+              strokeWidth={0} 
+              fill="currentColor" 
+            />
           ) : (
-            <TriangleDown className="h-3 w-3 mr-1 fill-current" />
+            <Triangle 
+              className="h-3 w-3 mr-1 fill-current rotate-180" 
+              strokeWidth={0} 
+              fill="currentColor" 
+            />
           )}
           <span className="text-sm font-semibold">
             {formatNumber(Math.abs(value), 2)}%
