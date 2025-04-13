@@ -1,3 +1,4 @@
+
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,6 +22,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
   useEffect(() => {
+    // Log para depuração
+    console.log('Inicializando provedor de autenticação');
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, newSession) => {
         console.log("Evento de autenticação detectado:", event);
@@ -28,6 +32,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (event !== 'PASSWORD_RECOVERY') {
           setSession(newSession);
           setUser(newSession?.user ?? null);
+          
+          // Evento SIGNED_IN ocorre apenas quando o usuário faz login diretamente
+          // e não durante a inicialização da sessão
+          if (event === 'SIGNED_IN') {
+            console.log('Usuário fez login com sucesso');
+            // Removido o toast de login bem-sucedido
+          }
         }
         
         if (event === 'SIGNED_OUT') {
@@ -46,10 +57,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
+    // Verificação de sessão existente na inicialização
     supabase.auth.getSession().then(({ data: { session: newSession } }) => {
       const isResetPasswordPage = window.location.pathname.includes('reset-password');
       
       if (!isResetPasswordPage || !window.location.hash.includes('access_token')) {
+        console.log('Sessão recuperada na inicialização:', newSession ? 'Sim' : 'Não');
         setSession(newSession);
         setUser(newSession?.user ?? null);
       }
@@ -62,8 +75,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
+      console.log('Tentando fazer login com:', email);
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
+      console.log('Login bem-sucedido');
+      // Removido o toast de login bem-sucedido
     } catch (error: any) {
       toast({
         title: "Erro ao fazer login",

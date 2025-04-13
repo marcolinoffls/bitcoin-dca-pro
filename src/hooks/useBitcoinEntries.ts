@@ -10,6 +10,9 @@
  * Utiliza React Query para cache e atualização reativa
  * 
  * Atualizações:
+ * - Corrigido o problema de carregamento inicial após login
+ * - Adicionada escuta da mudança de estado de autenticação
+ * - Melhorada a invalidação de queries ao mudar o usuário
  * - Corrigido o problema de atualização da data no Supabase
  * - Adicionado log detalhado para acompanhar a atualização dos aportes
  * - Garantida a invalidação do cache de queries após operações
@@ -19,7 +22,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { BitcoinEntry, CurrentRate } from '@/types';
@@ -53,21 +56,35 @@ const parseLocalDate = (dateString: string): Date => {
 };
 
 export const useBitcoinEntries = () => {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const queryClient = useQueryClient();
 
   // Estado local para armazenar o aporte sendo editado
   const [editingEntry, setEditingEntry] = useState<BitcoinEntry | null>(null);
 
+  // Efeito para limpar o cache quando o usuário muda
+  useEffect(() => {
+    // Quando o usuário muda (login, logout ou troca de conta)
+    // invalidamos o cache para forçar uma nova busca
+    if (user) {
+      console.log('Usuário autenticado detectado, invalidando cache de aportes');
+      queryClient.invalidateQueries({ queryKey: ['entries'] });
+    }
+  }, [user?.id, queryClient]);
+
   /**
    * Busca lista de aportes do usuário logado
    */
   const { data: entries = [], isLoading, refetch } = useQuery({
-    queryKey: ['entries'],
+    queryKey: ['entries', user?.id], // Adicionado user.id como parte da chave
     queryFn: async () => {
-      if (!user) return [];
+      if (!user) {
+        console.log('Nenhum usuário autenticado, retornando lista vazia');
+        return [];
+      }
       
       try {
+        console.log('Buscando aportes para o usuário:', user.id);
         const entriesData = await fetchBitcoinEntries();
         console.log('Aportes carregados do Supabase:', entriesData);
         return entriesData;
@@ -76,7 +93,8 @@ export const useBitcoinEntries = () => {
         throw error;
       }
     },
-    enabled: !!user,
+    enabled: !!user, // Ativa a query apenas quando há um usuário
+    staleTime: 1000 * 60 * 5, // 5 minutos antes de considerar os dados obsoletos
   });
 
   /**

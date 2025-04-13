@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BitcoinEntry, CurrentRate } from '@/types';
@@ -5,12 +6,14 @@ import { calculateTotalBitcoin, calculateAverageByPeriod } from '@/services/bitc
 import { formatNumber } from '@/lib/utils';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import BitcoinTotalCard from './BitcoinTotalCard';
+import { Loader2 } from 'lucide-react';
 
 interface StatisticsCardsProps {
   entries: BitcoinEntry[];
   currentRate: CurrentRate;
   selectedCurrency: 'BRL' | 'USD';
   displayUnit: 'BTC' | 'SATS';
+  isLoading?: boolean; // Adicionado prop de carregamento
 }
 
 /**
@@ -28,6 +31,7 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
   currentRate,
   selectedCurrency,
   displayUnit,
+  isLoading = false, // Default para falso
 }) => {
   const [selectedPeriod, setSelectedPeriod] = useState<'month' | 'year' | 'all'>('month');
   
@@ -60,6 +64,20 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
   // Adicionando verificações de segurança
   const currentRateValue = currentRate && selectedCurrency === 'USD' ? currentRate.usd : currentRate?.brl || 0;
   const currencySymbol = selectedCurrency === 'USD' ? '$' : 'R$';
+
+  // Componente de carregamento
+  if (isLoading) {
+    return (
+      <div className="flex flex-col gap-4">
+        <Card className="overflow-hidden rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-200">
+          <CardContent className="flex items-center justify-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin text-bitcoin" />
+            <span className="ml-2 text-sm text-muted-foreground">Carregando seus dados...</span>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4">

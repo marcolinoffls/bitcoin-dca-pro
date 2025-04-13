@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useBitcoinRate } from '@/hooks/useBitcoinRate';
 import EntryForm from '@/components/EntryForm';
@@ -22,6 +23,9 @@ const Index = () => {
     updateCurrentRate: fetchRateUpdate
   } = useBitcoinRate();
 
+  const { user } = useAuth();
+  
+  // Forçar refetch quando o componente montar ou o usuário mudar
   const {
     entries,
     isLoading: isEntriesLoading,
@@ -29,13 +33,26 @@ const Index = () => {
     addEntry,
     editEntry,
     cancelEdit,
-    deleteEntry
+    deleteEntry,
+    refetch: refetchEntries
   } = useBitcoinEntries();
+
+  // Efeito para garantir que os dados sejam carregados quando o usuário logar
+  useEffect(() => {
+    if (user) {
+      console.log('Usuário autenticado detectado no Index, forçando refetch de aportes');
+      // Pequeno timeout para garantir que a UI tenha tempo de renderizar
+      // antes de iniciar a requisição de dados
+      setTimeout(() => {
+        refetchEntries();
+      }, 100);
+    }
+  }, [user?.id, refetchEntries]);
 
   const [selectedCurrency, setSelectedCurrency] = useState<'BRL' | 'USD'>('BRL');
   const [displayUnit, setDisplayUnit] = useState<'BTC' | 'SATS'>('BTC');
   const isMobile = useIsMobile();
-  const { user, signOut } = useAuth();
+  const { signOut } = useAuth();
   const { toast } = useToast();
 
   const toggleDisplayUnit = (value: 'BTC' | 'SATS') => {
@@ -135,6 +152,7 @@ const Index = () => {
           />
         </div>
 
+        {/* Adicionado indicador de carregamento quando os aportes estão sendo buscados */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
           <div className="md:col-span-1">
             <StatisticsCards
@@ -142,6 +160,7 @@ const Index = () => {
               currentRate={bitcoinRate}
               selectedCurrency={selectedCurrency}
               displayUnit={displayUnit}
+              isLoading={isEntriesLoading}
             />
           </div>
 
@@ -174,6 +193,7 @@ const Index = () => {
             onEdit={handleEditEntry}
             selectedCurrency={selectedCurrency}
             displayUnit={displayUnit}
+            isLoading={isEntriesLoading}
           />
         </div>
       </div>
