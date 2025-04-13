@@ -146,3 +146,33 @@
     @apply grid-cols-1;
   }
 }
+
+/* Melhorias no layout responsivo */
+@media (max-width: 639px) {
+  .container {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+}
+
+/* Ajustes para cards no layout principal */
+.card-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+/* Espaçamento dos cards estatísticos */
+.stats-card {
+  margin-bottom: 1rem;
+}
+
+/* Melhorias no scroll em dispositivos móveis */
+@media (max-width: 767px) {
+  html, body {
+    overflow-x: hidden;
+  }
+  
+  body {
+    position: relative;
+  }
+}

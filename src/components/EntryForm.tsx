@@ -21,7 +21,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardHeader, CardTitle } from '@/components/ui/card';
 import DatePickerField from '@/components/form/DatePickerField';
 import CurrencyField from '@/components/form/CurrencyField';
 import AmountField from '@/components/form/AmountField';
@@ -146,8 +146,8 @@ const EntryForm: React.FC<EntryFormProps> = ({
   };
 
   return (
-    <Card className="w-full rounded-xl shadow-md hover:shadow-lg transition-all duration-200 overflow-hidden">
-      <CardHeader className="pb-4 px-6">
+    <div className="w-full">
+      <CardHeader className="pb-4 px-0">
         <CardTitle className={`${isMobile ? 'text-lg' : 'text-xl'} flex items-center gap-2`}>
           {/* Ícone para o card de Registrar Novo Aporte */}
           <div className="h-8 w-8 flex-shrink-0">
@@ -163,7 +163,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
         </CardTitle>
       </CardHeader>
 
-      <CardContent className="px-6 pb-6">
+      <div className="px-0">
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Campo de Data */}
           <DatePickerField 
@@ -216,8 +216,8 @@ const EntryForm: React.FC<EntryFormProps> = ({
             />
           </div>
         </form>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 
