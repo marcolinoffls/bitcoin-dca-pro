@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { BitcoinEntry, CurrentRate } from '@/types';
 import { calculatePercentageChange } from '@/services/bitcoinService';
@@ -450,12 +449,12 @@ const EntriesList: React.FC<EntriesListProps> = ({
                     {/* Filtro por mês */}
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Por mês</label>
-                      <Select value={monthFilter || ''} onValueChange={(value) => setMonthFilter(value || null)}>
+                      <Select value={monthFilter || 'all'} onValueChange={(value) => setMonthFilter(value === 'all' ? null : value)}>
                         <SelectTrigger>
                           <SelectValue placeholder="Todos os meses" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Todos os meses</SelectItem>
+                          <SelectItem value="all">Todos os meses</SelectItem>
                           {availableMonths.map(month => (
                             <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>
                           ))}
@@ -466,12 +465,12 @@ const EntriesList: React.FC<EntriesListProps> = ({
                     {/* Filtro por origem */}
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Por origem</label>
-                      <Select value={originFilter || ''} onValueChange={(value) => setOriginFilter(value as 'corretora' | 'p2p' | null)}>
+                      <Select value={originFilter || 'all'} onValueChange={(value) => setOriginFilter(value === 'all' ? null : value as 'corretora' | 'p2p')}>
                         <SelectTrigger>
                           <SelectValue placeholder="Todas as origens" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Todas as origens</SelectItem>
+                          <SelectItem value="all">Todas as origens</SelectItem>
                           <SelectItem value="corretora">Corretora</SelectItem>
                           <SelectItem value="p2p">P2P</SelectItem>
                         </SelectContent>
