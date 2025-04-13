@@ -1,5 +1,5 @@
 
-import { BitcoinEntry, CurrentRate } from "@/types";
+import { BitcoinEntry, CurrentRate, PriceVariation } from "@/types";
 
 /**
  * Funções para buscar a cotação atual
@@ -23,6 +23,43 @@ export const fetchCurrentBitcoinRate = async (): Promise<CurrentRate> => {
     return {
       usd: 0,
       brl: 0,
+      timestamp: new Date()
+    };
+  }
+};
+
+/**
+ * Busca as variações de preço do Bitcoin em diferentes períodos
+ * Retorna a variação percentual para 24h, 7d, 30d, 90d e o ano atual
+ */
+export const fetchBitcoinPriceVariation = async (): Promise<PriceVariation> => {
+  try {
+    // Busca dados da API CoinGecko com as variações percentuais
+    const response = await fetch(
+      "https://api.coingecko.com/api/v3/coins/bitcoin?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false"
+    );
+    
+    const data = await response.json();
+    const marketData = data.market_data;
+    
+    // Extraindo as variações percentuais
+    return {
+      day: marketData.price_change_percentage_24h || 0,
+      week: marketData.price_change_percentage_7d || 0,
+      month: marketData.price_change_percentage_30d || 0,
+      quarter: marketData.price_change_percentage_60d || 0, // API não tem 90d, usando 60d como aproximação
+      year: marketData.price_change_percentage_1y || 0,
+      timestamp: new Date()
+    };
+  } catch (error) {
+    console.error("Error fetching Bitcoin price variations:", error);
+    // Retorna valores padrão em caso de erro
+    return {
+      day: 0,
+      week: 0,
+      month: 0,
+      quarter: 0,
+      year: 0,
       timestamp: new Date()
     };
   }

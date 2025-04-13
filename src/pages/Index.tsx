@@ -18,6 +18,7 @@ import { BitcoinEntry } from '@/types';
 const Index = () => {
   const {
     currentRate: bitcoinRate,
+    priceVariation,
     isLoading: isRateLoading,
     updateCurrentRate: fetchRateUpdate
   } = useBitcoinRate();
@@ -170,6 +171,7 @@ const Index = () => {
             <div className="mb-5">
               <CurrentRateCard
                 currentRate={bitcoinRate}
+                priceVariation={priceVariation}
                 isLoading={isRateLoading}
                 onRefresh={fetchRateUpdate}
               />

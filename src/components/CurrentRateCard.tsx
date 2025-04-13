@@ -1,21 +1,34 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CurrentRate } from '@/types';
+import { CurrentRate, PriceVariation } from '@/types';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, ArrowUp, ArrowDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatNumber } from '@/lib/utils';
 
 interface CurrentRateCardProps {
   currentRate: CurrentRate;
+  priceVariation?: PriceVariation;
   isLoading: boolean;
   onRefresh: () => void;
 }
 
+/**
+ * Componente que exibe o card de cotação atual do Bitcoin
+ * 
+ * Mostra o preço atual em USD e BRL, além das variações percentuais
+ * em diferentes períodos (24h, 7d, 30d, 90d, ano atual)
+ * 
+ * @param currentRate Objeto com as cotações atuais
+ * @param priceVariation Objeto com as variações percentuais
+ * @param isLoading Estado de carregamento
+ * @param onRefresh Função para atualizar os dados
+ */
 const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
   currentRate,
+  priceVariation,
   isLoading,
   onRefresh,
 }) => {
@@ -23,6 +36,36 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
   const usdRate = currentRate?.usd || 0;
   const brlRate = currentRate?.brl || 0;
   const timestamp = currentRate?.timestamp || new Date();
+
+  // Componente para exibir cada período de variação
+  const PriceVariationItem = ({ 
+    label, 
+    value, 
+    className = '' 
+  }: { 
+    label: string; 
+    value: number; 
+    className?: string;
+  }) => {
+    // Determina se a variação é positiva ou negativa
+    const isPositive = value >= 0;
+    
+    return (
+      <div className={`flex flex-col items-center ${className}`}>
+        <span className="text-xs text-muted-foreground mb-1">{label}</span>
+        <div className={`flex items-center ${isPositive ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
+          {isPositive ? (
+            <ArrowUp className="h-3 w-3 mr-1" />
+          ) : (
+            <ArrowDown className="h-3 w-3 mr-1" />
+          )}
+          <span className="text-sm font-medium">
+            {formatNumber(Math.abs(value), 2)}%
+          </span>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <Card className="rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-200">
@@ -57,6 +100,19 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
             </div>
           </div>
         </div>
+        
+        {/* Novo bloco de variação de preços */}
+        {priceVariation && (
+          <div className="mt-3 mb-2">
+            <div className="flex flex-wrap justify-between gap-2">
+              <PriceVariationItem label="24 horas" value={priceVariation.day} />
+              <PriceVariationItem label="7 dias" value={priceVariation.week} />
+              <PriceVariationItem label="30 dias" value={priceVariation.month} />
+              <PriceVariationItem label="90 dias" value={priceVariation.quarter} />
+              <PriceVariationItem label="AA" value={priceVariation.year} />
+            </div>
+          </div>
+        )}
         
         <div className="flex items-center justify-between mt-2">
           <p className="text-xs text-muted-foreground">

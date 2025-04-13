@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
-import { CurrentRate } from '@/types';
-import { fetchCurrentBitcoinRate } from '@/services/bitcoinService';
+import { CurrentRate, PriceVariation } from '@/types';
+import { fetchCurrentBitcoinRate, fetchBitcoinPriceVariation } from '@/services/bitcoinService';
 import { useToast } from '@/components/ui/use-toast';
 
 export function useBitcoinRate() {
@@ -11,14 +11,31 @@ export function useBitcoinRate() {
     brl: 0,
     timestamp: new Date(),
   });
+
+  // Estado para armazenar as variações de preço
+  const [priceVariation, setPriceVariation] = useState<PriceVariation>({
+    day: 0,
+    week: 0,
+    month: 0,
+    quarter: 0,
+    year: 0,
+    timestamp: new Date(),
+  });
+
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   const updateCurrentRate = async () => {
     setIsLoading(true);
     try {
-      const rate = await fetchCurrentBitcoinRate();
+      // Buscar taxa atual e variações de preço em paralelo
+      const [rate, variation] = await Promise.all([
+        fetchCurrentBitcoinRate(),
+        fetchBitcoinPriceVariation()
+      ]);
+      
       setCurrentRate(rate);
+      setPriceVariation(variation);
     } catch (error) {
       console.error('Failed to fetch current rate:', error);
       toast({
@@ -44,6 +61,7 @@ export function useBitcoinRate() {
 
   return {
     currentRate,
+    priceVariation,
     isLoading,
     updateCurrentRate
   };
