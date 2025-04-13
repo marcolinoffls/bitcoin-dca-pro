@@ -40,6 +40,17 @@ interface EntriesListProps {
   onImportFile?: (file: File) => Promise<{ count: number, entries: BitcoinEntry[] }>;
 }
 
+/**
+ * Componente que exibe a lista de aportes do usuário em formato de tabela
+ * 
+ * Funcionalidades:
+ * - Visualização de aportes em BRL ou USD
+ * - Edição e exclusão de aportes
+ * - Filtragem por mês, moeda e origem
+ * - Controle de linhas visíveis
+ * - Resumo dos totais na parte inferior
+ * - Importação de planilhas CSV e Excel
+ */
 const EntriesList: React.FC<EntriesListProps> = ({
   entries,
   currentRate,
@@ -339,23 +350,8 @@ const EntriesList: React.FC<EntriesListProps> = ({
       totals.totalBtc += entry.btcAmount;
     });
     
-    // Calcular preço médio das cotações (média aritmética simples)
-    // Isso é uma mudança da média ponderada para média aritmética das cotações exibidas
-    let totalExchangeRates = 0;
-    filteredEntries.forEach(entry => {
-      let entryRateInViewCurrency = entry.exchangeRate;
-      
-      if (entry.currency !== currencyView) {
-        entryRateInViewCurrency = entry.currency === 'USD' 
-          ? entry.exchangeRate * (currentRate.brl / currentRate.usd) // USD to BRL
-          : entry.exchangeRate / (currentRate.brl / currentRate.usd); // BRL to USD
-      }
-      
-      totalExchangeRates += entryRateInViewCurrency;
-    });
-    
-    // Calcular média aritmética simples das cotações
-    totals.avgPrice = filteredEntries.length > 0 ? totalExchangeRates / filteredEntries.length : 0;
+    // Calcular preço médio
+    totals.avgPrice = totals.totalBtc !== 0 ? totals.totalInvested / totals.totalBtc : 0;
     
     // Calcular variação percentual e valor atual
     const currentRateValue = currencyView === 'USD' ? currentRate.usd : currentRate.brl;
@@ -383,49 +379,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {/* Linha de totais movida para o topo */}
-            <TableRow className="bg-gray-100/80 font-semibold border-t-2">
-              <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                TOTAIS
-              </TableCell>
-              <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(totals.totalInvested)}
-              </TableCell>
-              <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                {formatBitcoinAmount(totals.totalBtc)}
-              </TableCell>
-              <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(totals.avgPrice)}
-                <div className="text-xs text-muted-foreground">(preço médio)</div>
-              </TableCell>
-              <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                <div className="flex items-center">
-                  {totals.percentChange > 0 ? (
-                    <TrendingUp className="h-4 w-4 mr-1 text-green-500" />
-                  ) : (
-                    <TrendingDown className="h-4 w-4 mr-1 text-red-500" />
-                  )}
-                  <span
-                    className={
-                      totals.percentChange > 0 ? 'text-green-500' : 'text-red-500'
-                    }
-                  >
-                    {formatNumber(totals.percentChange)}%
-                  </span>
-                </div>
-              </TableCell>
-              <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                <div className={totals.percentChange > 0 ? 'text-green-500' : 'text-red-500'}>
-                  {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(totals.currentValue)}
-                  <div className="text-xs text-muted-foreground">
-                    {totals.percentChange > 0 ? '+' : ''}{formatNumber(totals.currentValue - totals.totalInvested)}
-                  </div>
-                </div>
-              </TableCell>
-              <TableCell></TableCell>
-            </TableRow>
-            
-            {/* Entradas individuais */}
             {sortedEntries.map((entry) => {
               const currentRateValue = currencyView === 'USD' ? currentRate.usd : currentRate.brl;
               
@@ -492,294 +445,391 @@ const EntriesList: React.FC<EntriesListProps> = ({
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end space-x-2">
+                  <TableCell className={`text-right ${isMobile ? "text-xs py-2" : ""}`}>
+                    <div className="flex justify-end">
                       <Button
                         variant="ghost"
-                        size="icon"
+                        size="sm"
                         onClick={() => handleEditClick(entry.id)}
-                        title="Editar Aporte"
+                        className="mr-1"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="ghost"
-                        size="icon"
+                        size="sm"
                         onClick={() => handleDeleteClick(entry.id)}
-                        title="Excluir Aporte"
                       >
-                        <Trash2 className="h-4 w-4 text-red-500" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </TableCell>
                 </TableRow>
               );
             })}
+            
+            {/* Linha de totais */}
+            <TableRow className="bg-gray-100/80 font-semibold border-t-2">
+              <TableCell className={isMobile ? "text-xs py-2" : ""}>
+                TOTAIS
+              </TableCell>
+              <TableCell className={isMobile ? "text-xs py-2" : ""}>
+                {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(totals.totalInvested)}
+              </TableCell>
+              <TableCell className={isMobile ? "text-xs py-2" : ""}>
+                {formatBitcoinAmount(totals.totalBtc)}
+              </TableCell>
+              <TableCell className={isMobile ? "text-xs py-2" : ""}>
+                {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(totals.avgPrice)}
+              </TableCell>
+              <TableCell className={isMobile ? "text-xs py-2" : ""}>
+                <div className="flex items-center">
+                  {totals.percentChange > 0 ? (
+                    <TrendingUp className="h-4 w-4 mr-1 text-green-500" />
+                  ) : (
+                    <TrendingDown className="h-4 w-4 mr-1 text-red-500" />
+                  )}
+                  <span
+                    className={
+                      totals.percentChange > 0 ? 'text-green-500' : 'text-red-500'
+                    }
+                  >
+                    {formatNumber(totals.percentChange)}%
+                  </span>
+                </div>
+              </TableCell>
+              <TableCell className={isMobile ? "text-xs py-2" : ""}>
+                <div className={totals.percentChange > 0 ? 'text-green-500' : 'text-red-500'}>
+                  {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(totals.currentValue)}
+                  <div className="text-xs text-muted-foreground">
+                    {totals.percentChange > 0 ? '+' : ''}{formatNumber(totals.currentValue - totals.totalInvested)}
+                  </div>
+                </div>
+              </TableCell>
+              <TableCell></TableCell>
+            </TableRow>
           </TableBody>
         </Table>
+        
+        {/* Controle de número de linhas */}
+        <div className="flex justify-end mt-4">
+          <div className="flex items-center">
+            <span className="text-sm mr-2">Exibir:</span>
+            <Select value={rowsToShow.toString()} onValueChange={(value) => setRowsToShow(parseInt(value))}>
+              <SelectTrigger className="w-20">
+                <SelectValue placeholder="10 linhas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10 linhas</SelectItem>
+                <SelectItem value="30">30 linhas</SelectItem>
+                <SelectItem value="50">50 linhas</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
       </div>
     );
   };
 
   return (
-    <Card className="mt-6">
-      <CardHeader className="pb-3">
-        <div className="flex flex-wrap items-center justify-between">
-          <CardTitle className={isMobile ? "text-lg" : "text-xl"}>
-            <div className="flex items-center gap-2">
-              <div className="h-6 w-6">
-                <img 
-                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/aportes.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvYXBvcnRlcy5wbmciLCJpYXQiOjE3NDQ0OTc3MTMsImV4cCI6MTc3NjAzMzcxM30.ofk3Ocv9aFS_BI19nsngxNbJYjw10do5u3RjTgWrOTo" 
-                  alt="Aportes Registrados"
-                  className="h-full w-full object-contain"
-                />
+    <>
+      <Card className="mt-6">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className={isMobile ? "text-lg" : "text-xl"}>
+              <div className="flex items-center gap-2">
+                <div className="h-6 w-6">
+                  <img 
+                    src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/aportes.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvYXBvcnRlcy5wbmciLCJpYXQiOjE3NDQ0OTc3MTMsImV4cCI6MTc3NjAzMzcxM30.ofk3Ocv9aFS_BI19nsngxNbJYjw10do5u3RjTgWrOTo" 
+                    alt="Aportes Registrados"
+                    className="h-full w-full object-contain"
+                  />
+                </div>
+                Aportes Registrados
               </div>
-              Aportes Registrados
-            </div>
-          </CardTitle>
-          <div className="flex flex-wrap md:flex-nowrap gap-2 items-center mt-2 md:mt-0">
-            <input 
-              type="file" 
-              accept=".csv,.xlsx" 
-              ref={fileInputRef} 
-              onChange={handleFileChange} 
-              className="hidden" 
-            />
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex gap-2 mr-2"
-              onClick={openImportDialog}
-            >
-              <Upload className="h-4 w-4 text-green-500" />
-              <span>Importar</span>
-            </Button>
-            <Popover open={isFilterPopoverOpen} onOpenChange={handleFilterPopoverOpenChange}>
-              <PopoverTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className={`flex gap-2 mr-2 ${isFilterActive ? 'border-green-500 text-green-500' : ''}`}
-                >
-                  <Filter className={`h-4 w-4 ${isFilterActive ? 'text-green-500' : ''}`} />
-                  <span>Filtrar</span>
-                  {isFilterActive && (
-                    <span className="inline-flex h-2 w-2 rounded-full bg-green-500" />
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80">
-                <div className="grid gap-4">
-                  <div className="space-y-2">
-                    <h4 className="font-medium leading-none">Filtrar aportes</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Selecione os critérios desejados e clique em confirmar.
-                    </p>
-                  </div>
-                  <div className="grid gap-2">
-                    <div className="grid gap-1">
-                      <label htmlFor="month" className="text-sm">
-                        Por mês
-                      </label>
-                      <Select
-                        value={tempMonthFilter || ''}
-                        onValueChange={(value) => setTempMonthFilter(value || null)}
+            </CardTitle>
+            
+            {/* Botões de ação */}
+            <div className="flex items-center gap-2">
+              {/* Botão de filtro com indicador visual quando filtro está ativo */}
+              <Popover open={isFilterPopoverOpen} onOpenChange={handleFilterPopoverOpenChange}>
+                <PopoverTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size={isMobile ? "sm" : "default"} 
+                    className={`flex items-center gap-2 ${isFilterActive ? 'border-bitcoin text-bitcoin' : ''}`}
+                  >
+                    <Filter size={16} className={isFilterActive ? 'text-bitcoin' : ''} />
+                    {!isMobile && <span>Filtrar</span>}
+                    {isFilterActive && (
+                      <span className="absolute top-0 right-0 h-2 w-2 bg-bitcoin rounded-full"></span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-4">
+                  <div className="space-y-4">
+                    <h4 className="font-medium">Filtrar aportes</h4>
+                    
+                    {/* Filtro por mês */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Por mês</label>
+                      <Select 
+                        value={tempMonthFilter || 'all'} 
+                        onValueChange={(value) => setTempMonthFilter(value === 'all' ? null : value)}
                       >
-                        <SelectTrigger id="month">
-                          <SelectValue placeholder="Selecione um mês" />
+                        <SelectTrigger>
+                          <SelectValue placeholder="Todos os meses" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Todos os meses</SelectItem>
-                          {availableMonths.map((month) => (
-                            <SelectItem key={month.value} value={month.value}>
-                              {month.label}
-                            </SelectItem>
+                          <SelectItem value="all">Todos os meses</SelectItem>
+                          {availableMonths.map(month => (
+                            <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="grid gap-1">
-                      <label htmlFor="origin" className="text-sm">
-                        Por origem
-                      </label>
-                      <Select
-                        value={tempOriginFilter || ''}
-                        onValueChange={(value) => 
-                          setTempOriginFilter(value ? value as 'corretora' | 'p2p' | 'planilha' : null)
-                        }
+                    
+                    {/* Filtro por origem */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Por origem</label>
+                      <Select 
+                        value={tempOriginFilter || 'all'} 
+                        onValueChange={(value) => setTempOriginFilter(value === 'all' ? null : value as 'corretora' | 'p2p' | 'planilha')}
                       >
-                        <SelectTrigger id="origin">
-                          <SelectValue placeholder="Selecione uma origem" />
+                        <SelectTrigger>
+                          <SelectValue placeholder="Todas as origens" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Todas as origens</SelectItem>
+                          <SelectItem value="all">Todas as origens</SelectItem>
                           <SelectItem value="corretora">Corretora</SelectItem>
                           <SelectItem value="p2p">P2P</SelectItem>
                           <SelectItem value="planilha">Planilha</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="flex justify-between mt-2">
+                    
+                    {/* Botões de ação */}
+                    <div className="flex flex-col gap-2 mt-4">
+                      {/* Botão para aplicar filtros */}
                       <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={clearFilters}
-                        className="mt-2"
-                      >
-                        Limpar filtros
-                      </Button>
-                      <Button 
-                        variant="default" 
-                        size="sm"
+                        className="w-full bg-bitcoin hover:bg-bitcoin/90 text-white" 
                         onClick={applyFilters}
-                        className="mt-2"
                       >
                         Confirmar filtros
                       </Button>
+                      
+                      {/* Botão para limpar filtros */}
+                      <Button 
+                        variant="outline" 
+                        className="w-full" 
+                        onClick={clearFilters}
+                      >
+                        Limpar filtros
+                      </Button>
                     </div>
                   </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-            <Tabs 
-              defaultValue={selectedCurrency} 
-              value={viewCurrency}
-              onValueChange={(val) => setViewCurrency(val as 'BRL' | 'USD')}
-              className="w-auto"
-            >
-              <TabsList className="grid w-28 grid-cols-2 h-8">
-                <TabsTrigger value="BRL" className="text-xs">BRL</TabsTrigger>
-                <TabsTrigger value="USD" className="text-xs">USD</TabsTrigger>
-              </TabsList>
-            </Tabs>
+                </PopoverContent>
+              </Popover>
+              
+              {/* Botão para importar planilha */}
+              <Button 
+                variant="outline" 
+                size={isMobile ? "sm" : "default"}
+                className="flex items-center gap-2"
+                onClick={openImportDialog}
+              >
+                <Plus size={16} />
+                {!isMobile && <span>Importar Planilha</span>}
+              </Button>
+            </div>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="all" className="w-full">
-          <TabsContent value="all" className="mt-0">
-            {renderEntriesTable(viewCurrency)}
-          </TabsContent>
-        </Tabs>
-        
-        <div className="flex justify-between items-center mt-4">
-          <div className="text-sm text-muted-foreground">
-            Mostrando {Math.min(sortedEntries.length, rowsToShow)} de {filteredEntries.length} aportes
-          </div>
-          
-          {filteredEntries.length > rowsToShow && (
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setRowsToShow(prev => prev + 10)}
-            >
-              Mostrar mais
-            </Button>
-          )}
-        </div>
-      </CardContent>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="brl" className="w-full" onValueChange={(value) => setViewCurrency(value as 'BRL' | 'USD')}>
+            <TabsList className="mb-4 grid w-full grid-cols-2">
+              <TabsTrigger value="brl" className="rounded-l-md rounded-r-none border-r">Exibir em BRL (R$)</TabsTrigger>
+              <TabsTrigger value="usd" className="rounded-r-md rounded-l-none border-l">Exibir em USD ($)</TabsTrigger>
+            </TabsList>
+            <TabsContent value="brl">
+              {renderEntriesTable('BRL')}
+            </TabsContent>
+            <TabsContent value="usd">
+              {renderEntriesTable('USD')}
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
 
-      {/* Modal de Exclusão */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmar exclusão</DialogTitle>
-            <DialogDescription>
-              Tem certeza que deseja excluir este aporte? Esta ação não pode ser desfeita.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button variant="destructive" onClick={handleConfirmDelete}>
-              Excluir
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal de Edição */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+      {/* Modal de edição de aporte */}
+      <Dialog open={isEditDialogOpen} onOpenChange={(open) => {
+        setIsEditDialogOpen(open);
+        if (!open) {
+          handleEditClose();
+        }
+      }}>
+        <DialogContent className="sm:max-w-md rounded-2xl px-6">
           <DialogHeader>
             <DialogTitle>Editar Aporte</DialogTitle>
             <DialogDescription>
-              Altere os dados do seu aporte de Bitcoin.
+              Modifique os dados do seu aporte e clique em atualizar para salvar.
             </DialogDescription>
           </DialogHeader>
           {selectedEntry && (
             <EntryEditForm
               entry={selectedEntry}
-              onClose={handleEditClose}
               currentRate={currentRate}
+              onClose={handleEditClose}
               displayUnit={displayUnit}
             />
           )}
         </DialogContent>
       </Dialog>
-
-      {/* Modal de Importação */}
-      <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+      
+      {/* Modal de confirmação de exclusão */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-sm rounded-2xl px-6">
           <DialogHeader>
-            <DialogTitle>Importar Aportes</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-red-500" />
+              Confirmar Exclusão
+            </DialogTitle>
             <DialogDescription>
-              Importe seus aportes a partir de um arquivo CSV ou XLSX.
+              Tem certeza que deseja excluir este aporte? Esta ação não pode ser desfeita.
             </DialogDescription>
           </DialogHeader>
-          
-          <div className="grid gap-4 py-4">
-            {importProgress.isImporting ? (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{importProgress.stage}</span>
-                  <span className="text-sm text-muted-foreground">{importProgress.progress}%</span>
-                </div>
-                <Progress value={importProgress.progress} className="h-2" />
-              </div>
-            ) : (
-              <>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:bg-gray-50 transition-colors" onClick={handleFileButtonClick}>
-                  <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                  <p className="text-sm text-muted-foreground">
-                    Clique para selecionar um arquivo ou arraste e solte aqui
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Arquivos CSV ou XLSX
-                  </p>
-                </div>
-                
-                {selectedFile && (
-                  <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-md border border-gray-200">
-                    <div className="flex-1 truncate">
-                      <p className="text-sm font-medium">{selectedFile.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {(selectedFile.size / 1024).toFixed(2)} KB
-                      </p>
-                    </div>
-                    <Button
-                      variant="default"
-                      size="sm"
-                      onClick={handleStartImport}
-                      disabled={isImporting}
-                    >
-                      Importar
-                    </Button>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsImportDialogOpen(false)}>
+          <DialogFooter className="mt-4 flex justify-between gap-3">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsDeleteDialogOpen(false)}
+              className="flex-1 rounded-xl"
+            >
               Cancelar
+            </Button>
+            <Button 
+              onClick={handleConfirmDelete}
+              className="flex-1 bg-bitcoin hover:bg-bitcoin/90 text-white rounded-xl"
+            >
+              Confirmar exclusão
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Card>
+      
+      {/* Modal de importação de planilha */}
+      <Dialog open={isImportDialogOpen} onOpenChange={(open) => {
+        if (!importProgress.isImporting) {
+          setIsImportDialogOpen(open);
+          if (!open) {
+            setSelectedFile(null);
+            if (fileInputRef.current) {
+              fileInputRef.current.value = '';
+            }
+          }
+        }
+      }}>
+        <DialogContent className="sm:max-w-lg rounded-2xl px-6">
+          <DialogHeader>
+            <DialogTitle>Importar Planilha</DialogTitle>
+            <DialogDescription>
+              Importe seus aportes a partir de uma planilha no formato CSV ou Excel.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="rounded-lg border p-4 bg-gray-50">
+              <h3 className="text-sm font-medium mb-2">Instruções de preenchimento</h3>
+              <ul className="text-sm space-y-1">
+                <li>• A planilha deve conter as colunas: <span className="font-semibold">Data, Valor Investido e Bitcoin</span></li>
+                <li>• O campo cotação é opcional - será calculado automaticamente se ausente</li>
+                <li>• Formato de data recomendado: DD/MM/AAAA</li>
+                <li>• Use vírgula ( , ) como separador decimal</li>
+              </ul>
+              
+              <div className="mt-3">
+                <a 
+                  href="https://docs.google.com/spreadsheets/d/1gQXqirgJdUdA7ljN-IdTGHUeEAixTdBhiyCeJ9OKvvk/edit?usp=sharing" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="inline-flex items-center text-bitcoin hover:underline text-sm"
+                >
+                  📄 Acessar modelo de planilha no Google Sheets
+                </a>
+              </div>
+            </div>
+            
+            <div className="border rounded-lg p-8 flex flex-col items-center justify-center">
+              <Download className="h-10 w-10 text-muted-foreground mb-2" />
+              <p className="text-center text-sm text-muted-foreground mb-4">
+                Arraste e solte seu arquivo aqui, ou clique para selecionar
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Suporta CSV (.csv) e Excel (.xlsx)
+              </p>
+              
+              {/* Input file oculto */}
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                className="hidden" 
+                accept=".csv,.xlsx" 
+                onChange={handleFileChange}
+              />
+              
+              {/* Botão estilizado que ativa o input file */}
+              <Button 
+                variant="outline" 
+                className="mt-4 w-full"
+                onClick={handleFileButtonClick}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Selecionar arquivo
+              </Button>
+              
+              {/* Exibir o nome do arquivo selecionado, se houver */}
+              {selectedFile && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Arquivo selecionado: {selectedFile.name}
+                </p>
+              )}
+            </div>
+            
+            {/* Barra de progresso para importação */}
+            {importProgress.isImporting && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">{importProgress.stage}</span>
+                  <span className="text-sm">{importProgress.progress}%</span>
+                </div>
+                <Progress value={importProgress.progress} className="h-2" />
+              </div>
+            )}
+          </div>
+          <DialogFooter className="flex justify-end gap-3">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                if (!importProgress.isImporting) {
+                  setIsImportDialogOpen(false);
+                  setSelectedFile(null);
+                  if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                  }
+                }
+              }}
+              disabled={importProgress.isImporting}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              className="bg-bitcoin hover:bg-bitcoin/90 text-white"
+              disabled={!selectedFile || importProgress.isImporting}
+              onClick={handleStartImport}
+            >
+              {importProgress.isImporting ? 'Importando...' : 'Iniciar importação'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
