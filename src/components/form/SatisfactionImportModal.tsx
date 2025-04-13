@@ -8,7 +8,7 @@
  * 
  * Uso: Chamado pelo EntryForm quando o usuário clica em "Importar do Satisfaction (P2P)"
  */
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ import { formatNumber } from '@/lib/utils';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface SatisfactionImportModalProps {
   isOpen: boolean;
@@ -118,6 +119,31 @@ const SatisfactionImportModal: React.FC<SatisfactionImportModalProps> = ({
     date?: Date;
   } | null>(null);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  /**
+   * Função para fazer scroll suave quando o textarea receber foco no mobile
+   * Assegura que o campo fique visível acima do teclado virtual
+   */
+  const handleTextareaFocus = () => {
+    if (isMobile && textareaRef.current) {
+      // Primeiro damos um pequeno tempo para o teclado aparecer
+      setTimeout(() => {
+        if (textareaRef.current) {
+          // Rola a tela para mostrar o textarea
+          textareaRef.current.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+            inline: 'nearest'
+          });
+          
+          // Adiciona um pouco de margem adicional para evitar que o topo da tela corte o textarea
+          window.scrollBy(0, -100);
+        }
+      }, 300);
+    }
+  };
 
   /**
    * Extrai os dados da mensagem do Satisfaction
@@ -292,9 +318,11 @@ Você Recebe: 18.959 sats`;
 
           <div className="py-4">
             <Textarea
+              ref={textareaRef}
               placeholder={exampleMessage}
               value={importText}
               onChange={(e) => setImportText(e.target.value)}
+              onFocus={handleTextareaFocus}
               className="min-h-[150px] rounded-md placeholder:whitespace-pre-line placeholder:text-muted-foreground placeholder:opacity-60 text-foreground text-base"
               style={{ fontSize: '16px' }} // Evita zoom no mobile
             />
