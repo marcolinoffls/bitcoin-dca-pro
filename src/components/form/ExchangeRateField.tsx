@@ -1,7 +1,7 @@
 
 /**
  * Campo para informar a cotação do Bitcoin no momento da compra.
- * Removido o botão para preencher com a cotação atual automaticamente.
+ * Permite entrada de valores com vírgula ou ponto como separador decimal.
  */
 import React from 'react';
 import { Label } from '@/components/ui/label';
@@ -19,6 +19,17 @@ const ExchangeRateField: React.FC<ExchangeRateFieldProps> = ({
   onExchangeRateChange, 
   displayValue 
 }) => {
+  // Aceita tanto vírgula quanto ponto como separador decimal e normaliza para o formato brasileiro
+  const handleInputChange = (value: string) => {
+    // Remove todos os caracteres que não sejam números, vírgula ou ponto
+    const cleanedValue = value.replace(/[^\d.,]/g, '');
+    
+    // Substitui pontos por vírgulas para o formato brasileiro
+    const formattedValue = cleanedValue.replace(/\./g, ',');
+    
+    onExchangeRateChange(formattedValue);
+  };
+
   return (
     <div className="flex flex-col space-y-3 mt-6">
       <div className="flex justify-between items-center">
@@ -32,7 +43,7 @@ const ExchangeRateField: React.FC<ExchangeRateFieldProps> = ({
           id="exchangeRate"
           placeholder="0,00"
           value={displayValue}
-          onChange={(e) => onExchangeRateChange(e.target.value)}
+          onChange={(e) => handleInputChange(e.target.value)}
           className="pl-8 rounded-xl focus-visible:ring-bitcoin focus-visible:border-bitcoin transition-all"
           type="text"
           inputMode="decimal"

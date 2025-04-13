@@ -21,6 +21,7 @@
  * - Melhorada a validação e tratamento da data
  * - Garantido que a data selecionada no calendário seja aplicada imediatamente
  * - Corrigido problema de timezone, forçando o horário local ao interpretar datas
+ * - Corrigido problema de validação dos campos numéricos, aceitando vírgula ou ponto
  */
 
 import React, { useState, useEffect } from 'react';
@@ -82,7 +83,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
   const [exchangeRate, setExchangeRate] = useState(entry.exchangeRate);
   const [exchangeRateDisplay, setExchangeRateDisplay] = useState(formatNumber(entry.exchangeRate));
   const [currency, setCurrency] = useState<'BRL' | 'USD'>(entry.currency);
-  const [origin, setOrigin] = useState<'corretora' | 'p2p'>(entry.origin || 'corretora');
+  const [origin, setOrigin] = useState<'corretora' | 'p2p' | 'planilha'>(entry.origin || 'corretora');
   
   // Garantir que a data seja sempre uma instância de Date válida com fuso horário local
   const [date, setDate] = useState<Date>(() => {
@@ -105,6 +106,32 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
   // Função para converter string em formato brasileiro para número
   const parseLocalNumber = (value: string): number => {
     return parseFloat(value.replace(/\./g, '').replace(',', '.'));
+  };
+
+  // Aceita tanto vírgula quanto ponto como separador decimal e normaliza para o formato brasileiro
+  const handleAmountChange = (value: string) => {
+    // Remove todos os caracteres que não sejam números, vírgula ou ponto
+    const cleanedValue = value.replace(/[^\d.,]/g, '');
+    
+    // Substitui pontos por vírgulas para o formato brasileiro
+    const formattedValue = cleanedValue.replace(/\./g, ',');
+    
+    setAmountInvestedDisplay(formattedValue);
+  };
+
+  // Aceita tanto vírgula quanto ponto como separador decimal e normaliza para o formato brasileiro
+  const handleExchangeRateChange = (value: string) => {
+    // Remove todos os caracteres que não sejam números, vírgula ou ponto
+    const cleanedValue = value.replace(/[^\d.,]/g, '');
+    
+    // Substitui pontos por vírgulas para o formato brasileiro
+    const formattedValue = cleanedValue.replace(/\./g, ',');
+    
+    setExchangeRateDisplay(formattedValue);
+    const val = parseLocalNumber(formattedValue);
+    if (!isNaN(val)) {
+      setExchangeRate(val);
+    }
   };
 
   const handleCurrencyChange = (newCurrency: 'BRL' | 'USD') => {
@@ -231,19 +258,10 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
               id="editAmount"
               placeholder="0,00"
               value={amountInvestedDisplay}
-              onChange={(e) => {
-                // Substitui pontos por vírgulas para compatibilidade com formato brasileiro
-                const formattedInput = e.target.value.replace(/\./g, ',');
-                
-                if (e.target.value === '0.') {
-                  setAmountInvestedDisplay('0,');
-                  return;
-                }
-
-                setAmountInvestedDisplay(formattedInput);
-              }}
+              onChange={(e) => handleAmountChange(e.target.value)}
               className="pl-8 rounded-xl"
               type="text"
+              inputMode="decimal"
               required
             />
           </div>
@@ -263,18 +281,10 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
           <Input
             placeholder="0,00"
             value={exchangeRateDisplay}
-            onChange={(e) => {
-              // Substitui pontos por vírgulas para compatibilidade com formato brasileiro
-              const formattedInput = e.target.value.replace(/\./g, ',');
-              
-              setExchangeRateDisplay(formattedInput);
-              const val = parseLocalNumber(formattedInput);
-              if (!isNaN(val)) {
-                setExchangeRate(val);
-              }
-            }}
+            onChange={(e) => handleExchangeRateChange(e.target.value)}
             className="pl-8 rounded-xl"
             type="text"
+            inputMode="decimal"
             required
           />
         </div>
