@@ -1,4 +1,3 @@
-
 /**
  * Hook: useBitcoinEntries
  *
@@ -254,6 +253,7 @@ export const useBitcoinEntries = () => {
     }
     
     try {
+      console.log('Iniciando processo de importação para arquivo:', file.name);
       setImportProgress({
         progress: 0,
         stage: 'Iniciando importação...',
@@ -265,6 +265,7 @@ export const useBitcoinEntries = () => {
         file, 
         user.id,
         (progress, stage) => {
+          console.log(`Progresso da importação: ${progress}% - ${stage}`);
           setImportProgress({
             progress,
             stage,
@@ -272,6 +273,8 @@ export const useBitcoinEntries = () => {
           });
         }
       );
+      
+      console.log('Importação concluída com sucesso:', result);
       
       // Atualizar o cache de queries para exibir os novos dados
       await queryClient.invalidateQueries({ queryKey: ['entries'] });
@@ -285,6 +288,8 @@ export const useBitcoinEntries = () => {
       
       return result;
     } catch (error) {
+      console.error('Erro durante importação:', error);
+      
       // Em caso de erro, resetar o progresso
       setImportProgress({
         progress: 0,
@@ -292,7 +297,6 @@ export const useBitcoinEntries = () => {
         isImporting: false
       });
       
-      console.error('Erro na importação:', error);
       throw error;
     }
   };

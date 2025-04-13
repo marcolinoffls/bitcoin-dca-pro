@@ -200,8 +200,9 @@ export const prepareImportedEntries = (
       // Processar data no formato DD/MM/AAAA, MM/DD/AAAA ou Date
       let entryDate: Date;
       
-      if (item.data instanceof Date) {
-        entryDate = item.data;
+      // Corrigir verificação de instanceof Date
+      if (Object.prototype.toString.call(item.data) === '[object Date]') {
+        entryDate = item.data as unknown as Date;
       } else {
         // Tentar formatos comuns
         const dateParts = String(item.data).split(/[/.-]/);

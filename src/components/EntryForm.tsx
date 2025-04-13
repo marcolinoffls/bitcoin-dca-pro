@@ -1,4 +1,3 @@
-
 /**
  * Componente: EntryForm
  * 
@@ -19,7 +18,7 @@
  * - Campos de valor e quantidade de BTC são totalmente independentes
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import DatePickerField from '@/components/form/DatePickerField';
 import CurrencyField from '@/components/form/CurrencyField';
@@ -84,6 +83,9 @@ const EntryForm: React.FC<EntryFormProps> = ({
     reset
   } = useEntryFormLogic(editingEntry, currentRate, displayUnit);
 
+  // Atualizar o tipo do estado de "origin" para incluir "planilha"
+  const [origin, setOrigin] = useState<'corretora' | 'p2p' | 'planilha'>('corretora');
+
   // Corrige o bug: limpa o formulário quando o modo de edição é encerrado
   useEffect(() => {
     if (!editingEntry) {
@@ -123,6 +125,11 @@ const EntryForm: React.FC<EntryFormProps> = ({
 
     // Limpa formulário após envio
     resetForm();
+  };
+
+  // Atualizar o handler para aceitar o novo tipo
+  const handleOriginChange = (newOrigin: 'corretora' | 'p2p' | 'planilha') => {
+    setOrigin(newOrigin);
   };
 
   return (

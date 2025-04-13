@@ -1,207 +1,126 @@
-import React, { useState, useEffect } from 'react';
-import { useBitcoinRate } from '@/hooks/useBitcoinRate';
-import EntryForm from '@/components/EntryForm';
+import React from 'react';
 import EntriesList from '@/components/EntriesList';
-import StatisticsCards from '@/components/StatisticsCards';
-import CurrentRateCard from '@/components/CurrentRateCard';
-import { LogOut } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
-import ToggleDisplayUnit from '@/components/ToggleDisplayUnit';
-import ToggleCurrency from '@/components/ToggleCurrency';
-import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
 import { useBitcoinEntries } from '@/hooks/useBitcoinEntries';
-import { BitcoinEntry } from '@/types';
+import EntryForm from '@/components/EntryForm';
+import { Toaster } from '@/components/ui/toaster';
+import { Card, CardContent } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useIsMobile } from '@/hooks/use-mobile';
 
-/**
- * Página principal do aplicativo
- * 
- * Responsável por exibir todos os componentes da dashboard e gerenciar
- * o estado global da aplicação (aportes, cotação atual, moeda selecionada, etc.)
- */
-const Index = () => {
-  const {
-    currentRate: bitcoinRate,
-    priceVariation,
-    isLoading: isRateLoading,
-    updateCurrentRate: fetchRateUpdate
-  } = useBitcoinRate();
-
-  const { user } = useAuth();
-  
-  // Forçar refetch quando o componente montar ou o usuário mudar
-  const {
-    entries,
-    isLoading: isEntriesLoading,
-    editingEntry,
-    addEntry,
-    editEntry,
-    cancelEdit,
+const IndexPage: React.FC = () => {
+  const { 
+    entries, 
+    isLoading, 
+    currentRate, 
+    addEntry, 
+    updateEntry, 
     deleteEntry,
-    refetch: refetchEntries
+    importProgress,
+    importEntriesFromSpreadsheet,
+    refetch
   } = useBitcoinEntries();
-
-  // Efeito para garantir que os dados sejam carregados quando o usuário logar
-  useEffect(() => {
-    if (user) {
-      console.log('Usuário autenticado detectado no Index, forçando refetch de aportes');
-      // Pequeno timeout para garantir que a UI tenha tempo de renderizar
-      // antes de iniciar a requisição de dados
-      setTimeout(() => {
-        refetchEntries();
-      }, 100);
-    }
-  }, [user?.id, refetchEntries]);
-
-  const [selectedCurrency, setSelectedCurrency] = useState<'BRL' | 'USD'>('BRL');
-  const [displayUnit, setDisplayUnit] = useState<'BTC' | 'SATS'>('BTC');
-  const isMobile = useIsMobile();
-  const { signOut } = useAuth();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
-  const toggleDisplayUnit = (value: 'BTC' | 'SATS') => {
-    setDisplayUnit(value);
+  const handleAddEntry = async (entry: any) => {
+    try {
+      await addEntry(entry);
+      toast({
+        title: "Aporte adicionado!",
+        description: "Seu aporte foi registrado com sucesso.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao adicionar aporte",
+        description: error.message || "Ocorreu um erro ao registrar o aporte.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const toggleCurrency = (value: 'BRL' | 'USD') => {
-    setSelectedCurrency(value);
+  const handleEditEntry = async (id: string, entry: any) => {
+    try {
+      await updateEntry(id, entry);
+      toast({
+        title: "Aporte atualizado!",
+        description: "Seu aporte foi atualizado com sucesso.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao atualizar aporte",
+        description: error.message || "Ocorreu um erro ao atualizar o aporte.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleAddEntry = (
-    amountInvested: number,
-    btcAmount: number,
-    exchangeRate: number,
-    currency: 'BRL' | 'USD',
-    date: Date,
-    origin: 'corretora' | 'p2p'
-  ) => {
-    addEntry({
-      amountInvested,
-      btcAmount,
-      exchangeRate,
-      currency,
-      date,
-      origin
-    });
+  const handleDeleteEntry = async (id: string) => {
+    try {
+      await deleteEntry(id);
+      toast({
+        title: "Aporte excluído!",
+        description: "Seu aporte foi excluído com sucesso.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao excluir aporte",
+        description: error.message || "Ocorreu um erro ao excluir o aporte.",
+        variant: "destructive",
+      });
+    }
   };
-
-  const handleDeleteEntry = (entryIdOrEntry: string | { id: string }) => {
-    const id = typeof entryIdOrEntry === 'string' 
-      ? entryIdOrEntry 
-      : entryIdOrEntry.id;
-    
-    deleteEntry(id);
-  };
-
-  const handleEditEntry = (entry: BitcoinEntry | string) => {
-    if (typeof entry === 'string') {
-      const foundEntry = entries.find(e => e.id === entry);
-      if (foundEntry) {
-        editEntry(foundEntry);
-      }
-    } else {
-      editEntry(entry);
+  
+  const handleImportFile = async (file: File) => {
+    try {
+      const result = await importEntriesFromSpreadsheet(file);
+      toast({
+        title: "Importação concluída!",
+        description: `Foram adicionados ${result.count} aportes à sua carteira.`,
+        variant: "success",
+      });
+      refetch(); // Atualiza a lista de aportes
+      return result;
+    } catch (error: any) {
+      toast({
+        title: "Erro na importação",
+        description: error.message || "Ocorreu um erro ao importar a planilha",
+        variant: "destructive",
+      });
+      throw error;
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="container mx-auto py-6 px-4">
-        <header className="mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-8">
-                <img 
-                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/bitcoin%20logo%20oficial%20sem%20nome%20100px.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvYml0Y29pbiBsb2dvIG9maWNpYWwgc2VtIG5vbWUgMTAwcHgucG5nIiwiaWF0IjoxNzQ0NTU4MDQ2LCJleHAiOjE4MDc2MzAwNDZ9.jmzK3PG-1LJ1r-2cqJD7OiOJItfPWA4oD8n0autKJeo" 
-                  alt="Bitcoin Logo"
-                  className="h-full w-full object-contain"
-                />
+    <div className="container py-8">
+      <Toaster />
+      <div className="grid gap-6">
+        <Card>
+          <CardContent>
+            {currentRate ? (
+              <EntryForm onSubmit={handleAddEntry} currentRate={currentRate} />
+            ) : (
+              <div className="flex flex-col items-center justify-center py-8">
+                <Skeleton className="h-8 w-24 mb-2" />
+                <Skeleton className="h-4 w-48" />
               </div>
-              <div className="h-5">
-                <img 
-                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/public/fontes//Bitcoin%20dca%20pro%20-%20caixa%20alta%20(1).png" 
-                  alt="Bitcoin DCA Pro"
-                  className="h-full object-contain"
-                />
-              </div>
-            </div>
-            <div className="flex items-center">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={signOut}
-                className="flex items-center gap-1"
-              >
-                <LogOut size={16} />
-                <span className={isMobile ? "hidden" : "inline"}>Sair</span>
-              </Button>
-            </div>
-          </div>
-          <div className="flex items-center justify-between">
-            <p className={`text-muted-foreground ${isMobile ? "text-xs" : ""}`}>
-              Stay Humble and Stack Sats
-            </p>
-          </div>
-        </header>
-
-        <div className="flex justify-center gap-4 mb-6">
-          <ToggleDisplayUnit
-            displayUnit={displayUnit}
-            onToggle={toggleDisplayUnit}
-          />
-          <ToggleCurrency
-            selectedCurrency={selectedCurrency}
-            onToggle={toggleCurrency}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
-          <div className="md:col-span-1">
-            <StatisticsCards
-              entries={entries}
-              currentRate={bitcoinRate}
-              selectedCurrency={selectedCurrency}
-              displayUnit={displayUnit}
-              isLoading={isEntriesLoading}
-            />
-          </div>
-
-          <div className="md:col-span-2">
-            <div className="mb-5">
-              <CurrentRateCard
-                currentRate={bitcoinRate}
-                priceVariation={priceVariation}
-                isLoading={isRateLoading}
-                onRefresh={fetchRateUpdate}
-              />
-            </div>
-            <div>
-              <EntryForm
-                onAddEntry={handleAddEntry}
-                currentRate={bitcoinRate}
-                onCancelEdit={cancelEdit}
-                displayUnit={displayUnit}
-                editingEntry={editingEntry}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <EntriesList
-            entries={entries}
-            currentRate={bitcoinRate}
-            onDelete={handleDeleteEntry}
-            onEdit={handleEditEntry}
-            selectedCurrency={selectedCurrency}
-            displayUnit={displayUnit}
-            isLoading={isEntriesLoading}
-          />
-        </div>
+            )}
+          </CardContent>
+        </Card>
+        <EntriesList
+          entries={entries}
+          currentRate={currentRate}
+          onDelete={handleDeleteEntry}
+          onEdit={handleEditEntry}
+          selectedCurrency="BRL"
+          displayUnit="SATS"
+          isLoading={isLoading}
+          importProgress={importProgress}
+          onImportFile={handleImportFile}
+        />
       </div>
     </div>
   );
 };
 
-export default Index;
+export default IndexPage;
