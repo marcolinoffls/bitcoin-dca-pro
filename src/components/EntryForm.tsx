@@ -129,7 +129,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
     <Card className="rounded-xl shadow-md hover:shadow-lg transition-all duration-200">
       <CardHeader className={isMobile ? 'pb-2' : 'pb-3'}>
         <CardTitle className={`${isMobile ? 'text-lg' : 'text-xl'} flex items-center gap-2`}>
-          {/* Novo ícone para o card de Registrar Novo Aporte */}
+          {/* Novo ícone para o card de Novo Aporte */}
           <div className="h-8 w-8">
             <img 
               src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/novo-aporte.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvbm92by1hcG9ydGUucG5nIiwiaWF0IjoxNzQ0NDk3MTY4LCJleHAiOjE3NzYwMzMxNjh9.gSYsPjL3OqW6iNLDHtvyuoYh6SBlJUm30UL16I4NPI8" 
@@ -137,7 +137,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
               className="h-full w-full object-contain"
             />
           </div>
-          {editingEntry ? 'Editar Aporte' : 'Registrar Novo Aporte'}
+          {editingEntry ? 'Editar Aporte' : 'Novo Aporte'}
         </CardTitle>
       </CardHeader>
 
