@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useRef } from 'react';
 import { BitcoinEntry, CurrentRate } from '@/types';
 import { calculatePercentageChange } from '@/services/bitcoinService';
@@ -754,4 +755,32 @@ const EntriesList: React.FC<EntriesListProps> = ({
                     <div className="flex-1 truncate">
                       <p className="text-sm font-medium">{selectedFile.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {(
+                        {(selectedFile.size / 1024).toFixed(2)} KB
+                      </p>
+                    </div>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={handleStartImport}
+                      disabled={isImporting}
+                    >
+                      Importar
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsImportDialogOpen(false)}>
+              Cancelar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+};
+
+export default EntriesList;
