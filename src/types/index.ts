@@ -1,4 +1,5 @@
 
+
 export interface BitcoinEntry {
   id: string;
   date: Date;
@@ -25,3 +26,4 @@ export interface PriceVariation {
   year: number;      // Variação no ano atual
   timestamp: Date;   // Data/hora da última atualização
 }
+

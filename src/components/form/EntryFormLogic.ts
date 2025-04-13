@@ -16,6 +16,7 @@
  * Atualização:
  * - Convertido valores string para number para manipulação mais segura
  * - Mantido formato de exibição para o usuário com strings formatadas
+ * - Adicionada função setExchangeRate para permitir definir a taxa diretamente
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -36,7 +37,7 @@ interface EditingEntry {
   btcAmount: number;
   exchangeRate: number;
   currency: Currency;
-  origin?: 'corretora' | 'p2p';
+  origin?: 'corretora' | 'p2p' | 'planilha';
 }
 
 export const useEntryFormLogic = (
@@ -173,6 +174,7 @@ export const useEntryFormLogic = (
     exchangeRate,
     exchangeRateDisplay,
     setExchangeRateDisplay,
+    setExchangeRate, // Nova função exportada
     currency,
     origin,
     date,

@@ -33,6 +33,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import SatisfactionImportModal from '@/components/form/SatisfactionImportModal';
 import { Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { formatNumber } from '@/lib/utils';
 
 interface EntryFormProps {
   onAddEntry: (
@@ -41,7 +42,7 @@ interface EntryFormProps {
     exchangeRate: number,
     currency: 'BRL' | 'USD',
     date: Date,
-    origin: 'corretora' | 'p2p'
+    origin: 'corretora' | 'p2p' | 'planilha'
   ) => void;
   currentRate: { usd: number; brl: number };
   editingEntry?: {
@@ -76,6 +77,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
     exchangeRate,
     exchangeRateDisplay,
     handleExchangeRateChange,
+    setExchangeRate,
     currency,
     origin,
     date,
@@ -137,6 +139,40 @@ const EntryForm: React.FC<EntryFormProps> = ({
   // Fechar o modal de importação do Satisfaction
   const closeSatisfactionModal = () => {
     setIsSatisfactionModalOpen(false);
+  };
+
+  /**
+   * Processa os dados extraídos do Satisfaction e preenche o formulário
+   */
+  const handleDataExtracted = (data: {
+    exchangeRate?: number;
+    amountInvested?: number;
+    btcAmount?: number;
+  }) => {
+    // Definir origem como P2P
+    handleOriginChange('p2p');
+    
+    // Preencher taxa de câmbio se disponível
+    if (data.exchangeRate) {
+      setExchangeRate(data.exchangeRate);
+      handleExchangeRateChange(formatNumber(data.exchangeRate));
+    }
+    
+    // Preencher valor investido se disponível
+    if (data.amountInvested) {
+      setAmountInvested(formatNumber(data.amountInvested));
+    }
+    
+    // Preencher quantidade de Bitcoin se disponível
+    if (data.btcAmount) {
+      // Formatar conforme a unidade de exibição (BTC ou SATS)
+      if (displayUnit === 'SATS') {
+        const sats = Math.round(data.btcAmount * 100000000);
+        setBtcAmount(formatNumber(sats, 0));
+      } else {
+        setBtcAmount(formatNumber(data.btcAmount, 8));
+      }
+    }
   };
 
   return (
@@ -228,6 +264,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
       <SatisfactionImportModal 
         isOpen={isSatisfactionModalOpen} 
         onClose={closeSatisfactionModal} 
+        onDataExtracted={handleDataExtracted}
       />
     </Card>
   );
