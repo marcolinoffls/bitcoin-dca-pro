@@ -146,23 +146,25 @@ const EntryForm: React.FC<EntryFormProps> = ({
   };
 
   return (
-    <Card className="rounded-xl shadow-md hover:shadow-lg transition-all duration-200">
-      <CardHeader className={isMobile ? 'pb-2' : 'pb-3'}>
+    <Card className="w-full rounded-xl shadow-md hover:shadow-lg transition-all duration-200 overflow-hidden">
+      <CardHeader className="pb-4 px-6">
         <CardTitle className={`${isMobile ? 'text-lg' : 'text-xl'} flex items-center gap-2`}>
-          {/* Novo ícone para o card de Registrar Novo Aporte */}
-          <div className="h-8 w-8">
+          {/* Ícone para o card de Registrar Novo Aporte */}
+          <div className="h-8 w-8 flex-shrink-0">
             <img 
               src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/novo-aporte.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvbm92by1hcG9ydGUucG5nIiwiaWF0IjoxNzQ0NDk3MTY4LCJleHAiOjE3NzYwMzMxNjh9.gSYsPjL3OqW6iNLDHtvyuoYh6SBlJUm30UL16I4NPI8" 
               alt="Novo Aporte"
               className="h-full w-full object-contain"
             />
           </div>
-          {editingEntry ? 'Editar Aporte' : 'Registrar Novo Aporte'}
+          <span className="flex-grow text-left">
+            {editingEntry ? 'Editar Aporte' : 'Registrar Novo Aporte'}
+          </span>
         </CardTitle>
       </CardHeader>
 
-      <CardContent className={isMobile ? 'pb-3' : ''}>
-        <form onSubmit={handleSubmit} className={`space-y-${isMobile ? '3' : '4'}`}>
+      <CardContent className="px-6 pb-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {/* Campo de Data */}
           <DatePickerField 
             date={date} 
@@ -176,7 +178,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
           />
 
           {/* Valores: Investimento e BTC */}
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <AmountField 
               currency={currency} 
               amount={amountInvested} 
@@ -204,13 +206,15 @@ const EntryForm: React.FC<EntryFormProps> = ({
           />
 
           {/* Ações: Calcular, Resetar, Confirmar */}
-          <FormActions 
-            isEditing={!!editingEntry} 
-            displayUnit={displayUnit} 
-            onCalculateFromAmount={calculateFromAmount} 
-            onCalculateFromBtc={calculateFromBtc} 
-            onReset={resetForm} 
-          />
+          <div className="pt-2">
+            <FormActions 
+              isEditing={!!editingEntry} 
+              displayUnit={displayUnit} 
+              onCalculateFromAmount={calculateFromAmount} 
+              onCalculateFromBtc={calculateFromBtc} 
+              onReset={resetForm} 
+            />
+          </div>
         </form>
       </CardContent>
     </Card>

@@ -1,4 +1,13 @@
 
+/**
+ * Página Index
+ * 
+ * Este é o componente principal da aplicação que exibe:
+ * - O formulário para adicionar novos aportes de Bitcoin
+ * - A lista de aportes registrados
+ * 
+ * Utiliza os hooks personalizados para gerenciar dados e estado da aplicação.
+ */
 import React from 'react';
 import EntriesList from '@/components/EntriesList';
 import { useBitcoinEntries } from '@/hooks/useBitcoinEntries';
@@ -107,13 +116,16 @@ const IndexPage: React.FC = () => {
   };
 
   return (
-    <div className="container py-8">
+    <div className="container mx-auto px-4 py-8 max-w-5xl">
       <Toaster />
       <div className="grid gap-6">
         <Card>
-          <CardContent>
+          <CardContent className="p-6">
             {currentRate ? (
-              <EntryForm onAddEntry={handleAddEntry} currentRate={currentRate} />
+              <EntryForm 
+                onAddEntry={handleAddEntry} 
+                currentRate={currentRate} 
+              />
             ) : (
               <div className="flex flex-col items-center justify-center py-8">
                 <Skeleton className="h-8 w-24 mb-2" />
