@@ -38,16 +38,6 @@ const Index = () => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (user && !sessionStorage.getItem('loginSuccessShown')) {
-      toast({
-        title: "Login bem-sucedido",
-        description: "Bem-vindo de volta!",
-      });
-      sessionStorage.setItem('loginSuccessShown', 'true');
-    }
-  }, [user, toast]);
-
   const toggleDisplayUnit = (value: 'BTC' | 'SATS') => {
     setDisplayUnit(value);
   };

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,36 +21,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, newSession) => {
         console.log("Evento de autenticação detectado:", event);
         
-        // Se o evento for PASSWORD_RECOVERY, não atualizamos o estado de sessão
-        // para evitar redirecionamento automático
         if (event !== 'PASSWORD_RECOVERY') {
           setSession(newSession);
           setUser(newSession?.user ?? null);
         }
         
-        if (event === 'SIGNED_IN') {
-          // Verificamos se estamos na página de reset-password
-          const isResetPasswordPage = window.location.pathname.includes('reset-password');
-          
-          // Só mostramos o toast de login bem-sucedido se não estivermos na página de reset
-          if (!isResetPasswordPage) {
-            toast({
-              title: "Login bem-sucedido",
-              description: "Bem-vindo de volta!",
-            });
-          }
-        } else if (event === 'SIGNED_OUT') {
+        if (event === 'SIGNED_OUT') {
           toast({
             title: "Logout efetuado",
             description: "Você saiu com sucesso.",
           });
         } else if (event === 'PASSWORD_RECOVERY') {
-          // Deixamos o componente ResetPassword lidar com este evento
           console.log("Evento de recuperação de senha detectado");
         } else if (event === 'USER_UPDATED') {
           toast({
@@ -62,12 +46,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session: newSession } }) => {
-      // Verificamos se estamos na página de reset-password
       const isResetPasswordPage = window.location.pathname.includes('reset-password');
       
-      // Se estivermos na página de reset, não atualizamos o estado da sessão
       if (!isResetPasswordPage || !window.location.hash.includes('access_token')) {
         setSession(newSession);
         setUser(newSession?.user ?? null);
