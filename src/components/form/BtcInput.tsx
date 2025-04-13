@@ -3,16 +3,8 @@
  * Componente BtcInput 
  * 
  * Função: Campo de entrada especializado para valores de Bitcoin/Satoshis
- * Onde é usado: No formulário de edição de aportes
- * 
- * Integrações:
- * - Label e Input do shadcn/ui para UI consistente
- * - Automaticamente converte pontos (.) para vírgulas (,) para compatibilidade com formato brasileiro
- * 
- * Atualização:
- * - Melhorada a manipulação dos valores para conversão correta entre string e number
+ * com teclado numérico otimizado para entrada decimal
  */
-
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -28,9 +20,7 @@ export const BtcInput: React.FC<BtcInputProps> = ({
   value,
   onChange
 }) => {
-  // Função que converte pontos para vírgulas ao digitar
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Substitui pontos por vírgulas para compatibilidade com formato brasileiro
     const newValue = e.target.value.replace(/\./g, ',');
     onChange(newValue);
   };
@@ -51,6 +41,8 @@ export const BtcInput: React.FC<BtcInputProps> = ({
           onChange={handleInputChange}
           className="pl-12 rounded-xl"
           type="text"
+          inputMode="decimal"  // Adicionado para teclado numérico
+          pattern="[0-9]*,[0-9]*"  // Padrão para números decimais com vírgula
           required
         />
       </div>

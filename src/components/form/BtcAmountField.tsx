@@ -3,15 +3,7 @@
  * Componente para entrada do valor em Bitcoin ou Satoshis
  * 
  * Função: Permite que o usuário digite o valor de BTC adquirido
- * e converte automaticamente pontos (.) para vírgulas (,)
- * para compatibilidade com o formato brasileiro
- * 
- * Atualização:
- * - Melhorada a manipulação dos valores para conversão correta entre string e number
- * - Adicionado console.log para depuração do formato de número
- * - Melhorada a consistência da formatação
- * - Garantido o envio correto dos valores numéricos
- * - Corrigido o tratamento de pontos e vírgulas para consistência com outros campos
+ * com teclado numérico otimizado para entrada decimal
  */
 import React from 'react';
 import { Label } from '@/components/ui/label';
@@ -28,11 +20,8 @@ const BtcAmountField: React.FC<BtcAmountFieldProps> = ({
   onBtcAmountChange,
   displayUnit = 'BTC'
 }) => {
-  // Função que converte pontos para vírgulas ao digitar
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Substitui pontos por vírgulas para compatibilidade com formato brasileiro
     const value = e.target.value.replace(/\./g, ',');
-    console.log('Valor BTC formatado:', value);
     onBtcAmountChange(value);
   };
 
@@ -52,6 +41,8 @@ const BtcAmountField: React.FC<BtcAmountFieldProps> = ({
           onChange={handleInputChange}
           className="pl-12 rounded-xl"
           type="text"
+          inputMode="decimal"  // Adicionado para teclado numérico
+          pattern="[0-9]*,[0-9]*"  // Padrão para números decimais com vírgula
           required
         />
       </div>
