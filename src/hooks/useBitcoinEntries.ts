@@ -265,28 +265,24 @@ export const useBitcoinEntries = () => {
    * Retorna os dados para pré-visualização, sem salvá-los ainda
    */
   const prepareImportFromSpreadsheet = async (file: File): Promise<BitcoinEntry[]> => {
-    console.log('[useBitcoinEntries] Iniciando prepareImportFromSpreadsheet:', file.name, file.size, file.type);
+    console.log('[useBitcoinEntries] Iniciando prepareImportFromSpreadsheet:', file.name);
     
     if (!user) {
-      console.error('[useBitcoinEntries] Erro: Usuário não autenticado');
       throw new Error('Usuário não autenticado');
     }
     
     try {
       setImportProgress({
         progress: 0,
-        stage: 'Iniciando preparação...',
+        stage: 'Iniciando importação...',
         isImporting: true
       });
-      
-      console.log('[useBitcoinEntries] Chamando importSpreadsheet...');
       
       // Chamar função de importação com callback de progresso
       const result = await importSpreadsheet(
         file, 
         user.id,
         (progress, stage) => {
-          console.log(`[useBitcoinEntries] Progresso de importação: ${progress}% - ${stage}`);
           setImportProgress({
             progress,
             stage,
@@ -295,35 +291,27 @@ export const useBitcoinEntries = () => {
         }
       );
       
-      console.log('[useBitcoinEntries] Resultado da importação:', { 
-        count: result.count,
-        previewDataLength: result.previewData.length,
-        previewData: result.previewData
-      });
+      console.log('[useBitcoinEntries] Resultado da importação:', result);
       
       // Armazenar dados para pré-visualização
       setPreviewData(result.previewData);
       setPendingImport(result.entries); // Array para Supabase
       
-      // Finalizar o progresso de preparação
       setImportProgress({
         progress: 70,
-        stage: 'Dados preparados para importação',
+        stage: 'Dados prontos para conferência',
         isImporting: false
       });
       
-      console.log('[useBitcoinEntries] Preparação concluída, retornando dados para pré-visualização');
       return result.previewData;
-    } catch (error) {
-      // Em caso de erro, resetar o progresso
-      console.error('[useBitcoinEntries] Erro na preparação da importação:', error);
       
+    } catch (error) {
+      console.error('[useBitcoinEntries] Erro na preparação da importação:', error);
       setImportProgress({
         progress: 0,
         stage: '',
         isImporting: false
       });
-      
       throw error;
     }
   };
