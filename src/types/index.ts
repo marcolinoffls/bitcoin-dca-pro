@@ -1,4 +1,3 @@
-
 export interface BitcoinEntry {
   id: string;
   date: Date;
@@ -27,5 +26,5 @@ export interface PriceVariation {
   timestamp: Date;   // Data/hora da última atualização
 }
 
-export type Origin = "corretora" | "p2p" | "planilha";
+export type Origin = "corretora" | "p2p";
 export type RegistrationSource = "manual" | "planilha";
