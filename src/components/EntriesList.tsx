@@ -327,11 +327,11 @@ const EntriesList: React.FC<EntriesListProps> = ({
               <div className="h-6 w-6">
                 <img 
                   src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/aportes.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvYXBvcnRlcy5wbmciLCJpYXQiOjE3NDQ0OTc3MTMsImV4cCI6MTc3NjAzMzcxM30.ofk3Ocv9aFS_BI19nsngxNbJYjw10do5u3RjTgWrOTo" 
-                  alt="Aportes Registrados"
+                  alt="Aportes registrados"
                   className="h-full w-full object-contain"
                 />
               </div>
-              Aportes Registrados
+              Aportes registrados
             </div>
           </CardTitle>
         </CardHeader>
