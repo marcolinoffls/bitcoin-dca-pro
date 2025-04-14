@@ -232,9 +232,6 @@ export const prepareImportedEntries = (
       // Calcular cotação se não fornecida
       const exchangeRate = item.cotacao || (item.valorInvestido / item.bitcoin);
       
-      // Normalizar a origem (garantir que seja apenas 'corretora' ou 'p2p')
-      const normalizedOrigin = item.origem ? normalizeValorOrigem(item.origem) : 'corretora';
-      
       // Gerar ID único
       const id = uuidv4();
       
@@ -248,8 +245,8 @@ export const prepareImportedEntries = (
         cotacao: exchangeRate,
         moeda: item.moeda || 'BRL',
         cotacao_moeda: item.moeda || 'BRL',
-        origem_aporte: normalizedOrigin,  // Garante que seja 'corretora' ou 'p2p'
-        origem_registro: 'planilha'  // Define que veio de importação
+        origem_aporte: item.origem || 'planilha', // Marcar origem como planilha
+        origem_registro: 'planilha'  // Nova coluna: define que veio de importação
       };
       
       // Objeto BitcoinEntry para o app
@@ -260,8 +257,8 @@ export const prepareImportedEntries = (
         btcAmount: item.bitcoin,
         exchangeRate,
         currency: item.moeda || 'BRL',
-        origin: normalizedOrigin,  // Garante que seja 'corretora' ou 'p2p'
-        registrationSource: 'planilha'  // Propriedade para rastrear a origem do registro
+        origin: item.origem || 'planilha', // Marcar origem como planilha
+        registrationSource: 'planilha'  // Nova propriedade para rastrear a origem do registro
       };
       
       supabaseEntries.push(supabaseEntry);
@@ -331,7 +328,7 @@ export const importSpreadsheet = async (
     // Retorna dados para pré-visualização antes de inserir
     return {
       count: appEntries.length,
-      entries: supabaseEntries,
+      entries: appEntries,
       previewData: appEntries
     };
   } catch (error) {

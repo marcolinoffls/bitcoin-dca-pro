@@ -1,3 +1,4 @@
+
 /**
  * Hook: useBitcoinEntries
  *
@@ -48,7 +49,7 @@ interface SupabaseAporte {
   bitcoin: number;
   cotacao: number;
   moeda: 'BRL' | 'USD';
-  origem_aporte: 'corretora' | 'p2p';
+  origem_aporte: 'corretora' | 'p2p' | 'planilha';
   origem_registro: 'manual' | 'planilha';
   user_id: string;
   cotacao_moeda: string;
@@ -162,8 +163,7 @@ export const useBitcoinEntries = () => {
       cotacao: exchangeRate,
       moeda: currency,
       cotacao_moeda: currency,
-      origem_aporte: origin,
-      origem_registro: 'manual' // Registro manual por padrão
+      origem_aporte: origin
     }]);
     
     if (error) throw error;
@@ -286,7 +286,7 @@ export const useBitcoinEntries = () => {
     try {
       setImportProgress({
         progress: 0,
-        stage: 'Iniciando processamento...',
+        stage: 'Iniciando preparação...',
         isImporting: true
       });
       

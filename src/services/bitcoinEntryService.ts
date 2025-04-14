@@ -17,7 +17,7 @@
  * - Atualizado para suportar novos tipos de origem (planilha) nos aportes
  */
 
-import { BitcoinEntry, CurrentRate, Origin, RegistrationSource } from '@/types';
+import { BitcoinEntry, CurrentRate, Origin } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -60,7 +60,7 @@ export const fetchBitcoinEntries = async () => {
       exchangeRate: Number(entry.cotacao),
       currency: entry.moeda as 'BRL' | 'USD',
       origin: entry.origem_aporte as Origin,
-      registrationSource: entry.origem_registro as RegistrationSource
+      registrationSource: entry.origem_registro as 'manual' | 'planilha'
     };
   }) || [];
   
@@ -117,7 +117,7 @@ export const createBitcoinEntry = async (
     exchangeRate,
     currency,
     origin,
-    registrationSource: 'manual' as RegistrationSource
+    registrationSource: 'manual'
   };
 };
 

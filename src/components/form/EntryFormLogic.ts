@@ -24,7 +24,7 @@ import { formatNumber } from '@/lib/utils';
 
 type Currency = 'BRL' | 'USD';
 type DisplayUnit = 'BTC' | 'SATS';
-type Origin = 'corretora' | 'p2p';
+type Origin = 'corretora' | 'p2p' | 'planilha';
 
 interface CurrentRate {
   usd: number;
@@ -40,69 +40,6 @@ interface EditingEntry {
   currency: Currency;
   origin?: Origin;
 }
-
-/**
- * Valida os dados do formulário e retorna os valores numéricos
- * Se algum valor for inválido, lança um erro
- */
-export const validateForm = (
-  amountInvested: string,
-  btcAmount: string,
-  exchangeRate: string
-) => {
-  // Converter os valores para números
-  const numericAmount = parseFloat(amountInvested.replace(/\./g, '').replace(',', '.'));
-  const numericBtcAmount = parseFloat(btcAmount.replace(/\./g, '').replace(',', '.'));
-  const numericExchangeRate = parseFloat(exchangeRate.replace(/\./g, '').replace(',', '.'));
-  
-  // Validar o valor investido
-  if (isNaN(numericAmount) || numericAmount <= 0) {
-    throw new Error('O valor investido deve ser um número positivo');
-  }
-  
-  // Validar a quantidade de Bitcoin
-  if (isNaN(numericBtcAmount) || numericBtcAmount <= 0) {
-    throw new Error('A quantidade de Bitcoin deve ser um número positivo');
-  }
-  
-  // Validar a cotação
-  if (isNaN(numericExchangeRate) || numericExchangeRate <= 0) {
-    throw new Error('A cotação deve ser um número positivo');
-  }
-  
-  return {
-    numericAmount,
-    numericBtcAmount,
-    numericExchangeRate
-  };
-};
-
-/**
- * Calcula a cotação com base no valor e quantidade de Bitcoin
- */
-export const calculateExchangeRate = (
-  amountInvested: string,
-  btcAmount: string
-) => {
-  if (!amountInvested || !btcAmount) {
-    return { calculatedRate: null };
-  }
-  
-  try {
-    const numericAmount = parseFloat(amountInvested.replace(/\./g, '').replace(',', '.'));
-    const numericBtcAmount = parseFloat(btcAmount.replace(/\./g, '').replace(',', '.'));
-    
-    if (isNaN(numericAmount) || isNaN(numericBtcAmount) || numericBtcAmount === 0) {
-      return { calculatedRate: null };
-    }
-    
-    const rate = numericAmount / numericBtcAmount;
-    return { calculatedRate: formatNumber(rate, 2) };
-  } catch (error) {
-    console.error('Erro ao calcular cotação:', error);
-    return { calculatedRate: null };
-  }
-};
 
 export const useEntryFormLogic = (
   editingEntry?: EditingEntry,

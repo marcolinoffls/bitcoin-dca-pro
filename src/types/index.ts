@@ -1,4 +1,3 @@
-
 export interface BitcoinEntry {
   id: string;
   date: Date;
@@ -6,8 +5,8 @@ export interface BitcoinEntry {
   btcAmount: number;
   exchangeRate: number;
   currency: 'BRL' | 'USD';
-  origin: Origin;
-  registrationSource?: RegistrationSource;
+  origin?: 'corretora' | 'p2p' | 'planilha';
+  registrationSource?: 'manual' | 'planilha';
 }
 
 export interface CurrentRate {
@@ -27,6 +26,5 @@ export interface PriceVariation {
   timestamp: Date;   // Data/hora da última atualização
 }
 
-// Definição dos tipos de origem de aporte
 export type Origin = "corretora" | "p2p";
 export type RegistrationSource = "manual" | "planilha";
