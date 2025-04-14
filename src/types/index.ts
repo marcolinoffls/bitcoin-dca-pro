@@ -1,3 +1,4 @@
+
 export interface BitcoinEntry {
   id: string;
   date: Date;
@@ -5,7 +6,7 @@ export interface BitcoinEntry {
   btcAmount: number;
   exchangeRate: number;
   currency: 'BRL' | 'USD';
-  origin?: 'corretora' | 'p2p' | 'planilha';
+  origin?: 'corretora' | 'p2p';
   registrationSource?: 'manual' | 'planilha';
 }
 

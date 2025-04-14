@@ -245,8 +245,8 @@ export const prepareImportedEntries = (
         cotacao: exchangeRate,
         moeda: item.moeda || 'BRL',
         cotacao_moeda: item.moeda || 'BRL',
-        origem_aporte: item.origem || 'planilha', // Marcar origem como planilha
-        origem_registro: 'planilha'  // Nova coluna: define que veio de importação
+        origem_aporte: item.origem || 'corretora',
+        origem_registro: 'planilha'  // Define que veio de importação
       };
       
       // Objeto BitcoinEntry para o app
@@ -257,8 +257,8 @@ export const prepareImportedEntries = (
         btcAmount: item.bitcoin,
         exchangeRate,
         currency: item.moeda || 'BRL',
-        origin: item.origem || 'planilha', // Marcar origem como planilha
-        registrationSource: 'planilha'  // Nova propriedade para rastrear a origem do registro
+        origin: item.origem || 'corretora',
+        registrationSource: 'planilha'  // Propriedade para rastrear a origem do registro
       };
       
       supabaseEntries.push(supabaseEntry);
@@ -328,7 +328,7 @@ export const importSpreadsheet = async (
     // Retorna dados para pré-visualização antes de inserir
     return {
       count: appEntries.length,
-      entries: appEntries,
+      entries: supabaseEntries,
       previewData: appEntries
     };
   } catch (error) {

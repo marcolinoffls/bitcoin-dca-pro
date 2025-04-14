@@ -1,305 +1,295 @@
 
 /**
- * Componente EntryEditForm
- *
- * Função: Permite ao usuário editar um aporte de Bitcoin já registrado.
- * Onde é usado: No modal de edição, dentro da seção "Aportes Registrados".
- *
- * Integrações:
- * - Supabase: Atualiza um registro da tabela `aportes` via hook useBitcoinEntries.
- * - Props:
- *    - entry: os dados originais do aporte
- *    - currentRate: cotação atual do Bitcoin
- *    - onClose: função para fechar o modal
- *    - displayUnit: unidade usada para exibir BTC ou SATS
+ * Componente: EntryEditForm
  * 
- * Atualizações:
- * - Corrigido o problema de atualização de data no Supabase
- * - Convertidos os campos de string para number para manipulação mais segura
- * - Garantida a atualização da lista de aportes após uma edição
- * - Adicionado console.log para mostrar a data selecionada antes de enviar ao Supabase
- * - Melhorada a validação e tratamento da data
- * - Garantido que a data selecionada no calendário seja aplicada imediatamente
- * - Corrigido problema de timezone, forçando o horário local ao interpretar datas
- * - Corrigido problema de validação dos campos numéricos, aceitando vírgula ou ponto
+ * Formulário para edição de aportes existentes.
+ * Permite alterar todos os campos (data, valor, quantidade, cotação, moeda e origem).
+ * 
+ * É chamado pelo EntriesList quando o usuário clica no botão de editar.
  */
-
-import React, { useState, useEffect } from 'react';
-import { format } from 'date-fns';
+import React, { useState, useEffect } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
+import { useBitcoinEntries } from "@/hooks/useBitcoinEntries";
+import { BitcoinEntry, CurrentRate } from "@/types";
+import { formatBitcoinValue, formatCurrencyValue, formatNumber } from "@/lib/utils";
+import { CalendarIcon, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import { ptBR } from 'date-fns/locale';
-import { BitcoinEntry, CurrentRate } from '@/types';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
-import { formatNumber } from '@/lib/utils';
-import { useBitcoinEntries } from '@/hooks/useBitcoinEntries'; // Importa o hook para uso direto
-
-import CurrencySelector from '@/components/CurrencySelector';
-import OriginSelector from '@/components/form/OriginSelector';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { BtcInput } from '@/components/form/BtcInput';
-import DatePickerField from '@/components/form/DatePickerField';
+import { format } from "date-fns";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useToast } from "@/hooks/use-toast";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import OriginSelector from "./form/OriginSelector";
 
 interface EntryEditFormProps {
   entry: BitcoinEntry;
   currentRate: CurrentRate;
   onClose: () => void;
-  displayUnit?: 'BTC' | 'SATS';
+  displayUnit: 'BTC' | 'SATS';
 }
 
-/**
- * Converte string de data para objeto Date, forçando o fuso horário local
- * @param dateInput Data no formato string ou Date
- * @returns Objeto Date com o fuso horário local
- */
-const ensureLocalDate = (dateInput: Date | string): Date => {
-  if (dateInput instanceof Date) {
-    return dateInput;
-  }
-  
-  // Adiciona o horário T00:00:00 para forçar a interpretação no fuso horário local
-  return new Date(`${dateInput}T00:00:00`);
-};
-
-const EntryEditForm: React.FC<EntryEditFormProps> = ({
+const EntryEditForm: React.FC<EntryEditFormProps> = ({ 
   entry,
   currentRate,
   onClose,
-  displayUnit = 'BTC',
+  displayUnit
 }) => {
-  const { toast } = useToast();
   const { user } = useAuth();
-  // Usamos o hook diretamente no componente para ter acesso à função updateEntry
   const { updateEntry } = useBitcoinEntries();
-
-  // Inicializa os campos com valores formatados para exibição
-  const [amountInvestedDisplay, setAmountInvestedDisplay] = useState(formatNumber(entry.amountInvested));
-  const [btcAmountDisplay, setBtcAmountDisplay] = useState(
-    displayUnit === 'SATS'
-      ? formatNumber(entry.btcAmount * 100000000, 0)
-      : formatNumber(entry.btcAmount, 8)
-  );
-  const [exchangeRate, setExchangeRate] = useState(entry.exchangeRate);
-  const [exchangeRateDisplay, setExchangeRateDisplay] = useState(formatNumber(entry.exchangeRate));
-  const [currency, setCurrency] = useState<'BRL' | 'USD'>(entry.currency);
-  const [origin, setOrigin] = useState<'corretora' | 'p2p' | 'planilha'>(entry.origin || 'corretora');
+  const { toast } = useToast();
+  const isMobile = useIsMobile();
   
-  // Garantir que a data seja sempre uma instância de Date válida com fuso horário local
-  const [date, setDate] = useState<Date>(() => {
-    return ensureLocalDate(entry.date);
+  const [date, setDate] = useState<Date>(new Date(entry.date));
+  const [amount, setAmount] = useState<string>(entry.amountInvested.toString());
+  const [bitcoinAmount, setBitcoinAmount] = useState<string>(entry.btcAmount.toString());
+  const [exchangeRate, setExchangeRate] = useState<string>(entry.exchangeRate.toString());
+  const [currency, setCurrency] = useState<'BRL' | 'USD'>(entry.currency);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [origin, setOrigin] = useState<"corretora" | "p2p">(
+    entry.origin === "planilha" ? "corretora" : entry.origin as "corretora" | "p2p"
+  );
+
+  const updateMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("Usuário não autenticado");
+      
+      setIsUpdating(true);
+      
+      const numericAmount = parseFloat(amount.replace(/\./g, '').replace(',', '.'));
+      const numericBitcoinAmount = parseFloat(bitcoinAmount.replace(/\./g, '').replace(',', '.'));
+      const numericExchangeRate = parseFloat(exchangeRate.replace(/\./g, '').replace(',', '.'));
+      
+      if (isNaN(numericAmount) || numericAmount <= 0) {
+        throw new Error("O valor investido deve ser um número positivo");
+      }
+      
+      if (isNaN(numericBitcoinAmount) || numericBitcoinAmount <= 0) {
+        throw new Error("A quantidade de Bitcoin deve ser um número positivo");
+      }
+      
+      if (isNaN(numericExchangeRate) || numericExchangeRate <= 0) {
+        throw new Error("A cotação deve ser um número positivo");
+      }
+      
+      await updateEntry(entry.id, {
+        date,
+        amountInvested: numericAmount,
+        btcAmount: numericBitcoinAmount,
+        exchangeRate: numericExchangeRate,
+        currency,
+        origin
+      });
+      
+      return true;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Aporte atualizado",
+        description: "Os dados do aporte foram atualizados com sucesso!",
+        variant: "success",
+      });
+      onClose();
+    },
+    onError: (error) => {
+      console.error("Erro ao atualizar aporte:", error);
+      toast({
+        title: "Erro ao atualizar",
+        description: error instanceof Error ? error.message : "Ocorreu um erro ao atualizar o aporte",
+        variant: "destructive",
+      });
+    },
+    onSettled: () => {
+      setIsUpdating(false);
+    }
   });
 
-  // Atualizamos a data quando o entry mudar, garantindo que seja sempre um objeto Date com fuso horário local
   useEffect(() => {
-    console.log('Entry atualizado, data original:', entry.date);
-    if (entry.date) {
-      const newDate = ensureLocalDate(entry.date);
-      if (!isNaN(newDate.getTime())) {
-        setDate(newDate);
-        console.log('Data do entry convertida e atualizada:', newDate, 
-          'Formatada:', format(newDate, "dd/MM/yyyy", { locale: ptBR }));
+    // Calcular a cotação automaticamente se o usuário alterar o valor ou a quantidade
+    if (amount && bitcoinAmount) {
+      try {
+        const numericAmount = parseFloat(amount.replace(/\./g, '').replace(',', '.'));
+        const numericBitcoinAmount = parseFloat(bitcoinAmount.replace(/\./g, '').replace(',', '.'));
+        
+        if (!isNaN(numericAmount) && !isNaN(numericBitcoinAmount) && numericBitcoinAmount > 0) {
+          const calculatedRate = numericAmount / numericBitcoinAmount;
+          setExchangeRate(formatCurrencyValue(calculatedRate));
+        }
+      } catch (error) {
+        console.error("Erro ao calcular cotação:", error);
       }
     }
-  }, [entry]);
+  }, [amount, bitcoinAmount]);
 
-  // Função para converter string em formato brasileiro para número
-  const parseLocalNumber = (value: string): number => {
-    return parseFloat(value.replace(/\./g, '').replace(',', '.'));
-  };
-
-  // Aceita tanto vírgula quanto ponto como separador decimal e normaliza para o formato brasileiro
   const handleAmountChange = (value: string) => {
-    // Remove todos os caracteres que não sejam números, vírgula ou ponto
-    const cleanedValue = value.replace(/[^\d.,]/g, '');
+    // Remover qualquer caractere que não seja número ou vírgula/ponto
+    const cleanedValue = value.replace(/[^\d,.]/g, '').replace(/\./g, '').replace(',', '.');
     
-    // Substitui pontos por vírgulas para o formato brasileiro
-    const formattedValue = cleanedValue.replace(/\./g, ',');
+    // Formatar para exibição
+    const formattedValue = cleanedValue ? formatCurrencyValue(parseFloat(cleanedValue)) : '';
     
-    setAmountInvestedDisplay(formattedValue);
+    setAmount(formattedValue);
   };
 
-  // Aceita tanto vírgula quanto ponto como separador decimal e normaliza para o formato brasileiro
+  const handleBitcoinAmountChange = (value: string) => {
+    // Remover qualquer caractere que não seja número ou vírgula/ponto
+    const cleanedValue = value.replace(/[^\d,.]/g, '').replace(/\./g, '').replace(',', '.');
+    
+    // Formatar para exibição
+    const formattedValue = cleanedValue ? formatNumber(parseFloat(cleanedValue), 8) : '';
+    
+    setBitcoinAmount(formattedValue);
+  };
+
   const handleExchangeRateChange = (value: string) => {
-    // Remove todos os caracteres que não sejam números, vírgula ou ponto
-    const cleanedValue = value.replace(/[^\d.,]/g, '');
+    // Remover qualquer caractere que não seja número ou vírgula/ponto
+    const cleanedValue = value.replace(/[^\d,.]/g, '').replace(/\./g, '').replace(',', '.');
     
-    // Substitui pontos por vírgulas para o formato brasileiro
-    const formattedValue = cleanedValue.replace(/\./g, ',');
+    // Formatar para exibição
+    const formattedValue = cleanedValue ? formatCurrencyValue(parseFloat(cleanedValue)) : '';
     
-    setExchangeRateDisplay(formattedValue);
-    const val = parseLocalNumber(formattedValue);
-    if (!isNaN(val)) {
-      setExchangeRate(val);
-    }
+    setExchangeRate(formattedValue);
   };
 
-  const handleCurrencyChange = (newCurrency: 'BRL' | 'USD') => {
-    setCurrency(newCurrency);
-    if (currentRate) {
-      const newRate = newCurrency === 'USD' ? currentRate.usd : currentRate.brl;
-      setExchangeRate(newRate);
-      setExchangeRateDisplay(formatNumber(newRate));
-    }
-  };
-
-  // Função para atualizar a data do aporte
-  const handleDateChange = (newDate: Date) => {
-    console.log('Nova data selecionada em EntryEditForm:', newDate);
-    console.log('Formatada para exibição:', format(newDate, "dd/MM/yyyy", { locale: ptBR }));
-    
-    if (newDate instanceof Date && !isNaN(newDate.getTime())) {
-      setDate(newDate);
-    } else {
-      console.error('Data inválida recebida:', newDate);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!user) {
-      toast({
-        title: 'Acesso negado',
-        description: 'Você precisa estar logado para editar aportes.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    // Converte os valores de string para number para processamento
-    let parsedAmount = parseLocalNumber(amountInvestedDisplay);
-    let parsedBtc = parseLocalNumber(btcAmountDisplay);
-    // Converte SATS para BTC se necessário
-    if (displayUnit === 'SATS') parsedBtc = parsedBtc / 100000000;
-    
-    if (
-      isNaN(parsedAmount) ||
-      isNaN(parsedBtc) ||
-      isNaN(exchangeRate) ||
-      exchangeRate === 0
-    ) {
-      toast({
-        title: 'Erro nos dados',
-        description: 'Por favor, verifique os valores inseridos.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    // Garantir que a data é válida
-    if (!(date instanceof Date) || isNaN(date.getTime())) {
-      toast({
-        title: 'Data inválida',
-        description: 'Por favor, selecione uma data válida.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    // Log para verificar os dados antes de enviar
-    console.log('Dados sendo enviados para atualização:', {
-      id: entry.id,
-      amountInvested: parsedAmount,
-      btcAmount: parsedBtc,
-      exchangeRate: exchangeRate,
-      currency: currency,
-      date: date,
-      formattedDate: format(date, "dd/MM/yyyy", { locale: ptBR }),
-      origin: origin
-    });
-
+  const handleSwitchToBtcValue = () => {
     try {
-      // Usa a função updateEntry do hook useBitcoinEntries com a data correta
-      await updateEntry(entry.id, {
-        amountInvested: parsedAmount,
-        btcAmount: parsedBtc,
-        exchangeRate: exchangeRate,
-        currency: currency,
-        date: date, // Garante que a data atualizada seja enviada
-        origin: origin
-      });
-
-      toast({
-        title: 'Aporte atualizado',
-        description: 'Os dados foram atualizados com sucesso.',
-        variant: 'success',
-      });
-
-      onClose();
+      const currentValueBRL = parseFloat(amount.replace(/\./g, '').replace(',', '.'));
+      let newValueBTC = 0;
+      
+      if (currency === 'BRL') {
+        // Converter de BRL para BTC usando a cotação atual
+        newValueBTC = currentValueBRL / currentRate.brl;
+      } else {
+        // Converter de USD para BTC usando a cotação atual
+        newValueBTC = currentValueBRL / currentRate.usd;
+      }
+      
+      if (!isNaN(newValueBTC)) {
+        setBitcoinAmount(formatBitcoinValue(newValueBTC));
+      }
     } catch (error) {
-      console.error('Erro ao atualizar:', error);
-      toast({
-        title: 'Erro ao atualizar',
-        description: 'Não foi possível atualizar o aporte.',
-        variant: 'destructive',
-      });
+      console.error("Erro ao converter para BTC:", error);
     }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateMutation.mutate();
+  };
+
+  const formatBtcLabel = () => {
+    if (displayUnit === 'SATS') {
+      return 'Satoshis';
+    }
+    return 'Bitcoin (BTC)';
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 px-1">
-      {/* Data do aporte */}
-      <DatePickerField date={date} onDateChange={handleDateChange} />
+    <form onSubmit={handleSubmit} className="space-y-5 py-2">
+      <div className="space-y-3">
+        <div className="grid gap-2">
+          <Label htmlFor="date">Data do aporte</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "justify-start text-left font-normal",
+                  !date && "text-muted-foreground"
+                )}
+                id="date"
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {date ? format(date, 'dd/MM/yyyy', { locale: ptBR }) : <span>Selecione uma data</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <DatePicker
+                selected={date}
+                onChange={(date: Date) => setDate(date)}
+                dateFormat="dd/MM/yyyy"
+                locale={ptBR}
+                inline
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
 
-      {/* Moeda (BRL ou USD) */}
-      <CurrencySelector selectedCurrency={currency} onChange={handleCurrencyChange} />
-
-      {/* Valor Investido e BTC */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {/* Campo de Valor Investido */}
-        <div className="flex flex-col space-y-1.5">
-          <Label htmlFor="editAmount">Valor Investido</Label>
-          <div className="relative">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-muted-foreground">
-              {currency === 'USD' ? '$' : 'R$'}
-            </span>
+        <div className="grid gap-2">
+          <Label htmlFor="amount">{currency === 'BRL' ? 'Valor investido (R$)' : 'Valor investido ($)'}</Label>
+          <div className="flex space-x-2">
             <Input
-              id="editAmount"
-              placeholder="0,00"
-              value={amountInvestedDisplay}
+              id="amount"
+              placeholder={currency === 'BRL' ? "Ex: 1.000,00" : "Ex: 200.00"}
+              value={amount}
               onChange={(e) => handleAmountChange(e.target.value)}
-              className="pl-8 rounded-xl"
-              type="text"
-              inputMode="decimal"
-              required
+              className="text-right"
             />
+            <Tabs value={currency} onValueChange={(value) => setCurrency(value as 'BRL' | 'USD')} className="w-[120px]">
+              <TabsList className="grid grid-cols-2 h-10">
+                <TabsTrigger value="BRL" className="text-xs">BRL</TabsTrigger>
+                <TabsTrigger value="USD" className="text-xs">USD</TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
         </div>
 
-        {/* Campo de Bitcoin ou Sats */}
-        <BtcInput displayUnit={displayUnit} value={btcAmountDisplay} onChange={setBtcAmountDisplay} />
-      </div>
-
-      {/* Cotação */}
-      <div className="flex flex-col space-y-1.5 mt-4">
-        <Label>Cotação no momento da compra</Label>
-        <div className="relative">
-          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-muted-foreground">
-            {currency === 'USD' ? '$' : 'R$'}
-          </span>
+        <div className="grid gap-2">
+          <div className="flex justify-between items-center">
+            <Label htmlFor="btcAmount">{formatBtcLabel()}</Label>
+            <Button 
+              type="button" 
+              variant="link" 
+              className="text-xs h-auto p-0 text-bitcoin hover:text-bitcoin/80"
+              onClick={handleSwitchToBtcValue}
+            >
+              Usar cotação atual
+            </Button>
+          </div>
           <Input
-            placeholder="0,00"
-            value={exchangeRateDisplay}
-            onChange={(e) => handleExchangeRateChange(e.target.value)}
-            className="pl-8 rounded-xl"
-            type="text"
-            inputMode="decimal"
-            required
+            id="btcAmount"
+            placeholder={displayUnit === 'SATS' ? "Ex: 1.000.000" : "Ex: 0,00520000"}
+            value={bitcoinAmount}
+            onChange={(e) => handleBitcoinAmountChange(e.target.value)}
+            className="text-right"
           />
         </div>
+
+        <div className="grid gap-2">
+          <Label htmlFor="exchangeRate">
+            {currency === 'BRL' ? 'Cotação (R$ por BTC)' : 'Cotação ($ por BTC)'}
+          </Label>
+          <Input
+            id="exchangeRate"
+            placeholder={currency === 'BRL' ? "Ex: 320.000,00" : "Ex: 64,000.00"}
+            value={exchangeRate}
+            onChange={(e) => handleExchangeRateChange(e.target.value)}
+            className="text-right"
+          />
+        </div>
+        
+        <OriginSelector origin={origin} onOriginChange={setOrigin} />
       </div>
 
-      {/* Origem do aporte */}
-      <OriginSelector origin={origin} onOriginChange={setOrigin} />
-
-      {/* Botões de ação */}
-      <div className="flex gap-4 pt-4">
-        <Button type="button" variant="outline" onClick={onClose} className="flex-1 rounded-xl">
+      <div className="flex gap-2 pt-4 justify-between">
+        <Button type="button" variant="outline" onClick={onClose} className="flex-1">
           Cancelar
         </Button>
-        <Button type="submit" className="flex-1 bg-bitcoin hover:bg-bitcoin/90 rounded-xl py-3 px-4">
-          Atualizar
+        <Button type="submit" disabled={isUpdating} className="flex-1 bg-bitcoin hover:bg-bitcoin/90">
+          {isUpdating ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Salvando...
+            </>
+          ) : (
+            "Atualizar"
+          )}
         </Button>
       </div>
     </form>

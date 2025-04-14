@@ -1,4 +1,3 @@
-
 /**
  * Hook: useBitcoinEntries
  *
@@ -286,7 +285,7 @@ export const useBitcoinEntries = () => {
     try {
       setImportProgress({
         progress: 0,
-        stage: 'Iniciando preparação...',
+        stage: 'Iniciando processamento...',
         isImporting: true
       });
       

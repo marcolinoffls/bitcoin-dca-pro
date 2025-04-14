@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useRef } from 'react';
 import { BitcoinEntry, CurrentRate, Origin } from '@/types';
 import { calculatePercentageChange } from '@/services/bitcoinService';
@@ -7,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { TrendingDown, TrendingUp, Trash2, Edit, AlertCircle, Filter, Plus, Upload, Download, FileSpreadsheet, CheckCircle } from 'lucide-react';
+import { TrendingDown, TrendingUp, Trash2, Edit, AlertCircle, Filter, Plus, Upload, Download, FileSpreadsheet, CheckCircle, Loader2 } from 'lucide-react';
 import { formatNumber } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import EntryEditForm from '@/components/EntryEditForm';
@@ -950,7 +949,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
             </div>
             
             {importProgress.isImporting && (
-              <div className="space-y-1">
+              <div className="space-y-1 pt-2 pb-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm">{importProgress.stage}</span>
                   <span className="text-sm">{importProgress.progress}%</span>
@@ -980,7 +979,14 @@ const EntriesList: React.FC<EntriesListProps> = ({
               disabled={!selectedFile || importProgress.isImporting}
               onClick={handlePrepareImport}
             >
-              {importProgress.isImporting ? 'Processando...' : 'Avançar'}
+              {importProgress.isImporting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Processando...
+                </>
+              ) : (
+                'Avançar'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1023,8 +1029,17 @@ const EntriesList: React.FC<EntriesListProps> = ({
               disabled={previewData.length === 0 || importProgress.isImporting}
               onClick={handleConfirmImport}
             >
-              <CheckCircle className="h-4 w-4 mr-2" />
-              {importProgress.isImporting ? 'Importando...' : `Confirmar importação (${previewData.length} registros)`}
+              {importProgress.isImporting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Importando...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  {`Confirmar importação (${previewData.length} registros)`}
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
