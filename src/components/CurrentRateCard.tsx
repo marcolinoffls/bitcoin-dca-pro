@@ -66,7 +66,7 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
               fill="currentColor" 
             />
           )}
-          <span className="text-sm font-semibold">
+          <span className="text-sm">
             {formatNumber(Math.abs(value), 2)}%
           </span>
         </div>
