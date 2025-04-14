@@ -433,17 +433,41 @@ export const importSpreadsheet = async (
     const rawData = await readSpreadsheetFile(file);
     console.log('[importService] Arquivo lido com sucesso, linhas encontradas:', rawData.length);
     
+    // ...existing code...
+
     // Fase 2: Processamento e validação (50%)
-    console.log('[importService] Fase 2: Processamento e validação');
     onProgress?.(50, 'Processando dados...');
     const { supabaseEntries, appEntries } = prepareImportedEntries(rawData, userId);
-    console.log('[importService] Processamento concluído, registros válidos:', appEntries.length);
+    
+    // Fase 3: Enviar dados para o webhook do n8n
+    onProgress?.(75, 'Enviando dados para o webhook...');
+    try {
+      const webhookUrl = 'https://primary-production-3045.up.railway.app/webhook/import-satisfaction'; // Substitua pela URL do seu webhook
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(appEntries), // Enviar os dados processados
+      });
+    
+      if (!response.ok) {
+        throw new Error(`Erro ao enviar dados para o webhook: ${response.statusText}`);
+      }
+    
+      console.log('Dados enviados com sucesso para o webhook');
+    } catch (error) {
+      console.error('Erro ao enviar dados para o webhook:', error);
+      throw new Error('Falha ao enviar dados para o webhook');
+    }
     
     // Retorna dados para pré-visualização antes de inserir
-    console.log('[importService] Retornando dados para pré-visualização:', {
+    return {
       count: appEntries.length,
-      previewDataLength: appEntries.length
-    });
+      entries: appEntries,
+      previewData: appEntries,
+    };
+    
     onProgress?.(70, 'Concluído! Visualize os dados antes de confirmar.');
     
     return {
