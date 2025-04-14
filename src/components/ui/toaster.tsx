@@ -8,7 +8,7 @@ import {
   ToastTitle,
   ToastViewport,
 } from "@/components/ui/toast"
-import { CheckCircle, Bitcoin } from "lucide-react"
+import { CheckCircle, Bitcoin, AlertCircle, FileSpreadsheet } from "lucide-react"
 
 export function Toaster() {
   const { toasts } = useToast()
@@ -24,19 +24,44 @@ export function Toaster() {
           typeof description === 'string' && description.toLowerCase().includes('bitcoin') ||
           variant === 'default' && typeof title === 'string' && title.toLowerCase().includes('bitcoin');
         
+        // Adiciona ícone de erro para toasts destrutivos
+        const showErrorIcon = variant === 'destructive';
+        
+        // Adiciona ícone de planilha para toasts relacionados a importação
+        const showFileIcon = 
+          typeof title === 'string' && (
+            title.toLowerCase().includes('import') ||
+            title.toLowerCase().includes('planilha') ||
+            title.toLowerCase().includes('arquivo')
+          ) || 
+          typeof description === 'string' && (
+            description.toLowerCase().includes('import') ||
+            description.toLowerCase().includes('planilha') ||
+            description.toLowerCase().includes('arquivo')
+          );
+        
         return (
           <Toast key={id} variant={variant} {...props}>
             <div className="flex items-start gap-2">
-              {/* Adiciona ícone de Bitcoin quando o toast mencionar Bitcoin */}
+              {/* Ícones por tipo */}
               {showBitcoinIcon && (
                 <div className="mt-1">
                   <Bitcoin className="h-5 w-5 text-bitcoin" />
                 </div>
               )}
-              {/* Adiciona ícone de sucesso quando o toast for de sucesso e não for de Bitcoin */}
               {showSuccessIcon && !showBitcoinIcon && (
                 <div className="mt-1">
-                  <CheckCircle className="h-5 w-5" />
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                </div>
+              )}
+              {showErrorIcon && (
+                <div className="mt-1">
+                  <AlertCircle className="h-5 w-5 text-red-500" />
+                </div>
+              )}
+              {showFileIcon && !showErrorIcon && !showSuccessIcon && !showBitcoinIcon && (
+                <div className="mt-1">
+                  <FileSpreadsheet className="h-5 w-5 text-blue-500" />
                 </div>
               )}
               <div className="grid gap-1">

@@ -137,11 +137,21 @@ const EntriesList: React.FC<EntriesListProps> = ({
   const handlePrepareImport = async () => {
     console.log('[EntriesList] Iniciando handlePrepareImport');
     
-    if (!selectedFile || !onPrepareImport) {
-      console.error('[EntriesList] Erro: Nenhum arquivo selecionado ou função onPrepareImport não fornecida');
+    if (!selectedFile) {
+      console.error('[EntriesList] Erro: Nenhum arquivo selecionado');
       toast({
         title: "Erro",
-        description: !selectedFile ? "Nenhum arquivo selecionado" : "Função de importação não disponível",
+        description: "Nenhum arquivo selecionado",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!onPrepareImport) {
+      console.error('[EntriesList] Erro: Função onPrepareImport não fornecida');
+      toast({
+        title: "Erro",
+        description: "Função de importação não disponível",
         variant: "destructive",
       });
       return;
