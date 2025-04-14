@@ -34,6 +34,8 @@ interface RawImportData {
  * @returns Promise com array de dados brutos da planilha
  */
 export const readSpreadsheetFile = async (file: File): Promise<RawImportData[]> => {
+  console.log('[importService] Iniciando leitura do arquivo:', file.name, file.type, file.size);
+  
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     
@@ -41,34 +43,71 @@ export const readSpreadsheetFile = async (file: File): Promise<RawImportData[]> 
       try {
         // Ler arquivo como ArrayBuffer
         const data = e.target?.result;
+        console.log('[importService] Arquivo carregado com sucesso, tamanho:', data ? 
+          (data as ArrayBuffer).byteLength : 'dados vazios');
+        
         if (!data) {
-          reject(new Error('Falha ao ler o arquivo'));
+          const erro = new Error('Falha ao ler o arquivo');
+          console.error('[importService] Erro:', erro);
+          reject(erro);
           return;
         }
         
         // Processar com a biblioteca xlsx
+        console.log('[importService] Processando dados com XLSX...');
         const workbook = XLSX.read(data, { type: 'array' });
+        
+        if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+          const erro = new Error('Planilha não contém nenhuma página');
+          console.error('[importService] Erro:', erro);
+          reject(erro);
+          return;
+        }
+        
         const firstSheetName = workbook.SheetNames[0];
+        console.log('[importService] Nome da primeira folha:', firstSheetName);
+        
         const worksheet = workbook.Sheets[firstSheetName];
+        
+        if (!worksheet) {
+          const erro = new Error('Não foi possível acessar a página da planilha');
+          console.error('[importService] Erro:', erro);
+          reject(erro);
+          return;
+        }
         
         // Converter para JSON
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
-        console.log('Dados brutos da planilha:', jsonData);
+        console.log('[importService] Dados brutos da planilha:', jsonData);
+        
+        if (!jsonData || jsonData.length === 0) {
+          const erro = new Error('A planilha não contém dados');
+          console.error('[importService] Erro:', erro);
+          reject(erro);
+          return;
+        }
+        
+        console.log('[importService] Total de linhas encontradas:', jsonData.length);
         
         // Mapear cabeçalhos para nosso formato interno
+        console.log('[importService] Mapeando cabeçalhos...');
         const mappedData = mapSpreadsheetData(jsonData);
+        console.log('[importService] Mapeamento concluído, linhas válidas:', mappedData.length);
+        
         resolve(mappedData);
       } catch (error) {
-        console.error('Erro ao processar planilha:', error);
+        console.error('[importService] Erro ao processar planilha:', error);
         reject(new Error('Formato de arquivo inválido ou corrompido'));
       }
     };
     
-    reader.onerror = () => {
+    reader.onerror = (error) => {
+      console.error('[importService] Erro no FileReader:', error);
       reject(new Error('Falha ao ler o arquivo'));
     };
     
     // Ler como array buffer
+    console.log('[importService] Iniciando leitura do arquivo como ArrayBuffer...');
     reader.readAsArrayBuffer(file);
   });
 };
@@ -86,7 +125,10 @@ const mapSpreadsheetData = (jsonData: any[]): RawImportData[] => {
   
   // Obter a primeira linha para identificar colunas
   const firstRow = jsonData[0];
+  console.log('[importService] Primeira linha para análise de cabeçalhos:', firstRow);
+  
   const headers = Object.keys(firstRow);
+  console.log('[importService] Cabeçalhos encontrados:', headers);
   
   // Mapear cabeçalhos para nomes padronizados
   const headerMap: Record<string, string[]> = {
@@ -114,6 +156,15 @@ const mapSpreadsheetData = (jsonData: any[]): RawImportData[] => {
   const moedaColumn = findColumnName(headerMap.moeda);
   const origemColumn = findColumnName(headerMap.origem);
   
+  console.log('[importService] Mapeamento de colunas:', {
+    data: dataColumn,
+    valor: valorColumn,
+    bitcoin: bitcoinColumn,
+    cotacao: cotacaoColumn,
+    moeda: moedaColumn,
+    origem: origemColumn
+  });
+  
   // Verificar colunas obrigatórias
   if (!dataColumn || !valorColumn || !bitcoinColumn) {
     const missingColumns = [];
@@ -121,35 +172,69 @@ const mapSpreadsheetData = (jsonData: any[]): RawImportData[] => {
     if (!valorColumn) missingColumns.push('Valor Investido');
     if (!bitcoinColumn) missingColumns.push('Bitcoin');
     
-    throw new Error(`Colunas obrigatórias não encontradas: ${missingColumns.join(', ')}`);
+    const erro = new Error(`Colunas obrigatórias não encontradas: ${missingColumns.join(', ')}`);
+    console.error('[importService] Erro de validação:', erro);
+    throw erro;
   }
   
+  console.log('[importService] Iniciando processamento das linhas...');
+  
   // Mapear todos os dados
-  return jsonData.map((row: any): RawImportData => {
-    // Processar valores para garantir tipos corretos
-    let valorInvestido = parseFloat(String(row[valorColumn]).replace(',', '.'));
-    let bitcoin = parseFloat(String(row[bitcoinColumn]).replace(',', '.'));
-    
-    // Validar valores
-    if (isNaN(valorInvestido)) {
-      throw new Error(`Valor investido inválido na linha: ${JSON.stringify(row)}`);
+  const mappedData = jsonData.map((row: any, index: number): RawImportData => {
+    try {
+      // Processar valores para garantir tipos corretos
+      console.log(`[importService] Processando linha ${index + 1}:`, row);
+      
+      let valorInvestido: number;
+      try {
+        valorInvestido = parseFloat(String(row[valorColumn]).replace(',', '.'));
+        console.log(`[importService] Valor investido processado: ${valorInvestido}`);
+      } catch (e) {
+        console.error(`[importService] Erro ao processar valor investido na linha ${index + 1}:`, e);
+        throw new Error(`Valor investido inválido na linha ${index + 1}: ${row[valorColumn]}`);
+      }
+      
+      let bitcoin: number;
+      try {
+        bitcoin = parseFloat(String(row[bitcoinColumn]).replace(',', '.'));
+        console.log(`[importService] Quantidade de Bitcoin processada: ${bitcoin}`);
+      } catch (e) {
+        console.error(`[importService] Erro ao processar quantidade de Bitcoin na linha ${index + 1}:`, e);
+        throw new Error(`Quantidade de Bitcoin inválida na linha ${index + 1}: ${row[bitcoinColumn]}`);
+      }
+      
+      // Validar valores
+      if (isNaN(valorInvestido)) {
+        const erro = new Error(`Valor investido inválido na linha ${index + 1}: ${row[valorColumn]}`);
+        console.error('[importService] Erro de validação:', erro);
+        throw erro;
+      }
+      if (isNaN(bitcoin)) {
+        const erro = new Error(`Quantidade de Bitcoin inválida na linha ${index + 1}: ${row[bitcoinColumn]}`);
+        console.error('[importService] Erro de validação:', erro);
+        throw erro;
+      }
+      
+      // Processar data
+      let dataValue = row[dataColumn];
+      console.log(`[importService] Data original: ${dataValue}`);
+      
+      return {
+        data: dataValue,
+        valorInvestido,
+        bitcoin,
+        cotacao: cotacaoColumn ? parseFloat(String(row[cotacaoColumn]).replace(',', '.')) : undefined,
+        moeda: moedaColumn ? normalizeValorMoeda(row[moedaColumn]) : 'BRL',
+        origem: origemColumn ? normalizeValorOrigem(row[origemColumn]) : 'corretora'
+      };
+    } catch (error) {
+      console.error(`[importService] Erro ao processar linha ${index + 1}:`, error);
+      throw error;
     }
-    if (isNaN(bitcoin)) {
-      throw new Error(`Quantidade de Bitcoin inválida na linha: ${JSON.stringify(row)}`);
-    }
-    
-    // Processar data
-    let dataValue = row[dataColumn];
-    
-    return {
-      data: dataValue,
-      valorInvestido,
-      bitcoin,
-      cotacao: cotacaoColumn ? parseFloat(String(row[cotacaoColumn]).replace(',', '.')) : undefined,
-      moeda: moedaColumn ? normalizeValorMoeda(row[moedaColumn]) : 'BRL',
-      origem: origemColumn ? normalizeValorOrigem(row[origemColumn]) : 'corretora'
-    };
   });
+  
+  console.log('[importService] Processamento concluído com sucesso:', mappedData);
+  return mappedData;
 };
 
 /**
@@ -192,45 +277,58 @@ export const prepareImportedEntries = (
   rawData: RawImportData[], 
   userId: string
 ): { supabaseEntries: any[], appEntries: BitcoinEntry[] } => {
+  console.log('[importService] Preparando dados para importação, total de linhas:', rawData.length);
+  
   const supabaseEntries: any[] = [];
   const appEntries: BitcoinEntry[] = [];
   
   for (const item of rawData) {
     try {
+      console.log('[importService] Processando item:', item);
+      
       // Processar data no formato DD/MM/AAAA, MM/DD/AAAA ou Date
       let entryDate: Date;
       
       if (item.data instanceof Date) {
         entryDate = item.data;
+        console.log('[importService] Data já é um objeto Date:', entryDate);
       } else {
         // Tentar formatos comuns
         const dateParts = String(item.data).split(/[/.-]/);
+        console.log('[importService] Partes da data:', dateParts);
         
         // Verificar formato DD/MM/AAAA (ou com separadores - ou .)
         if (dateParts.length === 3) {
           // Se parece com DD/MM/AAAA (dias geralmente < 31, meses < 12)
           if (parseInt(dateParts[0]) <= 31 && parseInt(dateParts[1]) <= 12) {
             entryDate = new Date(`${dateParts[2]}-${dateParts[1]}-${dateParts[0]}T00:00:00`);
+            console.log('[importService] Data interpretada como DD/MM/AAAA:', entryDate);
           } else {
             // Assumir MM/DD/AAAA (formato americano)
             entryDate = new Date(`${dateParts[2]}-${dateParts[0]}-${dateParts[1]}T00:00:00`);
+            console.log('[importService] Data interpretada como MM/DD/AAAA:', entryDate);
           }
         } else {
           // Tentar analisar como string de data
           entryDate = new Date(String(item.data));
+          console.log('[importService] Data interpretada diretamente:', entryDate);
         }
       }
       
       // Verificar se a data é válida
       if (isNaN(entryDate.getTime())) {
-        throw new Error(`Data inválida: ${item.data}`);
+        const erro = new Error(`Data inválida: ${item.data}`);
+        console.error('[importService] Erro de validação de data:', erro);
+        throw erro;
       }
       
       // Formatar para ISO String YYYY-MM-DD
       const formattedDate = entryDate.toISOString().split('T')[0];
+      console.log('[importService] Data formatada:', formattedDate);
       
       // Calcular cotação se não fornecida
       const exchangeRate = item.cotacao || (item.valorInvestido / item.bitcoin);
+      console.log('[importService] Cotação calculada:', exchangeRate);
       
       // Gerar ID único
       const id = uuidv4();
@@ -263,12 +361,15 @@ export const prepareImportedEntries = (
       
       supabaseEntries.push(supabaseEntry);
       appEntries.push(appEntry);
+      
+      console.log('[importService] Item processado com sucesso:', { id, formattedDate });
     } catch (error) {
-      console.error('Erro ao processar linha:', error);
+      console.error('[importService] Erro ao processar linha:', error);
       throw error;
     }
   }
   
+  console.log('[importService] Preparação concluída, total de itens:', supabaseEntries.length);
   return { supabaseEntries, appEntries };
 };
 
@@ -278,8 +379,12 @@ export const prepareImportedEntries = (
  * @returns Resultado da operação com contagem de registros inseridos
  */
 export const importEntriesToSupabase = async (entries: any[]): Promise<{ count: number }> => {
+  console.log('[importService] Iniciando importação para Supabase, total de registros:', entries.length);
+  
   if (!entries.length) {
-    throw new Error('Nenhum dado válido para importar');
+    const erro = new Error('Nenhum dado válido para importar');
+    console.error('[importService] Erro:', erro);
+    throw erro;
   }
   
   // Inserir em lotes de 100 para evitar limite de tamanho da requisição
@@ -288,19 +393,22 @@ export const importEntriesToSupabase = async (entries: any[]): Promise<{ count: 
   
   for (let i = 0; i < entries.length; i += batchSize) {
     const batch = entries.slice(i, i + batchSize);
+    console.log(`[importService] Processando lote ${Math.floor(i/batchSize) + 1}, tamanho: ${batch.length}`);
     
     const { error } = await supabase
       .from('aportes')
       .insert(batch);
     
     if (error) {
-      console.error('Erro ao importar lote para Supabase:', error);
+      console.error('[importService] Erro ao importar lote para Supabase:', error);
       throw new Error(`Erro ao salvar dados: ${error.message}`);
     }
     
     inserted += batch.length;
+    console.log(`[importService] Lote ${Math.floor(i/batchSize) + 1} importado com sucesso, total inserido até agora: ${inserted}`);
   }
   
+  console.log('[importService] Importação concluída com sucesso, total de registros:', inserted);
   return { count: inserted };
 };
 
@@ -316,23 +424,32 @@ export const importSpreadsheet = async (
   userId: string,
   onProgress?: (progress: number, stage: string) => void
 ): Promise<{ count: number, entries: BitcoinEntry[], previewData: BitcoinEntry[] }> => {
+  console.log('[importService] Iniciando processo de importação de planilha:', file.name);
+  
   try {
     // Fase 1: Leitura do arquivo (25%)
+    console.log('[importService] Fase 1: Leitura do arquivo');
     onProgress?.(25, 'Lendo arquivo...');
     const rawData = await readSpreadsheetFile(file);
+    console.log('[importService] Arquivo lido com sucesso, linhas encontradas:', rawData.length);
     
     // Fase 2: Processamento e validação (50%)
+    console.log('[importService] Fase 2: Processamento e validação');
     onProgress?.(50, 'Processando dados...');
     const { supabaseEntries, appEntries } = prepareImportedEntries(rawData, userId);
+    console.log('[importService] Processamento concluído, registros válidos:', appEntries.length);
     
     // Retorna dados para pré-visualização antes de inserir
+    console.log('[importService] Retornando dados para pré-visualização');
+    onProgress?.(70, 'Concluído! Visualize os dados antes de confirmar.');
+    
     return {
       count: appEntries.length,
-      entries: appEntries,
+      entries: supabaseEntries, // Modificado para enviar os objetos para Supabase
       previewData: appEntries
     };
   } catch (error) {
-    console.error('Erro durante importação:', error);
+    console.error('[importService] Erro durante importação:', error);
     throw error;
   }
 };
@@ -343,15 +460,18 @@ export const importSpreadsheet = async (
  * @returns Resultado da importação
  */
 export const confirmImport = async (entries: any[]): Promise<{ count: number }> => {
+  console.log('[importService] Iniciando confirmação de importação, total de registros:', entries.length);
+  
   try {
     // Fase 3: Importação para o Supabase
     const result = await importEntriesToSupabase(entries);
+    console.log('[importService] Importação finalizada com sucesso:', result);
     
     return {
       count: result.count
     };
   } catch (error) {
-    console.error('Erro ao confirmar importação:', error);
+    console.error('[importService] Erro ao confirmar importação:', error);
     throw error;
   }
 };

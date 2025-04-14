@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useRef } from 'react';
 import { BitcoinEntry, CurrentRate, Origin } from '@/types';
 import { calculatePercentageChange } from '@/services/bitcoinService';
@@ -97,6 +96,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
   const [isDeleteAllDialogOpen, setIsDeleteAllDialogOpen] = useState(false);
 
   const handleFileButtonClick = () => {
+    console.log('[EntriesList] Botão de seleção de arquivo clicado');
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
@@ -104,12 +104,26 @@ const EntriesList: React.FC<EntriesListProps> = ({
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] || null;
+    console.log('[EntriesList] Arquivo selecionado:', file ? { 
+      name: file.name, 
+      type: file.type, 
+      size: file.size 
+    } : 'nenhum');
+    
     if (file) {
       const fileType = file.name.split('.').pop()?.toLowerCase();
+      console.log('[EntriesList] Tipo do arquivo:', fileType);
+      
       if (fileType === 'csv' || fileType === 'xlsx') {
         setSelectedFile(file);
-        console.log('Arquivo selecionado:', file.name);
+        console.log('[EntriesList] Arquivo válido selecionado:', file.name);
+        toast({
+          title: "Arquivo selecionado",
+          description: `O arquivo ${file.name} foi selecionado para importação.`,
+          variant: "default",
+        });
       } else {
+        console.error('[EntriesList] Tipo de arquivo não suportado:', fileType);
         toast({
           title: "Tipo de arquivo não suportado",
           description: "Por favor, selecione um arquivo .csv ou .xlsx",
@@ -123,20 +137,28 @@ const EntriesList: React.FC<EntriesListProps> = ({
   };
 
   const handlePrepareImport = async () => {
+    console.log('[EntriesList] Iniciando handlePrepareImport');
+    
     if (!selectedFile || !onPrepareImport) {
+      console.error('[EntriesList] Erro: Nenhum arquivo selecionado ou função onPrepareImport não fornecida');
       return;
     }
     
     try {
+      console.log('[EntriesList] Iniciando importação do arquivo:', selectedFile.name);
       setIsImporting(true);
       
-      await onPrepareImport(selectedFile);
+      console.log('[EntriesList] Chamando onPrepareImport...');
+      const previewResult = await onPrepareImport(selectedFile);
+      console.log('[EntriesList] Preview obtido com sucesso, registros:', previewResult.length);
       
       // Fechar o modal de importação e abrir o de pré-visualização
+      console.log('[EntriesList] Fechando modal de importação e abrindo modal de pré-visualização');
       setIsImportDialogOpen(false);
       setIsPreviewDialogOpen(true);
       
     } catch (error) {
+      console.error('[EntriesList] Erro na preparação da importação:', error);
       toast({
         title: "Erro na preparação",
         description: error instanceof Error ? error.message : "Ocorreu um erro ao processar a planilha",
@@ -420,7 +442,16 @@ const EntriesList: React.FC<EntriesListProps> = ({
   };
 
   const renderPreviewTable = () => {
-    if (previewData.length === 0) return null;
+    console.log('[EntriesList] Renderizando tabela de pré-visualização com dados:', previewData.length);
+    
+    if (previewData.length === 0) {
+      console.log('[EntriesList] Sem dados para pré-visualização');
+      return (
+        <div className="py-4 text-center text-muted-foreground">
+          Nenhum dado encontrado para pré-visualização
+        </div>
+      );
+    }
     
     return (
       <div className="overflow-x-auto">
@@ -622,7 +653,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
         
         <div className="flex justify-between mt-4">
           <div>
-            {/* Botão para excluir todos os aportes de planilha, só exibe se houver registros de planilha */}
             {entries.some(entry => entry.registrationSource === 'planilha') && (
               <Button
                 variant="outline"
@@ -790,7 +820,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
         </CardContent>
       </Card>
 
-      {/* Modal de Edição */}
       <Dialog open={isEditDialogOpen} onOpenChange={(open) => {
         setIsEditDialogOpen(open);
         if (!open) {
@@ -815,7 +844,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
         </DialogContent>
       </Dialog>
       
-      {/* Modal de Exclusão */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-sm rounded-2xl px-6">
           <DialogHeader>
@@ -845,7 +873,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
         </DialogContent>
       </Dialog>
       
-      {/* Modal de Exclusão em Lote para aportes importados */}
       <Dialog open={isDeleteAllDialogOpen} onOpenChange={setIsDeleteAllDialogOpen}>
         <DialogContent className="sm:max-w-sm rounded-2xl px-6">
           <DialogHeader>
@@ -875,16 +902,19 @@ const EntriesList: React.FC<EntriesListProps> = ({
         </DialogContent>
       </Dialog>
       
-      {/* Modal de Importação de Planilha */}
       <Dialog open={isImportDialogOpen} onOpenChange={(open) => {
+        console.log('[EntriesList] Modal de importação onOpenChange:', open, 'importProgress.isImporting:', importProgress.isImporting);
         if (!importProgress.isImporting) {
           setIsImportDialogOpen(open);
           if (!open) {
+            console.log('[EntriesList] Limpando dados de importação ao fechar modal');
             setSelectedFile(null);
             if (fileInputRef.current) {
               fileInputRef.current.value = '';
             }
           }
+        } else {
+          console.log('[EntriesList] Ignorando tentativa de fechar modal durante importação');
         }
       }}>
         <DialogContent className="sm:max-w-lg rounded-2xl px-6 max-h-[90vh] overflow-y-auto">
@@ -943,9 +973,12 @@ const EntriesList: React.FC<EntriesListProps> = ({
               </Button>
               
               {selectedFile && (
-                <p className="text-xs text-muted-foreground mt-2">
-                  Arquivo selecionado: {selectedFile.name}
-                </p>
+                <div className="mt-2 p-2 bg-gray-100 rounded-md w-full">
+                  <p className="text-xs text-muted-foreground flex items-center">
+                    <FileSpreadsheet className="h-3 w-3 mr-1" />
+                    Arquivo selecionado: {selectedFile.name}
+                  </p>
+                </div>
               )}
             </div>
             
@@ -963,6 +996,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
             <Button 
               variant="outline" 
               onClick={() => {
+                console.log('[EntriesList] Botão Cancelar clicado no modal de importação');
                 if (!importProgress.isImporting) {
                   setIsImportDialogOpen(false);
                   setSelectedFile(null);
@@ -978,7 +1012,10 @@ const EntriesList: React.FC<EntriesListProps> = ({
             <Button 
               className="bg-bitcoin hover:bg-bitcoin/90 text-white"
               disabled={!selectedFile || importProgress.isImporting}
-              onClick={handlePrepareImport}
+              onClick={() => {
+                console.log('[EntriesList] Botão Avançar clicado, selectedFile:', selectedFile?.name);
+                handlePrepareImport();
+              }}
             >
               {importProgress.isImporting ? 'Processando...' : 'Avançar'}
             </Button>
@@ -986,13 +1023,16 @@ const EntriesList: React.FC<EntriesListProps> = ({
         </DialogContent>
       </Dialog>
       
-      {/* Modal de Preview da importação */}
       <Dialog open={isPreviewDialogOpen} onOpenChange={(open) => {
+        console.log('[EntriesList] Modal de pré-visualização onOpenChange:', open, 'importProgress.isImporting:', importProgress.isImporting);
         if (!importProgress.isImporting) {
           setIsPreviewDialogOpen(open);
           if (!open && onCancelImport) {
+            console.log('[EntriesList] Cancelando importação ao fechar modal de pré-visualização');
             onCancelImport();
           }
+        } else {
+          console.log('[EntriesList] Ignorando tentativa de fechar modal durante importação');
         }
       }}>
         <DialogContent className="sm:max-w-5xl md:max-w-4xl rounded-2xl px-6 max-h-[90vh] overflow-y-auto">
@@ -1013,7 +1053,10 @@ const EntriesList: React.FC<EntriesListProps> = ({
           <DialogFooter className="flex justify-end gap-3 mt-4 sticky bottom-0 bg-background pt-2">
             <Button 
               variant="outline" 
-              onClick={handleCancelImport}
+              onClick={() => {
+                console.log('[EntriesList] Botão Cancelar clicado no modal de pré-visualização');
+                handleCancelImport();
+              }}
               disabled={importProgress.isImporting}
             >
               Cancelar
@@ -1021,7 +1064,10 @@ const EntriesList: React.FC<EntriesListProps> = ({
             <Button 
               className="bg-green-600 hover:bg-green-700 text-white"
               disabled={previewData.length === 0 || importProgress.isImporting}
-              onClick={handleConfirmImport}
+              onClick={() => {
+                console.log('[EntriesList] Botão Confirmar importação clicado, previewData:', previewData.length);
+                handleConfirmImport();
+              }}
             >
               <CheckCircle className="h-4 w-4 mr-2" />
               {importProgress.isImporting ? 'Importando...' : `Confirmar importação (${previewData.length} registros)`}

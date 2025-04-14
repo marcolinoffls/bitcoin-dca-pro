@@ -279,7 +279,10 @@ export const useBitcoinEntries = () => {
    * Retorna os dados para pré-visualização, sem salvá-los ainda
    */
   const prepareImportFromSpreadsheet = async (file: File) => {
+    console.log('[useBitcoinEntries] Iniciando prepareImportFromSpreadsheet:', file.name, file.size, file.type);
+    
     if (!user) {
+      console.error('[useBitcoinEntries] Erro: Usuário não autenticado');
       throw new Error('Usuário não autenticado');
     }
     
@@ -290,11 +293,14 @@ export const useBitcoinEntries = () => {
         isImporting: true
       });
       
+      console.log('[useBitcoinEntries] Chamando importSpreadsheet...');
+      
       // Chamar função de importação com callback de progresso
       const result = await importSpreadsheet(
         file, 
         user.id,
         (progress, stage) => {
+          console.log(`[useBitcoinEntries] Progresso de importação: ${progress}% - ${stage}`);
           setImportProgress({
             progress,
             stage,
@@ -302,6 +308,11 @@ export const useBitcoinEntries = () => {
           });
         }
       );
+      
+      console.log('[useBitcoinEntries] Resultado da importação:', { 
+        count: result.count,
+        previewDataLength: result.previewData.length
+      });
       
       // Armazenar dados para pré-visualização
       setPreviewData(result.previewData);
@@ -314,16 +325,18 @@ export const useBitcoinEntries = () => {
         isImporting: false
       });
       
+      console.log('[useBitcoinEntries] Preparação concluída, retornando dados para pré-visualização');
       return result.previewData;
     } catch (error) {
       // Em caso de erro, resetar o progresso
+      console.error('[useBitcoinEntries] Erro na preparação da importação:', error);
+      
       setImportProgress({
         progress: 0,
         stage: '',
         isImporting: false
       });
       
-      console.error('Erro na preparação da importação:', error);
       throw error;
     }
   };
@@ -332,7 +345,10 @@ export const useBitcoinEntries = () => {
    * Confirma a importação após a pré-visualização
    */
   const confirmImportEntries = async () => {
+    console.log('[useBitcoinEntries] Iniciando confirmImportEntries, pendingImport:', pendingImport.length);
+    
     if (!user || pendingImport.length === 0) {
+      console.error('[useBitcoinEntries] Erro: Nenhum dado pendente para importação ou usuário não autenticado');
       throw new Error('Nenhum dado pendente para importação');
     }
     
@@ -343,10 +359,15 @@ export const useBitcoinEntries = () => {
         isImporting: true
       });
       
+      console.log('[useBitcoinEntries] Chamando confirmImport...');
+      
       // Confirma a importação no Supabase
       const result = await confirmImport(pendingImport);
       
+      console.log('[useBitcoinEntries] Importação confirmada, resultado:', result);
+      
       // Atualizar o cache de queries para exibir os novos dados
+      console.log('[useBitcoinEntries] Invalidando cache de queries...');
       await queryClient.invalidateQueries({ queryKey: ['entries'] });
       
       // Limpar os dados de pré-visualização após importação
@@ -360,16 +381,18 @@ export const useBitcoinEntries = () => {
         isImporting: false
       });
       
+      console.log('[useBitcoinEntries] Processo de importação finalizado com sucesso');
       return result;
     } catch (error) {
       // Em caso de erro, resetar o progresso
+      console.error('[useBitcoinEntries] Erro na confirmação da importação:', error);
+      
       setImportProgress({
         progress: 0,
         stage: '',
         isImporting: false
       });
       
-      console.error('Erro na confirmação da importação:', error);
       throw error;
     }
   };
@@ -378,6 +401,7 @@ export const useBitcoinEntries = () => {
    * Cancela a importação e limpa os dados de pré-visualização
    */
   const cancelImport = () => {
+    console.log('[useBitcoinEntries] Cancelando importação');
     setPreviewData([]);
     setPendingImport([]);
     setImportProgress({
