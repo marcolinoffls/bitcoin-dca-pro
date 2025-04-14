@@ -1,3 +1,4 @@
+
 /**
  * Componente que exibe o card de "Total em Bitcoin"
  * 
@@ -32,18 +33,25 @@ const BitcoinTotalCard: React.FC<BitcoinTotalCardProps> = ({
 }) => {
   const { isVisible, toggleVisibility } = useBalanceVisibility();
   
+  // Verifica se currentRate está definido antes de usá-lo
+  const isCurrencyDataAvailable = currentRate && typeof currentRate.usd === 'number' && typeof currentRate.brl === 'number';
+  
   const totalBitcoin = calculateTotalBitcoin(entries);
   const formattedTotalBitcoin = displayUnit === 'SATS' 
     ? formatNumber(totalBitcoin * 100000000, 0)
     : formatNumber(totalBitcoin, 8);
   
-  const currentRateValue = selectedCurrency === 'USD' ? currentRate?.usd || 0 : currentRate?.brl || 0;
+  // Usa verificação de segurança ao acessar currentRate
+  const currentRateValue = isCurrencyDataAvailable 
+    ? (selectedCurrency === 'USD' ? currentRate.usd : currentRate.brl) 
+    : 0;
   const currencySymbol = selectedCurrency === 'USD' ? '$' : 'R$';
   const totalValueCurrent = totalBitcoin * currentRateValue;
   
+  // Cálculo seguro para total investido, com tratamento para conversão de moeda
   const totalInvested = entries.reduce((total, entry) => {
     const entryValue = entry.amountInvested;
-    if (entry.currency !== selectedCurrency && currentRate) {
+    if (entry.currency !== selectedCurrency && isCurrencyDataAvailable) {
       const conversionRate = currentRate.usd / currentRate.brl;
       return total + (entry.currency === 'USD' 
         ? entryValue * (1 / conversionRate) 

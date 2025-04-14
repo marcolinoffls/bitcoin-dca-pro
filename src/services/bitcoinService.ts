@@ -10,7 +10,18 @@ export const fetchCurrentBitcoinRate = async (): Promise<CurrentRate> => {
     const response = await fetch(
       "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,brl&include_last_updated_at=true"
     );
+    
+    if (!response.ok) {
+      throw new Error(`API responded with status: ${response.status}`);
+    }
+    
     const data = await response.json();
+    
+    // Verificação adicional para garantir que o objeto retornado tem a estrutura esperada
+    if (!data.bitcoin || typeof data.bitcoin.usd !== 'number' || typeof data.bitcoin.brl !== 'number') {
+      console.error("API returned unexpected data structure:", data);
+      throw new Error("Invalid data structure received from API");
+    }
     
     return {
       usd: data.bitcoin.usd,
@@ -39,15 +50,26 @@ export const fetchBitcoinPriceVariation = async (): Promise<PriceVariation> => {
       "https://api.coingecko.com/api/v3/coins/bitcoin?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false"
     );
     
+    if (!response.ok) {
+      throw new Error(`API responded with status: ${response.status}`);
+    }
+    
     const data = await response.json();
+    
+    // Verificação adicional para garantir que o objeto retornado tem a estrutura esperada
+    if (!data.market_data) {
+      console.error("API returned unexpected data structure:", data);
+      throw new Error("Invalid data structure received from API");
+    }
+    
     const marketData = data.market_data;
     
-    // Extraindo as variações percentuais
+    // Extraindo as variações percentuais com verificações adicionais
     return {
-      day: marketData.price_change_percentage_24h || 0,
-      week: marketData.price_change_percentage_7d || 0,
-      month: marketData.price_change_percentage_30d || 0,
-      year: marketData.price_change_percentage_1y || 0,
+      day: typeof marketData.price_change_percentage_24h === 'number' ? marketData.price_change_percentage_24h : 0,
+      week: typeof marketData.price_change_percentage_7d === 'number' ? marketData.price_change_percentage_7d : 0,
+      month: typeof marketData.price_change_percentage_30d === 'number' ? marketData.price_change_percentage_30d : 0,
+      year: typeof marketData.price_change_percentage_1y === 'number' ? marketData.price_change_percentage_1y : 0,
       timestamp: new Date()
     };
   } catch (error) {

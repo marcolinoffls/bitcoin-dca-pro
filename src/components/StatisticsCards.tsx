@@ -35,6 +35,9 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
 }) => {
   const [selectedPeriod, setSelectedPeriod] = useState<'month' | 'year' | 'all'>('month');
   
+  // Verifica se currentRate está definido antes de acessá-lo
+  const isCurrencyDataAvailable = currentRate && typeof currentRate.usd === 'number' && typeof currentRate.brl === 'number';
+  
   // Calcula o preço médio com base na seleção de moeda
   const calculateAvgPrice = (period: 'month' | 'year' | 'all') => {
     // Obtém o preço médio ponderado na moeda original (BRL)
@@ -42,8 +45,8 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
     
     if (avgPriceLocal <= 0) return 0;
     
-    // Adicionando verificação de segurança para currentRate e suas propriedades
-    if (selectedCurrency === 'USD' && currentRate && currentRate.usd > 0 && currentRate.brl > 0) {
+    // Verifica se os dados da moeda estão disponíveis antes de fazer a conversão
+    if (selectedCurrency === 'USD' && isCurrencyDataAvailable) {
       // Convert from BRL to USD using the current exchange rate
       return avgPriceLocal * (currentRate.usd / currentRate.brl);
     }
@@ -61,8 +64,10 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
       ? avgPriceYear 
       : avgPriceAll;
   
-  // Adicionando verificações de segurança
-  const currentRateValue = currentRate && selectedCurrency === 'USD' ? currentRate.usd : currentRate?.brl || 0;
+  // Adicionando verificações de segurança para evitar acesso a propriedades de undefined
+  const currentRateValue = isCurrencyDataAvailable
+    ? (selectedCurrency === 'USD' ? currentRate.usd : currentRate.brl)
+    : 0;
   const currencySymbol = selectedCurrency === 'USD' ? '$' : 'R$';
 
   // Componente de carregamento
