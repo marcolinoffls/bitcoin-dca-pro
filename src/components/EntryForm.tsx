@@ -44,7 +44,7 @@ interface EntryFormProps {
     exchangeRate: number,
     currency: 'BRL' | 'USD',
     date: Date,
-    origin: 'corretora' | 'p2p' | 'planilha'
+    origin: 'corretora' | 'p2p'
   ) => void;
   currentRate: { usd: number; brl: number };
   editingEntry?: {
@@ -54,7 +54,7 @@ interface EntryFormProps {
     btcAmount: number;
     exchangeRate: number;
     currency: 'BRL' | 'USD';
-    origin?: 'corretora' | 'p2p' | 'planilha';
+    origin?: 'corretora' | 'p2p';
   };
   onCancelEdit?: () => void;
   displayUnit?: 'BTC' | 'SATS';

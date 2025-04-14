@@ -48,7 +48,7 @@ interface SupabaseAporte {
   bitcoin: number;
   cotacao: number;
   moeda: 'BRL' | 'USD';
-  origem_aporte: 'corretora' | 'p2p' | 'planilha';
+  origem_aporte: 'corretora' | 'p2p';
   origem_registro: 'manual' | 'planilha';
   user_id: string;
   cotacao_moeda: string;
@@ -162,7 +162,8 @@ export const useBitcoinEntries = () => {
       cotacao: exchangeRate,
       moeda: currency,
       cotacao_moeda: currency,
-      origem_aporte: origin
+      origem_aporte: origin,
+      origem_registro: 'manual' // Registro manual por padrão
     }]);
     
     if (error) throw error;

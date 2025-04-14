@@ -11,22 +11,22 @@ import React, { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useBitcoinEntries } from "@/hooks/useBitcoinEntries";
-import { BitcoinEntry, CurrentRate } from "@/types";
-import { formatBitcoinValue, formatCurrencyValue, formatNumber } from "@/lib/utils";
+import { BitcoinEntry, CurrentRate, Origin } from "@/types";
+import { formatNumber } from "@/lib/utils";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { format } from "date-fns";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import OriginSelector from "./form/OriginSelector";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { ptBR } from 'date-fns/locale';
-import { format } from "date-fns";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useToast } from "@/hooks/use-toast";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import OriginSelector from "./form/OriginSelector";
 
 interface EntryEditFormProps {
   entry: BitcoinEntry;
@@ -52,9 +52,13 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
   const [exchangeRate, setExchangeRate] = useState<string>(entry.exchangeRate.toString());
   const [currency, setCurrency] = useState<'BRL' | 'USD'>(entry.currency);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [origin, setOrigin] = useState<"corretora" | "p2p">(
-    entry.origin === "planilha" ? "corretora" : entry.origin as "corretora" | "p2p"
-  );
+  
+  // Garantindo que o valor de origem seja sempre 'corretora' ou 'p2p'
+  const initialOrigin: Origin = entry.origin === "corretora" || entry.origin === "p2p" 
+    ? entry.origin 
+    : "corretora";
+  
+  const [origin, setOrigin] = useState<Origin>(initialOrigin);
 
   const updateMutation = useMutation({
     mutationFn: async () => {
@@ -127,6 +131,11 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
     }
   }, [amount, bitcoinAmount]);
 
+  // Funções para formatação de valores
+  const formatCurrencyValue = (value: number): string => {
+    return formatNumber(value, 2);
+  };
+
   const handleAmountChange = (value: string) => {
     // Remover qualquer caractere que não seja número ou vírgula/ponto
     const cleanedValue = value.replace(/[^\d,.]/g, '').replace(/\./g, '').replace(',', '.');
@@ -176,6 +185,11 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
     } catch (error) {
       console.error("Erro ao converter para BTC:", error);
     }
+  };
+
+  // Função para formatar valor de Bitcoin
+  const formatBitcoinValue = (value: number): string => {
+    return formatNumber(value, 8);
   };
 
   const handleSubmit = (e: React.FormEvent) => {

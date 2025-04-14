@@ -27,5 +27,6 @@ export interface PriceVariation {
   timestamp: Date;   // Data/hora da última atualização
 }
 
+// Definição dos tipos de origem de aporte
 export type Origin = "corretora" | "p2p";
 export type RegistrationSource = "manual" | "planilha";

@@ -232,6 +232,9 @@ export const prepareImportedEntries = (
       // Calcular cotação se não fornecida
       const exchangeRate = item.cotacao || (item.valorInvestido / item.bitcoin);
       
+      // Normalizar a origem (garantir que seja apenas 'corretora' ou 'p2p')
+      const normalizedOrigin = item.origem ? normalizeValorOrigem(item.origem) : 'corretora';
+      
       // Gerar ID único
       const id = uuidv4();
       
@@ -245,7 +248,7 @@ export const prepareImportedEntries = (
         cotacao: exchangeRate,
         moeda: item.moeda || 'BRL',
         cotacao_moeda: item.moeda || 'BRL',
-        origem_aporte: item.origem || 'corretora',
+        origem_aporte: normalizedOrigin,  // Garante que seja 'corretora' ou 'p2p'
         origem_registro: 'planilha'  // Define que veio de importação
       };
       
@@ -257,7 +260,7 @@ export const prepareImportedEntries = (
         btcAmount: item.bitcoin,
         exchangeRate,
         currency: item.moeda || 'BRL',
-        origin: item.origem || 'corretora',
+        origin: normalizedOrigin,  // Garante que seja 'corretora' ou 'p2p'
         registrationSource: 'planilha'  // Propriedade para rastrear a origem do registro
       };
       
