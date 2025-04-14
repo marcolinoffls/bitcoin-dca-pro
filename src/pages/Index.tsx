@@ -1,4 +1,4 @@
-// Importações principais
+// Importações principais de hooks, componentes e utilitários
 import React, { useState, useEffect } from 'react';
 import { useBitcoinRate } from '@/hooks/useBitcoinRate';
 import EntryForm from '@/components/EntryForm';
@@ -15,19 +15,17 @@ import { useToast } from '@/hooks/use-toast';
 import { useBitcoinEntries } from '@/hooks/useBitcoinEntries';
 import { BitcoinEntry } from '@/types';
 
-/**
- * Página principal do aplicativo Bitcoin DCA Pro
- * Exibe os cards de estatísticas, cotação, formulário de novo aporte e lista de aportes.
- */
+// Componente principal da dashboard
 const Index = () => {
   const {
     currentRate: bitcoinRate,
     priceVariation,
     isLoading: isRateLoading,
-    updateCurrentRate: fetchRateUpdate,
+    updateCurrentRate: fetchRateUpdate
   } = useBitcoinRate();
 
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
+  
   const {
     entries,
     isLoading: isEntriesLoading,
@@ -36,10 +34,16 @@ const Index = () => {
     editEntry,
     cancelEdit,
     deleteEntry,
-    refetch: refetchEntries,
+    refetch: refetchEntries
   } = useBitcoinEntries();
 
-  // Recarrega os aportes após o login do usuário
+  const [selectedCurrency, setSelectedCurrency] = useState<'BRL' | 'USD'>('BRL');
+  const [displayUnit, setDisplayUnit] = useState<'BTC' | 'SATS'>('BTC');
+
+  const isMobile = useIsMobile();
+  const { signOut } = useAuth();
+  const { toast } = useToast();
+
   useEffect(() => {
     if (user) {
       setTimeout(() => {
@@ -48,22 +52,24 @@ const Index = () => {
     }
   }, [user?.id, refetchEntries]);
 
-  // Estado para moeda e unidade de exibição
-  const [selectedCurrency, setSelectedCurrency] = useState<'BRL' | 'USD'>('BRL');
-  const [displayUnit, setDisplayUnit] = useState<'BTC' | 'SATS'>('BTC');
-  const isMobile = useIsMobile();
+  // Troca entre BTC e SATS
+  const toggleDisplayUnit = (value: 'BTC' | 'SATS') => {
+    setDisplayUnit(value);
+  };
 
-  const toggleDisplayUnit = (value: 'BTC' | 'SATS') => setDisplayUnit(value);
-  const toggleCurrency = (value: 'BRL' | 'USD') => setSelectedCurrency(value);
+  // Troca entre BRL e USD
+  const toggleCurrency = (value: 'BRL' | 'USD') => {
+    setSelectedCurrency(value);
+  };
 
-  // Manipulação de adição e edição de aporte
+  // Lógica de novo aporte
   const handleAddEntry = (
     amountInvested: number,
     btcAmount: number,
     exchangeRate: number,
     currency: 'BRL' | 'USD',
     date: Date,
-    origin: 'corretora' | 'p2p'
+    origin: 'corretora' | 'p2p' | 'planilha'
   ) => {
     addEntry({ amountInvested, btcAmount, exchangeRate, currency, date, origin });
   };
@@ -75,8 +81,8 @@ const Index = () => {
 
   const handleEditEntry = (entry: BitcoinEntry | string) => {
     if (typeof entry === 'string') {
-      const found = entries.find(e => e.id === entry);
-      if (found) editEntry(found);
+      const foundEntry = entries.find(e => e.id === entry);
+      if (foundEntry) editEntry(foundEntry);
     } else {
       editEntry(entry);
     }
@@ -84,29 +90,29 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="container mx-auto py-6 px-4 max-w-5xl">
-        {/* Cabeçalho com logo e botão de logout */}
+      <div className="container mx-auto py-6 px-4 max-w-6xl">
+        {/* TOPO COM LOGO, NOME E SAIR */}
         <header className="mb-6">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-              {/* Logo do Bitcoin */}
+              {/* Ícone Bitcoin */}
               <div className="h-8 w-8">
-                <img
+                <img 
                   src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/bitcoin%20logo%20oficial%20sem%20nome%20100px.png"
                   alt="Bitcoin Logo"
                   className="h-full w-full object-contain"
                 />
               </div>
-              {/* Logo texto do app */}
+              {/* Nome em imagem */}
               <div className="h-5">
-                <img
+                <img 
                   src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/public/fontes//Bitcoin%20dca%20pro%20-%20caixa%20alta%20(1).png"
                   alt="Bitcoin DCA Pro"
                   className="h-full object-contain"
                 />
               </div>
             </div>
-            <div className="flex items-center">
+            <div>
               <Button
                 variant="outline"
                 size="sm"
@@ -114,50 +120,51 @@ const Index = () => {
                 className="flex items-center gap-1"
               >
                 <LogOut size={16} />
-                <span className={isMobile ? 'hidden' : 'inline'}>Sair</span>
+                <span className={isMobile ? "hidden" : "inline"}>Sair</span>
               </Button>
             </div>
           </div>
-          <div className="flex justify-between items-center">
-            <p className="text-muted-foreground text-sm">
+          <div className="flex items-center justify-between">
+            <p className={`text-muted-foreground ${isMobile ? "text-xs" : ""}`}>
               Stay Humble and Stack Sats
             </p>
           </div>
         </header>
 
-        {/* Botões de seleção de moeda e unidade */}
+        {/* Seletor de unidade (BTC/SATS) e moeda (BRL/USD) */}
         <div className="flex justify-center gap-4 mb-6">
           <ToggleDisplayUnit displayUnit={displayUnit} onToggle={toggleDisplayUnit} />
           <ToggleCurrency selectedCurrency={selectedCurrency} onToggle={toggleCurrency} />
         </div>
 
-        {/* Cards principais */}
+        {/* ---------- BLOCO PRINCIPAL (CARDS + FORM + LISTA) ---------- */}
         <div className="flex flex-col gap-6">
-          {/* Cards em grid: Total, Preço Médio e Cotação */}
+          {/* 3 CARDS EM GRID DE 3 COLUNAS (total, preço médio, cotação) */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Card de Total Investido + BTC */}
+            <StatisticsCards
+              entries={entries}
+              currentRate={bitcoinRate}
+              selectedCurrency={selectedCurrency}
+              displayUnit={displayUnit}
+              isLoading={isEntriesLoading}
+            />
+
+            {/* Card de Preço Médio */}
             <div className="h-full">
-              <StatisticsCards
-                entries={entries}
-                currentRate={bitcoinRate}
-                selectedCurrency={selectedCurrency}
-                displayUnit={displayUnit}
-                isLoading={isEntriesLoading}
-              />
+              {/* Já incluso dentro do StatisticsCards */}
             </div>
 
-            <div className="h-full hidden md:block">{/* Espaço reservado */}</div>
-
-            <div className="h-full">
-              <CurrentRateCard
-                currentRate={bitcoinRate}
-                priceVariation={priceVariation}
-                isLoading={isRateLoading}
-                onRefresh={fetchRateUpdate}
-              />
-            </div>
+            {/* Card de Cotação Atual */}
+            <CurrentRateCard
+              currentRate={bitcoinRate}
+              priceVariation={priceVariation}
+              isLoading={isRateLoading}
+              onRefresh={fetchRateUpdate}
+            />
           </div>
 
-          {/* Formulário de novo aporte */}
+          {/* Formulário de Aportes */}
           <EntryForm
             onAddEntry={handleAddEntry}
             currentRate={bitcoinRate}
@@ -166,7 +173,7 @@ const Index = () => {
             editingEntry={editingEntry}
           />
 
-          {/* Lista de aportes registrados */}
+          {/* Lista de Aportes */}
           <EntriesList
             entries={entries}
             currentRate={bitcoinRate}
