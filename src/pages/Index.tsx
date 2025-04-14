@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useBitcoinRate } from '@/hooks/useBitcoinRate';
 import EntryForm from '@/components/EntryForm';
@@ -153,8 +154,10 @@ const Index = () => {
         </div>
 
         <div className="flex flex-col gap-6">
+          {/* Seção dos três cards principais com grid responsivo */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
+            {/* Card de Portfolio */}
+            <div className="h-full">
               <StatisticsCards
                 entries={entries}
                 currentRate={bitcoinRate}
@@ -164,10 +167,12 @@ const Index = () => {
               />
             </div>
             
-            <div className="hidden md:block">
+            {/* Card de Preço Médio (espaço reservado que já estava no código original) */}
+            <div className="hidden md:block h-full">
             </div>
             
-            <div>
+            {/* Card de Cotação Atual */}
+            <div className="h-full">
               <CurrentRateCard
                 currentRate={bitcoinRate}
                 priceVariation={priceVariation}
@@ -177,6 +182,7 @@ const Index = () => {
             </div>
           </div>
 
+          {/* Card de Formulário de Entrada */}
           <div>
             <EntryForm
               onAddEntry={handleAddEntry}
@@ -187,6 +193,7 @@ const Index = () => {
             />
           </div>
 
+          {/* Card de Lista de Aportes */}
           <div>
             <EntriesList
               entries={entries}

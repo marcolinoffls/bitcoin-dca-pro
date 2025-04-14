@@ -19,9 +19,10 @@ export function Toaster() {
         // Adiciona ícone automaticamente para toasts de sucesso
         const showSuccessIcon = variant === 'success';
         // Adiciona ícone de Bitcoin para toasts relacionados ao Bitcoin
-        const showBitcoinIcon = title?.toLowerCase().includes('bitcoin') || 
-                               description?.toLowerCase().includes('bitcoin') ||
-                               variant === 'default' && title?.toLowerCase().includes('bitcoin');
+        const showBitcoinIcon = 
+          typeof title === 'string' && title.toLowerCase().includes('bitcoin') || 
+          typeof description === 'string' && description.toLowerCase().includes('bitcoin') ||
+          variant === 'default' && typeof title === 'string' && title.toLowerCase().includes('bitcoin');
         
         return (
           <Toast key={id} variant={variant} {...props}>
