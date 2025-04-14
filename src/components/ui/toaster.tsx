@@ -10,9 +10,6 @@ import {
 } from "@/components/ui/toast"
 import { CheckCircle, Bitcoin } from "lucide-react"
 
-// Tipos expandidos para incluir a variante bitcoin
-type ExtendedVariant = 'default' | 'destructive' | 'success' | 'warning' | 'bitcoin';
-
 export function Toaster() {
   const { toasts } = useToast()
 
@@ -22,14 +19,12 @@ export function Toaster() {
         // Adiciona ícone automaticamente para toasts de sucesso
         const showSuccessIcon = variant === 'success';
         // Adiciona ícone de Bitcoin para toasts relacionados ao Bitcoin
-        // Verifica se title e description são strings antes de chamar toLowerCase
-        const showBitcoinIcon = 
-          (typeof title === 'string' && title.toLowerCase().includes('bitcoin')) || 
-          (typeof description === 'string' && description.toLowerCase().includes('bitcoin')) ||
-          variant === 'bitcoin';
+        const showBitcoinIcon = title?.toLowerCase().includes('bitcoin') || 
+                               description?.toLowerCase().includes('bitcoin') ||
+                               variant === 'bitcoin';
         
         return (
-          <Toast key={id} variant={variant as ExtendedVariant} {...props}>
+          <Toast key={id} variant={variant} {...props}>
             <div className="flex items-start gap-2">
               {/* Adiciona ícone de Bitcoin quando o toast mencionar Bitcoin */}
               {showBitcoinIcon && (

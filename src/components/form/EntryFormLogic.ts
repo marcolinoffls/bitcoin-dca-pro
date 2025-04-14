@@ -17,16 +17,14 @@
  * - Convertido valores string para number para manipulação mais segura
  * - Mantido formato de exibição para o usuário com strings formatadas
  * - Adicionada função setExchangeRate para permitir definir a taxa diretamente
- * - Definido BRL como moeda padrão inicial (ao invés de detectar)
- * - Exportada função handleOriginChange diretamente para corrigir erro de referência
  */
 
 import { useCallback, useEffect, useState } from 'react';
 import { formatNumber } from '@/lib/utils';
 
-export type Currency = 'BRL' | 'USD';
-export type DisplayUnit = 'BTC' | 'SATS';
-export type Origin = 'corretora' | 'p2p' | 'planilha';
+type Currency = 'BRL' | 'USD';
+type DisplayUnit = 'BTC' | 'SATS';
+type Origin = 'corretora' | 'p2p' | 'planilha';
 
 interface CurrentRate {
   usd: number;
@@ -53,7 +51,7 @@ export const useEntryFormLogic = (
   const [btcAmount, setBtcAmount] = useState<string>('');               // valor em BTC ou SATS como string formatada
   const [exchangeRate, setExchangeRate] = useState<number>(0);          // número puro para cálculos
   const [exchangeRateDisplay, setExchangeRateDisplay] = useState<string>(''); // string formatada para exibição
-  const [currency, setCurrency] = useState<Currency>('BRL');            // MODIFICADO: BRL como padrão
+  const [currency, setCurrency] = useState<Currency>('BRL');
   const [origin, setOrigin] = useState<Origin>('corretora');
   const [date, setDate] = useState<Date>(new Date());
 
@@ -124,13 +122,6 @@ export const useEntryFormLogic = (
   };
 
   /**
-   * Atualiza a origem do aporte
-   */
-  const handleOriginChange = (newOrigin: Origin) => {
-    setOrigin(newOrigin);
-  };
-
-  /**
    * Calcula manualmente o valor em BTC ou SATS com base no valor investido
    * Esta função agora só é chamada quando o usuário clica no botão de calcular,
    * e não mais automaticamente quando o valor investido é alterado
@@ -171,7 +162,7 @@ export const useEntryFormLogic = (
     setBtcAmount('');
     setExchangeRate(0);
     setExchangeRateDisplay('');
-    setCurrency('BRL'); // MODIFICADO: Garante que BRL seja sempre o padrão ao resetar
+    setCurrency('BRL');
     setOrigin('corretora');
     setDate(new Date());
   }, []);
@@ -186,7 +177,6 @@ export const useEntryFormLogic = (
     setExchangeRateDisplay,
     setExchangeRate,
     currency,
-    setCurrency,
     origin,
     date,
     setDate,
@@ -195,7 +185,7 @@ export const useEntryFormLogic = (
     handleExchangeRateChange,
     calculateFromAmount,
     calculateFromBtc,
-    handleOriginChange, // Agora exportado diretamente
+    handleOriginChange: setOrigin,
     reset
   };
 };

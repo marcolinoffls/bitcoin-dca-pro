@@ -18,8 +18,6 @@
  * - Removido o botão "Usar cotação atual" para evitar inconsistências
  * - Campos de valor e quantidade de BTC são totalmente independentes
  * - Adicionado feedback visual e sonoro ao registrar um aporte com sucesso
- * - Definido BRL como moeda padrão
- * - Ajustado para trocar para BRL ao importar do Satisfaction
  */
 
 import React, { useEffect, useState } from 'react';
@@ -29,7 +27,7 @@ import CurrencyField from '@/components/form/CurrencyField';
 import AmountField from '@/components/form/AmountField';
 import BtcAmountField from '@/components/form/BtcAmountField';
 import ExchangeRateField from '@/components/form/ExchangeRateField';
-import OriginSelector, { Origin } from '@/components/form/OriginSelector';
+import OriginSelector from '@/components/form/OriginSelector';
 import FormActions from '@/components/form/FormActions';
 import { useEntryFormLogic } from '@/components/form/EntryFormLogic';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -84,15 +82,14 @@ const EntryForm: React.FC<EntryFormProps> = ({
     handleExchangeRateChange,
     setExchangeRate,
     currency,
-    setCurrency, 
     origin,
     date,
     setDate,
     parseLocalNumber,
     handleCurrencyChange,
+    handleOriginChange,
     calculateFromAmount,
     calculateFromBtc,
-    handleOriginChange,
     reset
   } = useEntryFormLogic(editingEntry, currentRate, displayUnit);
 
@@ -144,10 +141,6 @@ const EntryForm: React.FC<EntryFormProps> = ({
 
   // Abrir o modal de importação do Satisfaction
   const openSatisfactionModal = () => {
-    // ADICIONADO: Força a seleção de BRL quando abre o modal do Satisfaction
-    if (currency !== 'BRL') {
-      handleCurrencyChange('BRL');
-    }
     setIsSatisfactionModalOpen(true);
   };
 
