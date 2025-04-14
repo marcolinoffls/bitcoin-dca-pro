@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -19,6 +20,14 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { ptBR } from 'date-fns/locale';
 
+/**
+ * Componente: EntryEditForm
+ * 
+ * Formulário para edição de aportes existentes.
+ * Permite alterar todos os campos (data, valor, quantidade, cotação, moeda e origem).
+ * 
+ * É chamado pelo EntriesList quando o usuário clica no botão de editar.
+ */
 interface EntryEditFormProps {
   entry: BitcoinEntry;
   currentRate: CurrentRate;

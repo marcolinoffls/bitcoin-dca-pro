@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { BitcoinEntry, CurrentRate, Origin } from '@/types';
+import { BitcoinEntry, CurrentRate, Origin, RegistrationSource } from '@/types';
 import { calculatePercentageChange } from '@/services/bitcoinService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -80,11 +80,11 @@ const EntriesList: React.FC<EntriesListProps> = ({
   
   const [monthFilter, setMonthFilter] = useState<string | null>(null);
   const [originFilter, setOriginFilter] = useState<Origin | null>(null);
-  const [registrationSourceFilter, setRegistrationSourceFilter] = useState<'manual' | 'planilha' | null>(null);
+  const [registrationSourceFilter, setRegistrationSourceFilter] = useState<RegistrationSource | null>(null);
   
   const [tempMonthFilter, setTempMonthFilter] = useState<string | null>(null);
   const [tempOriginFilter, setTempOriginFilter] = useState<Origin | null>(null);
-  const [tempRegistrationSourceFilter, setTempRegistrationSourceFilter] = useState<'manual' | 'planilha' | null>(null);
+  const [tempRegistrationSourceFilter, setTempRegistrationSourceFilter] = useState<RegistrationSource | null>(null);
   const [isFilterActive, setIsFilterActive] = useState(false);
   
   const [rowsToShow, setRowsToShow] = useState<number>(10);
@@ -131,7 +131,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
       
       await onPrepareImport(selectedFile);
       
-      // Fechar o modal de importação e abrir o de pré-visualização
       setIsImportDialogOpen(false);
       setIsPreviewDialogOpen(true);
       
@@ -621,7 +620,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
         
         <div className="flex justify-between mt-4">
           <div>
-            {/* Botão para excluir todos os aportes de planilha, só exibe se houver registros de planilha */}
             {entries.some(entry => entry.registrationSource === 'planilha') && (
               <Button
                 variant="outline"
@@ -789,7 +787,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
         </CardContent>
       </Card>
 
-      {/* Modal de Edição */}
       <Dialog open={isEditDialogOpen} onOpenChange={(open) => {
         setIsEditDialogOpen(open);
         if (!open) {
@@ -814,7 +811,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
         </DialogContent>
       </Dialog>
       
-      {/* Modal de Exclusão */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-sm rounded-2xl px-6">
           <DialogHeader>
@@ -844,7 +840,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
         </DialogContent>
       </Dialog>
       
-      {/* Modal de Exclusão em Lote para aportes importados */}
       <Dialog open={isDeleteAllDialogOpen} onOpenChange={setIsDeleteAllDialogOpen}>
         <DialogContent className="sm:max-w-sm rounded-2xl px-6">
           <DialogHeader>
@@ -874,7 +869,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
         </DialogContent>
       </Dialog>
       
-      {/* Modal de Importação de Planilha */}
       <Dialog open={isImportDialogOpen} onOpenChange={(open) => {
         if (!importProgress.isImporting) {
           setIsImportDialogOpen(open);
@@ -992,7 +986,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
         </DialogContent>
       </Dialog>
       
-      {/* Modal de Preview da importação */}
       <Dialog open={isPreviewDialogOpen} onOpenChange={(open) => {
         if (!importProgress.isImporting) {
           setIsPreviewDialogOpen(open);
