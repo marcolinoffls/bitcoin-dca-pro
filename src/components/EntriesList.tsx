@@ -1,6 +1,5 @@
-
 import React, { useState, useMemo, useRef } from 'react';
-import { BitcoinEntry, CurrentRate } from '@/types';
+import { BitcoinEntry, CurrentRate, Origin } from '@/types';
 import { calculatePercentageChange } from '@/services/bitcoinService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -62,7 +61,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
   importProgress = { progress: 0, stage: '', isImporting: false },
   onImportFile
 }) => {
-  // Referência para o input de arquivo
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   
@@ -72,11 +70,9 @@ const EntriesList: React.FC<EntriesListProps> = ({
   const [viewCurrency, setViewCurrency] = useState<'BRL' | 'USD'>(selectedCurrency);
   const isMobile = useIsMobile();
   
-  // Estados para os filtros ativos
   const [monthFilter, setMonthFilter] = useState<string | null>(null);
   const [originFilter, setOriginFilter] = useState<'corretora' | 'p2p' | 'planilha' | null>(null);
   
-  // Estados para os filtros temporários (não aplicados até confirmação)
   const [tempMonthFilter, setTempMonthFilter] = useState<string | null>(null);
   const [tempOriginFilter, setTempOriginFilter] = useState<'corretora' | 'p2p' | 'planilha' | null>(null);
   const [isFilterActive, setIsFilterActive] = useState(false);
@@ -87,30 +83,25 @@ const EntriesList: React.FC<EntriesListProps> = ({
   const [isImporting, setIsImporting] = useState(false);
   const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
 
-  // Função para acionar o input de arquivo ao clicar no botão
   const handleFileButtonClick = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
 
-  // Função para lidar com a seleção de arquivo
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] || null;
     if (file) {
-      // Verifica se o arquivo é do tipo .csv ou .xlsx
       const fileType = file.name.split('.').pop()?.toLowerCase();
       if (fileType === 'csv' || fileType === 'xlsx') {
         setSelectedFile(file);
         console.log('Arquivo selecionado:', file.name);
       } else {
-        // Feedback para o usuário sobre tipo de arquivo não suportado
         toast({
           title: "Tipo de arquivo não suportado",
           description: "Por favor, selecione um arquivo .csv ou .xlsx",
           variant: "destructive",
         });
-        // Limpar o input
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
@@ -118,7 +109,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
     }
   };
 
-  // Função para iniciar a importação do arquivo
   const handleStartImport = async () => {
     if (!selectedFile || !onImportFile) {
       return;
@@ -127,17 +117,14 @@ const EntriesList: React.FC<EntriesListProps> = ({
     try {
       setIsImporting(true);
       
-      // Chamar função de importação passada via props
       const result = await onImportFile(selectedFile);
       
-      // Mostrar toast de sucesso
       toast({
         title: "Importação concluída!",
         description: `Foram adicionados ${result.count} aportes à sua carteira.`,
         variant: "success",
       });
       
-      // Fechar o modal e limpar o arquivo selecionado
       setIsImportDialogOpen(false);
       setSelectedFile(null);
       if (fileInputRef.current) {
@@ -145,7 +132,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
       }
       
     } catch (error) {
-      // Mostrar toast de erro
       toast({
         title: "Erro na importação",
         description: error instanceof Error ? error.message : "Ocorreu um erro ao importar a planilha",
@@ -179,12 +165,10 @@ const EntriesList: React.FC<EntriesListProps> = ({
     onEdit('');
   };
 
-  // Funções para abrir e fechar o modal de importação
   const openImportDialog = () => {
     setIsImportDialogOpen(true);
   };
 
-  // Inicializar filtros temporários com os valores atuais quando o popover é aberto
   const handleFilterPopoverOpenChange = (open: boolean) => {
     setIsFilterPopoverOpen(open);
     if (open) {
@@ -193,7 +177,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
     }
   };
 
-  // Aplicar filtros ao clicar no botão de confirmar
   const applyFilters = () => {
     setMonthFilter(tempMonthFilter);
     setOriginFilter(tempOriginFilter);
@@ -201,7 +184,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
     setIsFilterPopoverOpen(false);
   };
 
-  // Função para limpar todos os filtros
   const clearFilters = () => {
     setMonthFilter(null);
     setOriginFilter(null);
@@ -210,12 +192,10 @@ const EntriesList: React.FC<EntriesListProps> = ({
     setIsFilterActive(false);
   };
 
-  // Aplicar filtros nas entradas
   const filteredEntries = useMemo(() => {
     if (!entries) return [];
     
     return entries.filter(entry => {
-      // Filtro por mês
       if (monthFilter) {
         const entryMonth = format(entry.date, 'yyyy-MM');
         if (entryMonth !== monthFilter) {
@@ -223,7 +203,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
         }
       }
       
-      // Filtro por origem
       if (originFilter && entry.origin !== originFilter) {
         return false;
       }
@@ -232,14 +211,12 @@ const EntriesList: React.FC<EntriesListProps> = ({
     });
   }, [entries, monthFilter, originFilter]);
   
-  // Ordenar entradas por data (mais recentes primeiro)
   const sortedEntries = useMemo(() => {
     return [...filteredEntries].sort(
       (a, b) => b.date.getTime() - a.date.getTime()
     ).slice(0, rowsToShow);
   }, [filteredEntries, rowsToShow]);
 
-  // Obter meses únicos para o filtro
   const availableMonths = useMemo(() => {
     const months: {[key: string]: string} = {};
     
@@ -323,7 +300,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
     return formatNumber(amount, 8);
   };
 
-  // Calcular os totais para a linha de resumo
   const calculateTotals = (currencyView: 'BRL' | 'USD') => {
     const totals = {
       totalInvested: 0,
@@ -335,25 +311,21 @@ const EntriesList: React.FC<EntriesListProps> = ({
     
     if (filteredEntries.length === 0) return totals;
     
-    // Calcular totais
     filteredEntries.forEach(entry => {
       let investedValue = entry.amountInvested;
       
-      // Converter moeda se necessário
       if (entry.currency !== currencyView) {
         investedValue = entry.currency === 'USD'
-          ? entry.amountInvested * (currentRate.brl / currentRate.usd) // USD to BRL
-          : entry.amountInvested / (currentRate.brl / currentRate.usd); // BRL to USD
+          ? entry.amountInvested * (currentRate.brl / currentRate.usd)
+          : entry.amountInvested / (currentRate.brl / currentRate.usd);
       }
       
       totals.totalInvested += investedValue;
       totals.totalBtc += entry.btcAmount;
     });
     
-    // Calcular preço médio
     totals.avgPrice = totals.totalBtc !== 0 ? totals.totalInvested / totals.totalBtc : 0;
     
-    // Calcular variação percentual e valor atual
     const currentRateValue = currencyView === 'USD' ? currentRate.usd : currentRate.brl;
     totals.percentChange = calculatePercentageChange(totals.avgPrice, currentRateValue);
     totals.currentValue = totals.totalBtc * currentRateValue;
@@ -386,8 +358,8 @@ const EntriesList: React.FC<EntriesListProps> = ({
               
               if (entry.currency !== currencyView) {
                 entryRateInViewCurrency = entry.currency === 'USD' 
-                  ? entry.exchangeRate * (currentRate.brl / currentRate.usd) // USD to BRL
-                  : entry.exchangeRate / (currentRate.brl / currentRate.usd); // BRL to USD
+                  ? entry.exchangeRate * (currentRate.brl / currentRate.usd)
+                  : entry.exchangeRate / (currentRate.brl / currentRate.usd);
               }
               
               const percentChange = calculatePercentageChange(
@@ -398,8 +370,8 @@ const EntriesList: React.FC<EntriesListProps> = ({
               let investedValue = entry.amountInvested;
               if (entry.currency !== currencyView) {
                 investedValue = entry.currency === 'USD'
-                  ? entry.amountInvested * (currentRate.brl / currentRate.usd) // USD to BRL
-                  : entry.amountInvested / (currentRate.brl / currentRate.usd); // BRL to USD
+                  ? entry.amountInvested * (currentRate.brl / currentRate.usd)
+                  : entry.amountInvested / (currentRate.brl / currentRate.usd);
               }
               
               const currentValue = investedValue * (1 + percentChange / 100);
@@ -468,7 +440,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
               );
             })}
             
-            {/* Linha de totais */}
             <TableRow className="bg-gray-100/80 font-semibold border-t-2">
               <TableCell className={isMobile ? "text-xs py-2" : ""}>
                 TOTAIS
@@ -511,7 +482,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
           </TableBody>
         </Table>
         
-        {/* Controle de número de linhas */}
         <div className="flex justify-end mt-4">
           <div className="flex items-center">
             <span className="text-sm mr-2">Exibir:</span>
@@ -549,99 +519,89 @@ const EntriesList: React.FC<EntriesListProps> = ({
               </div>
             </CardTitle>
             
-            {/* Botões de ação */}
-            <div className="flex items-center gap-2">
-              {/* Botão de filtro com indicador visual quando filtro está ativo */}
-              <Popover open={isFilterPopoverOpen} onOpenChange={handleFilterPopoverOpenChange}>
-                <PopoverTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size={isMobile ? "sm" : "default"} 
-                    className={`flex items-center gap-2 ${isFilterActive ? 'border-bitcoin text-bitcoin' : ''}`}
-                  >
-                    <Filter size={16} className={isFilterActive ? 'text-bitcoin' : ''} />
-                    {!isMobile && <span>Filtrar</span>}
-                    {isFilterActive && (
-                      <span className="absolute top-0 right-0 h-2 w-2 bg-bitcoin rounded-full"></span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80 p-4">
-                  <div className="space-y-4">
-                    <h4 className="font-medium">Filtrar aportes</h4>
-                    
-                    {/* Filtro por mês */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Por mês</label>
-                      <Select 
-                        value={tempMonthFilter || 'all'} 
-                        onValueChange={(value) => setTempMonthFilter(value === 'all' ? null : value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Todos os meses" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Todos os meses</SelectItem>
-                          {availableMonths.map(month => (
-                            <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    {/* Filtro por origem */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Por origem</label>
-                      <Select 
-                        value={tempOriginFilter || 'all'} 
-                        onValueChange={(value) => setTempOriginFilter(value === 'all' ? null : value as 'corretora' | 'p2p' | 'planilha')}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Todas as origens" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Todas as origens</SelectItem>
-                          <SelectItem value="corretora">Corretora</SelectItem>
-                          <SelectItem value="p2p">P2P</SelectItem>
-                          <SelectItem value="planilha">Planilha</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    {/* Botões de ação */}
-                    <div className="flex flex-col gap-2 mt-4">
-                      {/* Botão para aplicar filtros */}
-                      <Button 
-                        className="w-full bg-bitcoin hover:bg-bitcoin/90 text-white" 
-                        onClick={applyFilters}
-                      >
-                        Confirmar filtros
-                      </Button>
-                      
-                      {/* Botão para limpar filtros */}
-                      <Button 
-                        variant="outline" 
-                        className="w-full" 
-                        onClick={clearFilters}
-                      >
-                        Limpar filtros
-                      </Button>
-                    </div>
+            <Popover open={isFilterPopoverOpen} onOpenChange={handleFilterPopoverOpenChange}>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size={isMobile ? "sm" : "default"} 
+                  className={`flex items-center gap-2 ${isFilterActive ? 'border-bitcoin text-bitcoin' : ''}`}
+                >
+                  <Filter size={16} className={isFilterActive ? 'text-bitcoin' : ''} />
+                  {!isMobile && <span>Filtrar</span>}
+                  {isFilterActive && (
+                    <span className="absolute top-0 right-0 h-2 w-2 bg-bitcoin rounded-full"></span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-4">
+                <div className="space-y-4">
+                  <h4 className="font-medium">Filtrar aportes</h4>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Por mês</label>
+                    <Select 
+                      value={tempMonthFilter || 'all'} 
+                      onValueChange={(value) => setTempMonthFilter(value === 'all' ? null : value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Todos os meses" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos os meses</SelectItem>
+                        {availableMonths.map(month => (
+                          <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                </PopoverContent>
-              </Popover>
-              
-              {/* Botão para importar planilha */}
-              <Button 
-                variant="outline" 
-                size={isMobile ? "sm" : "default"}
-                className="flex items-center gap-2"
-                onClick={openImportDialog}
-              >
-                <Plus size={16} />
-                {!isMobile && <span>Importar Planilha</span>}
-              </Button>
-            </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Por origem</label>
+                    <Select 
+                      value={tempOriginFilter || 'all'} 
+                      onValueChange={(value) => setTempOriginFilter(value === 'all' ? null : value as 'corretora' | 'p2p' | 'planilha')}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Todas as origens" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas as origens</SelectItem>
+                        <SelectItem value="corretora">Corretora</SelectItem>
+                        <SelectItem value="p2p">P2P</SelectItem>
+                        <SelectItem value="planilha">Planilha</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="flex flex-col gap-2 mt-4">
+                    <Button 
+                      className="w-full bg-bitcoin hover:bg-bitcoin/90 text-white" 
+                      onClick={applyFilters}
+                    >
+                      Confirmar filtros
+                    </Button>
+                    
+                    <Button 
+                      variant="outline" 
+                      className="w-full" 
+                      onClick={clearFilters}
+                    >
+                      Limpar filtros
+                    </Button>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+            
+            <Button 
+              variant="outline" 
+              size={isMobile ? "sm" : "default"}
+              className="flex items-center gap-2"
+              onClick={openImportDialog}
+            >
+              <Plus size={16} />
+              {!isMobile && <span>Importar Planilha</span>}
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -660,7 +620,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
         </CardContent>
       </Card>
 
-      {/* Modal de edição de aporte */}
       <Dialog open={isEditDialogOpen} onOpenChange={(open) => {
         setIsEditDialogOpen(open);
         if (!open) {
@@ -685,7 +644,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
         </DialogContent>
       </Dialog>
       
-      {/* Modal de confirmação de exclusão */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-sm rounded-2xl px-6">
           <DialogHeader>
@@ -715,7 +673,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
         </DialogContent>
       </Dialog>
       
-      {/* Modal de importação de planilha */}
       <Dialog open={isImportDialogOpen} onOpenChange={(open) => {
         if (!importProgress.isImporting) {
           setIsImportDialogOpen(open);
@@ -727,24 +684,24 @@ const EntriesList: React.FC<EntriesListProps> = ({
           }
         }
       }}>
-        <DialogContent className="sm:max-w-lg rounded-2xl px-6">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-lg rounded-2xl px-6 max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="sticky top-0 bg-background z-10 py-3">
             <DialogTitle>Importar Planilha</DialogTitle>
             <DialogDescription>
               Importe seus aportes a partir de uma planilha no formato CSV ou Excel.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="rounded-lg border p-4 bg-gray-50">
-              <h3 className="text-sm font-medium mb-2">Instruções de preenchimento</h3>
-              <ul className="text-sm space-y-1">
+          <div className="space-y-3 py-2">
+            <div className="rounded-lg border p-3 bg-gray-50">
+              <h3 className="text-sm font-medium mb-1">Instruções de preenchimento</h3>
+              <ul className="text-sm space-y-0.5">
                 <li>• A planilha deve conter as colunas: <span className="font-semibold">Data, Valor Investido e Bitcoin</span></li>
                 <li>• O campo cotação é opcional - será calculado automaticamente se ausente</li>
                 <li>• Formato de data recomendado: DD/MM/AAAA</li>
                 <li>• Use vírgula ( , ) como separador decimal</li>
               </ul>
               
-              <div className="mt-3">
+              <div className="mt-2">
                 <a 
                   href="https://docs.google.com/spreadsheets/d/1gQXqirgJdUdA7ljN-IdTGHUeEAixTdBhiyCeJ9OKvvk/edit?usp=sharing" 
                   target="_blank" 
@@ -756,16 +713,15 @@ const EntriesList: React.FC<EntriesListProps> = ({
               </div>
             </div>
             
-            <div className="border rounded-lg p-8 flex flex-col items-center justify-center">
-              <Download className="h-10 w-10 text-muted-foreground mb-2" />
-              <p className="text-center text-sm text-muted-foreground mb-4">
+            <div className="border rounded-lg p-4 flex flex-col items-center justify-center">
+              <Download className="h-8 w-8 text-muted-foreground mb-2" />
+              <p className="text-center text-sm text-muted-foreground mb-2">
                 Arraste e solte seu arquivo aqui, ou clique para selecionar
               </p>
               <p className="text-xs text-muted-foreground">
                 Suporta CSV (.csv) e Excel (.xlsx)
               </p>
               
-              {/* Input file oculto */}
               <input 
                 type="file" 
                 ref={fileInputRef} 
@@ -774,17 +730,15 @@ const EntriesList: React.FC<EntriesListProps> = ({
                 onChange={handleFileChange}
               />
               
-              {/* Botão estilizado que ativa o input file */}
               <Button 
                 variant="outline" 
-                className="mt-4 w-full"
+                className="mt-3 w-full"
                 onClick={handleFileButtonClick}
               >
                 <Upload className="h-4 w-4 mr-2" />
                 Selecionar arquivo
               </Button>
               
-              {/* Exibir o nome do arquivo selecionado, se houver */}
               {selectedFile && (
                 <p className="text-xs text-muted-foreground mt-2">
                   Arquivo selecionado: {selectedFile.name}
@@ -792,9 +746,8 @@ const EntriesList: React.FC<EntriesListProps> = ({
               )}
             </div>
             
-            {/* Barra de progresso para importação */}
             {importProgress.isImporting && (
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="text-sm">{importProgress.stage}</span>
                   <span className="text-sm">{importProgress.progress}%</span>
@@ -803,7 +756,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
               </div>
             )}
           </div>
-          <DialogFooter className="flex justify-end gap-3">
+          <DialogFooter className="flex justify-end gap-3 mt-4 sticky bottom-0 bg-background pt-2">
             <Button 
               variant="outline" 
               onClick={() => {
