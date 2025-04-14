@@ -1,65 +1,128 @@
-import { useEffect, useState } from "react"
-import { formatCurrency } from "@/lib/utils"
-import { EntryForm } from "@/components/EntryForm"
-import { EntriesList } from "@/components/EntriesList"
-import { getCurrentPrice } from "@/services/priceService"
-import { BitcoinEntry } from "@/types"
-import { PriceCard } from "@/components/PriceCard"
-import { StatisticsCard } from "@/components/StatisticsCard"
-import { BitcoinIcon } from "lucide-react"
-import { useMediaQuery } from "usehooks-ts"
-import { Button } from "@/components/ui/button"
-import { useAuth } from "@/contexts/AuthContext"
-import { LogOut } from "lucide-react"
 
-export default function Index() {
-  const { user, signOut } = useAuth()
-  const isMobile = useMediaQuery("(max-width: 768px)")
+import React, { useState, useEffect } from 'react';
+import { useBitcoinRate } from '@/hooks/useBitcoinRate';
+import EntryForm from '@/components/EntryForm';
+import EntriesList from '@/components/EntriesList';
+import StatisticsCards from '@/components/StatisticsCards';
+import CurrentRateCard from '@/components/CurrentRateCard';
+import { LogOut } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import ToggleDisplayUnit from '@/components/ToggleDisplayUnit';
+import ToggleCurrency from '@/components/ToggleCurrency';
+import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { useBitcoinEntries } from '@/hooks/useBitcoinEntries';
+import { BitcoinEntry } from '@/types';
+
+/**
+ * Página principal do aplicativo
+ * 
+ * Responsável por exibir todos os componentes da dashboard e gerenciar
+ * o estado global da aplicação (aportes, cotação atual, moeda selecionada, etc.)
+ */
+const Index = () => {
+  const {
+    currentRate: bitcoinRate,
+    priceVariation,
+    isLoading: isRateLoading,
+    updateCurrentRate: fetchRateUpdate
+  } = useBitcoinRate();
+
+  const { user } = useAuth();
   
-  // Lista de aportes
-  const [entries, setEntries] = useState<BitcoinEntry[]>([])
-  // Cotação atual
-  const [currentRate, setCurrentRate] = useState({
-    USD: 0,
-    BRL: 0,
-    updatedAt: new Date().toISOString()
-  })
+  const {
+    entries,
+    isLoading: isEntriesLoading,
+    editingEntry,
+    addEntry,
+    editEntry,
+    cancelEdit,
+    deleteEntry,
+    refetch: refetchEntries
+  } = useBitcoinEntries();
 
-  // Carrega as cotações atuais
   useEffect(() => {
-    getCurrentPrice().then(setCurrentRate)
-  }, [])
+    if (user) {
+      console.log('Usuário autenticado detectado no Index, forçando refetch de aportes');
+      setTimeout(() => {
+        refetchEntries();
+      }, 100);
+    }
+  }, [user?.id, refetchEntries]);
+
+  const [selectedCurrency, setSelectedCurrency] = useState<'BRL' | 'USD'>('BRL');
+  const [displayUnit, setDisplayUnit] = useState<'BTC' | 'SATS'>('BTC');
+  const isMobile = useIsMobile();
+  const { signOut } = useAuth();
+  const { toast } = useToast();
+
+  const toggleDisplayUnit = (value: 'BTC' | 'SATS') => {
+    setDisplayUnit(value);
+  };
+
+  const toggleCurrency = (value: 'BRL' | 'USD') => {
+    setSelectedCurrency(value);
+  };
+
+  const handleAddEntry = (
+    amountInvested: number,
+    btcAmount: number,
+    exchangeRate: number,
+    currency: 'BRL' | 'USD',
+    date: Date,
+    origin: 'corretora' | 'p2p'
+  ) => {
+    addEntry({
+      amountInvested,
+      btcAmount,
+      exchangeRate,
+      currency,
+      date,
+      origin
+    });
+  };
+
+  const handleDeleteEntry = (entryIdOrEntry: string | { id: string }) => {
+    const id = typeof entryIdOrEntry === 'string' 
+      ? entryIdOrEntry 
+      : entryIdOrEntry.id;
+    
+    deleteEntry(id);
+  };
+
+  const handleEditEntry = (entry: BitcoinEntry | string) => {
+    if (typeof entry === 'string') {
+      const foundEntry = entries.find(e => e.id === entry);
+      if (foundEntry) {
+        editEntry(foundEntry);
+      }
+    } else {
+      editEntry(entry);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Container central da página */}
-      <div className="container mx-auto py-6 px-4">
-        
-        {/* ========== TOPO com logo e sair ========== */}
+      <div className="container mx-auto py-6 px-4 max-w-5xl">
         <header className="mb-6">
           <div className="flex items-center justify-between mb-3">
-            {/* Bloco com o logo do Bitcoin + texto em imagem */}
             <div className="flex items-center gap-3">
-              {/* Ícone Bitcoin */}
-              <div className="h-10 w-10">
-                <img
-                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/bitcoin%20logo%20oficial%20sem%20nome%20100px.png"
+              <div className="h-8 w-8">
+                <img 
+                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/bitcoin%20logo%20oficial%20sem%20nome%20100px.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvYml0Y29pbiBsb2dvIG9maWNpYWwgc2VtIG5vbWUgMTAwcHgucG5nIiwiaWF0IjoxNzQ0NTU4MDQ2LCJleHAiOjE4MDc2MzAwNDZ9.jmzK3PG-1LJ1r-2cqJD7OiOJItfPWA4oD8n0autKJeo" 
                   alt="Bitcoin Logo"
                   className="h-full w-full object-contain"
                 />
               </div>
-
-              {/* Imagem com o nome "Bitcoin DCA Pro" */}
-              <div className="h-8 ml-2">
-                <img
-                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/public/fontes/Bitcoin%20dca%20pro%20-%20caixa%20alta.png"
+              <div className="h-5">
+                <img 
+                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/public/fontes//Bitcoin%20dca%20pro%20-%20caixa%20alta%20(1).png" 
                   alt="Bitcoin DCA Pro"
                   className="h-full object-contain"
                 />
               </div>
             </div>
-
-            {/* Botão de sair */}
             <div className="flex items-center">
               <Button
                 variant="outline"
@@ -72,60 +135,80 @@ export default function Index() {
               </Button>
             </div>
           </div>
-
-          {/* Descrição abaixo do logo */}
           <div className="flex items-center justify-between">
-            <p
-              className={`text-muted-foreground ${
-                isMobile ? "text-xs" : ""
-              }`}
-            >
+            <p className={`text-muted-foreground ${isMobile ? "text-xs" : ""}`}>
               Stay Humble and Stack Sats
             </p>
           </div>
         </header>
 
-        {/* ======== SEO com H1 oculto ======== */}
-        <h1 className="sr-only">Bitcoin DCA Pro - acompanhe seus aportes</h1>
+        <div className="flex justify-center gap-4 mb-6">
+          <ToggleDisplayUnit
+            displayUnit={displayUnit}
+            onToggle={toggleDisplayUnit}
+          />
+          <ToggleCurrency
+            selectedCurrency={selectedCurrency}
+            onToggle={toggleCurrency}
+          />
+        </div>
 
-        {/* ========== CONTEÚDO PRINCIPAL ========== */}
-        <div className="flex flex-col gap-6 lg:grid lg:grid-cols-3 lg:grid-rows-[auto_auto_1fr]">
-          {/* ----- CARD DO PORTFÓLIO ----- */}
-          <div className="lg:col-span-1">
-            <StatisticsCard entries={entries} currentRate={currentRate} />
+        <div className="flex flex-col gap-6">
+          {/* Seção dos três cards principais com grid responsivo */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Card de Portfolio */}
+            <div className="h-full">
+              <StatisticsCards
+                entries={entries}
+                currentRate={bitcoinRate}
+                selectedCurrency={selectedCurrency}
+                displayUnit={displayUnit}
+                isLoading={isEntriesLoading}
+              />
+            </div>
+            
+            {/* Card de Preço Médio (espaço reservado que já estava no código original) */}
+            <div className="hidden md:block h-full">
+            </div>
+            
+            {/* Card de Cotação Atual */}
+            <div className="h-full">
+              <CurrentRateCard
+                currentRate={bitcoinRate}
+                priceVariation={priceVariation}
+                isLoading={isRateLoading}
+                onRefresh={fetchRateUpdate}
+              />
+            </div>
           </div>
 
-          {/* ----- CARD COTAÇÃO ----- */}
-          <div className="lg:col-span-2">
-            <PriceCard currentRate={currentRate} />
-          </div>
-
-          {/* ----- CARD PREÇO MÉDIO ----- */}
-          <div className="lg:col-span-1">
-            {/* Esse componente já possui seus próprios estilos */}
-            {/* Se quiser mover ou realocar, faça por grid */}
-            {/* Aqui está posicionado abaixo do card do portfólio */}
-          </div>
-
-          {/* ----- FORMULÁRIO DE APORTES ----- */}
-          <div className="lg:col-span-2">
+          {/* Card de Formulário de Entrada */}
+          <div>
             <EntryForm
-              currentRate={currentRate}
-              entries={entries}
-              onAddEntry={(entry) => setEntries((prev) => [entry, ...prev])}
+              onAddEntry={handleAddEntry}
+              currentRate={bitcoinRate}
+              onCancelEdit={cancelEdit}
+              displayUnit={displayUnit}
+              editingEntry={editingEntry}
             />
           </div>
 
-          {/* ----- LISTA DE APORTES REGISTRADOS ----- */}
-          <div className="lg:col-span-3">
+          {/* Card de Lista de Aportes */}
+          <div>
             <EntriesList
               entries={entries}
-              setEntries={setEntries}
-              currentRate={currentRate}
+              currentRate={bitcoinRate}
+              onDelete={handleDeleteEntry}
+              onEdit={handleEditEntry}
+              selectedCurrency={selectedCurrency}
+              displayUnit={displayUnit}
+              isLoading={isEntriesLoading}
             />
           </div>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
+
+export default Index;
