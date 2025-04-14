@@ -17,6 +17,7 @@
  * - Agora, ao cancelar a edição, o formulário principal é **resetado** e retorna ao modo original.
  * - Removido o botão "Usar cotação atual" para evitar inconsistências
  * - Campos de valor e quantidade de BTC são totalmente independentes
+ * - Adicionado feedback visual e sonoro ao registrar um aporte com sucesso
  */
 
 import React, { useEffect, useState } from 'react';
@@ -34,6 +35,7 @@ import SatisfactionImportModal from '@/components/form/SatisfactionImportModal';
 import { Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatNumber } from '@/lib/utils';
+import SuccessToast from '@/components/ui/success-toast';
 
 interface EntryFormProps {
   onAddEntry: (
@@ -67,6 +69,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
 }) => {
   const isMobile = useIsMobile();
   const [isSatisfactionModalOpen, setIsSatisfactionModalOpen] = useState(false);
+  const [successToastOpen, setSuccessToastOpen] = useState(false);
 
   // Importa a lógica do formulário (centraliza os estados e handlers)
   const {
@@ -126,6 +129,11 @@ const EntryForm: React.FC<EntryFormProps> = ({
 
     // Executa ação de criar ou editar
     onAddEntry(parsedAmount, parsedBtc, parsedRate, currency, date, origin);
+    
+    // Mostra o toast de sucesso após o envio bem-sucedido
+    if (!editingEntry) {
+      setSuccessToastOpen(true);
+    }
 
     // Limpa formulário após envio
     resetForm();
@@ -139,6 +147,11 @@ const EntryForm: React.FC<EntryFormProps> = ({
   // Fechar o modal de importação do Satisfaction
   const closeSatisfactionModal = () => {
     setIsSatisfactionModalOpen(false);
+  };
+
+  // Fechar o toast de sucesso
+  const closeSuccessToast = () => {
+    setSuccessToastOpen(false);
   };
 
   /**
@@ -271,6 +284,16 @@ const EntryForm: React.FC<EntryFormProps> = ({
         isOpen={isSatisfactionModalOpen} 
         onClose={closeSatisfactionModal} 
         onDataExtracted={handleDataExtracted}
+      />
+
+      {/* Toast de sucesso com animação e som */}
+      <SuccessToast
+        message="Aporte registrado com sucesso!"
+        isOpen={successToastOpen}
+        onClose={closeSuccessToast}
+        autoClose={true}
+        autoCloseTime={3000}
+        showBitcoin={true}
       />
     </Card>
   );

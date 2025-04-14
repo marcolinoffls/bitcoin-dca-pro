@@ -8,7 +8,7 @@ import {
   ToastTitle,
   ToastViewport,
 } from "@/components/ui/toast"
-import { CheckCircle } from "lucide-react"
+import { CheckCircle, Bitcoin } from "lucide-react"
 
 export function Toaster() {
   const { toasts } = useToast()
@@ -18,12 +18,22 @@ export function Toaster() {
       {toasts.map(function ({ id, title, description, action, variant, ...props }) {
         // Adiciona ícone automaticamente para toasts de sucesso
         const showSuccessIcon = variant === 'success';
+        // Adiciona ícone de Bitcoin para toasts relacionados ao Bitcoin
+        const showBitcoinIcon = title?.toLowerCase().includes('bitcoin') || 
+                               description?.toLowerCase().includes('bitcoin') ||
+                               variant === 'bitcoin';
         
         return (
           <Toast key={id} variant={variant} {...props}>
             <div className="flex items-start gap-2">
-              {/* Adiciona ícone de sucesso quando o toast for de sucesso */}
-              {showSuccessIcon && (
+              {/* Adiciona ícone de Bitcoin quando o toast mencionar Bitcoin */}
+              {showBitcoinIcon && (
+                <div className="mt-1">
+                  <Bitcoin className="h-5 w-5 text-bitcoin" />
+                </div>
+              )}
+              {/* Adiciona ícone de sucesso quando o toast for de sucesso e não for de Bitcoin */}
+              {showSuccessIcon && !showBitcoinIcon && (
                 <div className="mt-1">
                   <CheckCircle className="h-5 w-5" />
                 </div>
