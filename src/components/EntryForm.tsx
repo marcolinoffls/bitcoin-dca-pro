@@ -226,7 +226,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
 
           <div className="flex flex-col gap-3">
             {!editingEntry && (
-              <div className={`${isMobile ? 'flex flex-col gap-3' : 'flex justify-end gap-4'}`}>
+              <div className={`${isMobile ? 'flex flex-col gap-3' : 'flex flex-col items-end gap-3'}`}>
                 <Button 
                   type="button"
                   variant="outline"
