@@ -1,12 +1,3 @@
-
-/**
- * Componente: EntryEditForm
- * 
- * Formulário para edição de aportes existentes.
- * Permite alterar todos os campos (data, valor, quantidade, cotação, moeda e origem).
- * 
- * É chamado pelo EntriesList quando o usuário clica no botão de editar.
- */
 import React, { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";

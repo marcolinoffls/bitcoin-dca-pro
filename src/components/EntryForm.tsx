@@ -1,4 +1,3 @@
-
 /**
  * Componente: EntryForm
  * 
@@ -36,6 +35,7 @@ import { Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatNumber } from '@/lib/utils';
 import SuccessToast from '@/components/ui/success-toast';
+import { Origin } from '@/types';
 
 interface EntryFormProps {
   onAddEntry: (
@@ -71,6 +71,11 @@ const EntryForm: React.FC<EntryFormProps> = ({
   const [isSatisfactionModalOpen, setIsSatisfactionModalOpen] = useState(false);
   const [successToastOpen, setSuccessToastOpen] = useState(false);
 
+  // Ajuste para garantir tipagem correta de origem
+  const initialOrigin: Origin = editingEntry?.origin === "corretora" || editingEntry?.origin === "p2p" 
+    ? editingEntry.origin 
+    : "corretora";
+
   // Importa a lógica do formulário (centraliza os estados e handlers)
   const {
     amountInvested,
@@ -91,7 +96,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
     calculateFromAmount,
     calculateFromBtc,
     reset
-  } = useEntryFormLogic(editingEntry, currentRate, displayUnit);
+  } = useEntryFormLogic(editingEntry, currentRate, displayUnit, initialOrigin);
 
   // Corrige o bug: limpa o formulário quando o modo de edição é encerrado
   useEffect(() => {
