@@ -1,4 +1,4 @@
-
+// Importações principais
 import React, { useState, useEffect } from 'react';
 import { useBitcoinRate } from '@/hooks/useBitcoinRate';
 import EntryForm from '@/components/EntryForm';
@@ -16,21 +16,18 @@ import { useBitcoinEntries } from '@/hooks/useBitcoinEntries';
 import { BitcoinEntry } from '@/types';
 
 /**
- * Página principal do aplicativo
- * 
- * Responsável por exibir todos os componentes da dashboard e gerenciar
- * o estado global da aplicação (aportes, cotação atual, moeda selecionada, etc.)
+ * Página principal do aplicativo Bitcoin DCA Pro
+ * Exibe os cards de estatísticas, cotação, formulário de novo aporte e lista de aportes.
  */
 const Index = () => {
   const {
     currentRate: bitcoinRate,
     priceVariation,
     isLoading: isRateLoading,
-    updateCurrentRate: fetchRateUpdate
+    updateCurrentRate: fetchRateUpdate,
   } = useBitcoinRate();
 
-  const { user } = useAuth();
-  
+  const { user, signOut } = useAuth();
   const {
     entries,
     isLoading: isEntriesLoading,
@@ -39,32 +36,27 @@ const Index = () => {
     editEntry,
     cancelEdit,
     deleteEntry,
-    refetch: refetchEntries
+    refetch: refetchEntries,
   } = useBitcoinEntries();
 
+  // Recarrega os aportes após o login do usuário
   useEffect(() => {
     if (user) {
-      console.log('Usuário autenticado detectado no Index, forçando refetch de aportes');
       setTimeout(() => {
         refetchEntries();
       }, 100);
     }
   }, [user?.id, refetchEntries]);
 
+  // Estado para moeda e unidade de exibição
   const [selectedCurrency, setSelectedCurrency] = useState<'BRL' | 'USD'>('BRL');
   const [displayUnit, setDisplayUnit] = useState<'BTC' | 'SATS'>('BTC');
   const isMobile = useIsMobile();
-  const { signOut } = useAuth();
-  const { toast } = useToast();
 
-  const toggleDisplayUnit = (value: 'BTC' | 'SATS') => {
-    setDisplayUnit(value);
-  };
+  const toggleDisplayUnit = (value: 'BTC' | 'SATS') => setDisplayUnit(value);
+  const toggleCurrency = (value: 'BRL' | 'USD') => setSelectedCurrency(value);
 
-  const toggleCurrency = (value: 'BRL' | 'USD') => {
-    setSelectedCurrency(value);
-  };
-
+  // Manipulação de adição e edição de aporte
   const handleAddEntry = (
     amountInvested: number,
     btcAmount: number,
@@ -73,30 +65,18 @@ const Index = () => {
     date: Date,
     origin: 'corretora' | 'p2p'
   ) => {
-    addEntry({
-      amountInvested,
-      btcAmount,
-      exchangeRate,
-      currency,
-      date,
-      origin
-    });
+    addEntry({ amountInvested, btcAmount, exchangeRate, currency, date, origin });
   };
 
   const handleDeleteEntry = (entryIdOrEntry: string | { id: string }) => {
-    const id = typeof entryIdOrEntry === 'string' 
-      ? entryIdOrEntry 
-      : entryIdOrEntry.id;
-    
+    const id = typeof entryIdOrEntry === 'string' ? entryIdOrEntry : entryIdOrEntry.id;
     deleteEntry(id);
   };
 
   const handleEditEntry = (entry: BitcoinEntry | string) => {
     if (typeof entry === 'string') {
-      const foundEntry = entries.find(e => e.id === entry);
-      if (foundEntry) {
-        editEntry(foundEntry);
-      }
+      const found = entries.find(e => e.id === entry);
+      if (found) editEntry(found);
     } else {
       editEntry(entry);
     }
@@ -105,19 +85,22 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto py-6 px-4 max-w-5xl">
+        {/* Cabeçalho com logo e botão de logout */}
         <header className="mb-6">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
+              {/* Logo do Bitcoin */}
               <div className="h-8 w-8">
-                <img 
-                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/bitcoin%20logo%20oficial%20sem%20nome%20100px.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvYml0Y29pbiBsb2dvIG9maWNpYWwgc2VtIG5vbWUgMTAwcHgucG5nIiwiaWF0IjoxNzQ0NTU4MDQ2LCJleHAiOjE4MDc2MzAwNDZ9.jmzK3PG-1LJ1r-2cqJD7OiOJItfPWA4oD8n0autKJeo" 
+                <img
+                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/bitcoin%20logo%20oficial%20sem%20nome%20100px.png"
                   alt="Bitcoin Logo"
                   className="h-full w-full object-contain"
                 />
               </div>
+              {/* Logo texto do app */}
               <div className="h-5">
-                <img 
-                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/public/fontes//Bitcoin%20dca%20pro%20-%20caixa%20alta%20(1).png" 
+                <img
+                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/public/fontes//Bitcoin%20dca%20pro%20-%20caixa%20alta%20(1).png"
                   alt="Bitcoin DCA Pro"
                   className="h-full object-contain"
                 />
@@ -131,32 +114,27 @@ const Index = () => {
                 className="flex items-center gap-1"
               >
                 <LogOut size={16} />
-                <span className={isMobile ? "hidden" : "inline"}>Sair</span>
+                <span className={isMobile ? 'hidden' : 'inline'}>Sair</span>
               </Button>
             </div>
           </div>
-          <div className="flex items-center justify-between">
-            <p className={`text-muted-foreground ${isMobile ? "text-xs" : ""}`}>
+          <div className="flex justify-between items-center">
+            <p className="text-muted-foreground text-sm">
               Stay Humble and Stack Sats
             </p>
           </div>
         </header>
 
+        {/* Botões de seleção de moeda e unidade */}
         <div className="flex justify-center gap-4 mb-6">
-          <ToggleDisplayUnit
-            displayUnit={displayUnit}
-            onToggle={toggleDisplayUnit}
-          />
-          <ToggleCurrency
-            selectedCurrency={selectedCurrency}
-            onToggle={toggleCurrency}
-          />
+          <ToggleDisplayUnit displayUnit={displayUnit} onToggle={toggleDisplayUnit} />
+          <ToggleCurrency selectedCurrency={selectedCurrency} onToggle={toggleCurrency} />
         </div>
 
+        {/* Cards principais */}
         <div className="flex flex-col gap-6">
-          {/* Seção dos três cards principais com grid responsivo */}
+          {/* Cards em grid: Total, Preço Médio e Cotação */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Card de Portfolio */}
             <div className="h-full">
               <StatisticsCards
                 entries={entries}
@@ -166,12 +144,9 @@ const Index = () => {
                 isLoading={isEntriesLoading}
               />
             </div>
-            
-            {/* Card de Preço Médio (espaço reservado que já estava no código original) */}
-            <div className="hidden md:block h-full">
-            </div>
-            
-            {/* Card de Cotação Atual */}
+
+            <div className="h-full hidden md:block">{/* Espaço reservado */}</div>
+
             <div className="h-full">
               <CurrentRateCard
                 currentRate={bitcoinRate}
@@ -182,29 +157,25 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Card de Formulário de Entrada */}
-          <div>
-            <EntryForm
-              onAddEntry={handleAddEntry}
-              currentRate={bitcoinRate}
-              onCancelEdit={cancelEdit}
-              displayUnit={displayUnit}
-              editingEntry={editingEntry}
-            />
-          </div>
+          {/* Formulário de novo aporte */}
+          <EntryForm
+            onAddEntry={handleAddEntry}
+            currentRate={bitcoinRate}
+            onCancelEdit={cancelEdit}
+            displayUnit={displayUnit}
+            editingEntry={editingEntry}
+          />
 
-          {/* Card de Lista de Aportes */}
-          <div>
-            <EntriesList
-              entries={entries}
-              currentRate={bitcoinRate}
-              onDelete={handleDeleteEntry}
-              onEdit={handleEditEntry}
-              selectedCurrency={selectedCurrency}
-              displayUnit={displayUnit}
-              isLoading={isEntriesLoading}
-            />
-          </div>
+          {/* Lista de aportes registrados */}
+          <EntriesList
+            entries={entries}
+            currentRate={bitcoinRate}
+            onDelete={handleDeleteEntry}
+            onEdit={handleEditEntry}
+            selectedCurrency={selectedCurrency}
+            displayUnit={displayUnit}
+            isLoading={isEntriesLoading}
+          />
         </div>
       </div>
     </div>
