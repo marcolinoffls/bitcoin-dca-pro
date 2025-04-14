@@ -6,7 +6,7 @@
  * para o formato usado pela aplicação
  */
 
-import { BitcoinEntry } from '@/types';
+import { BitcoinEntry, Origin } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 
 interface WebhookResponseItem {
@@ -15,8 +15,8 @@ interface WebhookResponseItem {
   amountInvested: string | number;
   btcAmount: string | number;
   exchangeRate: string | number;
-  currency?: string;
-  origin?: string;
+  currency?: 'BRL' | 'USD';
+  origin?: Origin;
 }
 
 /**
@@ -36,3 +36,4 @@ export const transformWebhookData = (
     registrationSource: 'planilha'
   }));
 };
+
