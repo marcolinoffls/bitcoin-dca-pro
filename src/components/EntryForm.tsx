@@ -184,8 +184,8 @@ const EntryForm: React.FC<EntryFormProps> = ({
               <DatePickerField date={date} onDateChange={setDate} />
               
               <AmountField
-                value={amountInvested}
-                onValueChange={setAmountInvested}
+                amountValue={amountInvested}
+                onAmountChange={setAmountInvested}
                 currency={currency}
                 onCurrencyChange={setCurrency}
                 onBlur={updateExchangeRate}
@@ -194,8 +194,8 @@ const EntryForm: React.FC<EntryFormProps> = ({
             
             <div className="space-y-4">
               <BtcAmountField
-                value={btcAmount}
-                onValueChange={setBtcAmount}
+                btcValue={btcAmount}
+                onBtcValueChange={setBtcAmount}
                 onBlur={updateExchangeRate}
                 currentRate={currentRate}
                 currency={currency}
@@ -204,8 +204,8 @@ const EntryForm: React.FC<EntryFormProps> = ({
               />
               
               <ExchangeRateField
-                value={exchangeRate}
-                onValueChange={setExchangeRate}
+                rateValue={exchangeRate}
+                onRateChange={setExchangeRate}
                 currency={currency}
                 onUseCurrentRate={useCurrentMarketRate}
               />
@@ -218,8 +218,8 @@ const EntryForm: React.FC<EntryFormProps> = ({
           </div>
 
           <FormActions
-            isSubmitting={isSubmitting}
-            isEditing={!!editingEntry}
+            loading={isSubmitting}
+            editing={!!editingEntry}
             onCancel={editingEntry ? onCancelEdit : resetForm}
           />
         </form>
