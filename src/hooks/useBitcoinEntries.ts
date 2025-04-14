@@ -1,4 +1,3 @@
-
 /**
  * Hook: useBitcoinEntries
  *
@@ -9,19 +8,6 @@
  * - Integra com a cotação atual do Bitcoin
  *
  * Utiliza React Query para cache e atualização reativa
- * 
- * Atualizações:
- * - Adicionado suporte à nova coluna origem_registro
- * - Implementada pré-visualização de dados antes da importação
- * - Corrigido o problema de carregamento inicial após login
- * - Adicionada escuta da mudança de estado de autenticação
- * - Melhorada a invalidação de queries ao mudar o usuário
- * - Corrigido o problema de atualização da data no Supabase
- * - Adicionado log detalhado para acompanhar a atualização dos aportes
- * - Garantida a invalidação do cache de queries após operações
- * - Melhorada a validação da data para garantir que seja salva corretamente
- * - Melhorado o tratamento de erros e validação de datas
- * - Corrigido problema de timezone, forçando o horário local ao interpretar datas
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -278,7 +264,7 @@ export const useBitcoinEntries = () => {
    * Prepara a importação de aportes a partir de um arquivo de planilha
    * Retorna os dados para pré-visualização, sem salvá-los ainda
    */
-  const prepareImportFromSpreadsheet = async (file: File) => {
+  const prepareImportFromSpreadsheet = async (file: File): Promise<BitcoinEntry[]> => {
     console.log('[useBitcoinEntries] Iniciando prepareImportFromSpreadsheet:', file.name, file.size, file.type);
     
     if (!user) {
@@ -311,7 +297,8 @@ export const useBitcoinEntries = () => {
       
       console.log('[useBitcoinEntries] Resultado da importação:', { 
         count: result.count,
-        previewDataLength: result.previewData.length
+        previewDataLength: result.previewData.length,
+        previewData: result.previewData
       });
       
       // Armazenar dados para pré-visualização

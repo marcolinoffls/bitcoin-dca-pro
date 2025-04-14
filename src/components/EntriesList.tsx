@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { BitcoinEntry, CurrentRate, Origin } from '@/types';
 import { calculatePercentageChange } from '@/services/bitcoinService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,9 +19,6 @@ import { useToast } from '@/hooks/use-toast';
 
 /**
  * Interface que define as propriedades do componente EntriesList
- * 
- * Responsável por exibir a lista de aportes do usuário em formato de tabela,
- * com funcionalidades de edição, exclusão e filtragem
  */
 interface EntriesListProps {
   entries: BitcoinEntry[];
@@ -45,14 +42,6 @@ interface EntriesListProps {
 
 /**
  * Componente que exibe a lista de aportes do usuário em formato de tabela
- * 
- * Funcionalidades:
- * - Visualização de aportes em BRL ou USD
- * - Edição e exclusão de aportes
- * - Filtragem por mês, moeda e origem
- * - Controle de linhas visíveis
- * - Resumo dos totais na parte inferior
- * - Importação de planilhas CSV e Excel com pré-visualização
  */
 const EntriesList: React.FC<EntriesListProps> = ({
   entries,
@@ -94,6 +83,15 @@ const EntriesList: React.FC<EntriesListProps> = ({
   const [isImporting, setIsImporting] = useState(false);
   const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
   const [isDeleteAllDialogOpen, setIsDeleteAllDialogOpen] = useState(false);
+  const [localPreviewData, setLocalPreviewData] = useState<BitcoinEntry[]>([]);
+  
+  useEffect(() => {
+    console.log('[EntriesList] previewData prop atualizado:', previewData.length);
+    if (previewData && previewData.length > 0) {
+      setLocalPreviewData(previewData);
+      console.log('[EntriesList] Estado localPreviewData atualizado com dados de props:', previewData.length);
+    }
+  }, [previewData]);
 
   const handleFileButtonClick = () => {
     console.log('[EntriesList] Botão de seleção de arquivo clicado');
@@ -141,6 +139,11 @@ const EntriesList: React.FC<EntriesListProps> = ({
     
     if (!selectedFile || !onPrepareImport) {
       console.error('[EntriesList] Erro: Nenhum arquivo selecionado ou função onPrepareImport não fornecida');
+      toast({
+        title: "Erro",
+        description: !selectedFile ? "Nenhum arquivo selecionado" : "Função de importação não disponível",
+        variant: "destructive",
+      });
       return;
     }
     
@@ -151,6 +154,10 @@ const EntriesList: React.FC<EntriesListProps> = ({
       console.log('[EntriesList] Chamando onPrepareImport...');
       const previewResult = await onPrepareImport(selectedFile);
       console.log('[EntriesList] Preview obtido com sucesso, registros:', previewResult.length);
+      
+      // Atualizar estado local com os dados recebidos
+      setLocalPreviewData(previewResult);
+      console.log('[EntriesList] Estado localPreviewData atualizado com', previewResult.length, 'registros');
       
       // Fechar o modal de importação e abrir o de pré-visualização
       console.log('[EntriesList] Fechando modal de importação e abrindo modal de pré-visualização');
@@ -442,9 +449,10 @@ const EntriesList: React.FC<EntriesListProps> = ({
   };
 
   const renderPreviewTable = () => {
-    console.log('[EntriesList] Renderizando tabela de pré-visualização com dados:', previewData.length);
+    const dataToShow = localPreviewData;
+    console.log('[EntriesList] Renderizando tabela de pré-visualização com dados:', dataToShow.length);
     
-    if (previewData.length === 0) {
+    if (!dataToShow || dataToShow.length === 0) {
       console.log('[EntriesList] Sem dados para pré-visualização');
       return (
         <div className="py-4 text-center text-muted-foreground">
@@ -467,7 +475,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {previewData.map((entry, index) => (
+            {dataToShow.map((entry, index) => (
               <TableRow key={index}>
                 <TableCell className="text-xs py-2">
                   {format(entry.date, 'dd/MM/yyyy', { locale: ptBR })}
@@ -493,7 +501,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
           </TableBody>
         </Table>
         <div className="mt-4 text-sm text-center text-muted-foreground">
-          {previewData.length} aportes encontrados na planilha
+          {dataToShow.length} aportes encontrados na planilha
         </div>
       </div>
     );
@@ -1024,12 +1032,13 @@ const EntriesList: React.FC<EntriesListProps> = ({
       </Dialog>
       
       <Dialog open={isPreviewDialogOpen} onOpenChange={(open) => {
-        console.log('[EntriesList] Modal de pré-visualização onOpenChange:', open, 'importProgress.isImporting:', importProgress.isImporting);
+        console.log('[EntriesList] Modal de pré-visualização onOpenChange:', open, 'importProgress.isImporting:', importProgress.isImporting, 'localPreviewData.length:', localPreviewData.length);
         if (!importProgress.isImporting) {
           setIsPreviewDialogOpen(open);
           if (!open && onCancelImport) {
             console.log('[EntriesList] Cancelando importação ao fechar modal de pré-visualização');
             onCancelImport();
+            setLocalPreviewData([]);
           }
         } else {
           console.log('[EntriesList] Ignorando tentativa de fechar modal durante importação');
@@ -1056,6 +1065,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
               onClick={() => {
                 console.log('[EntriesList] Botão Cancelar clicado no modal de pré-visualização');
                 handleCancelImport();
+                setLocalPreviewData([]);
               }}
               disabled={importProgress.isImporting}
             >
@@ -1063,14 +1073,14 @@ const EntriesList: React.FC<EntriesListProps> = ({
             </Button>
             <Button 
               className="bg-green-600 hover:bg-green-700 text-white"
-              disabled={previewData.length === 0 || importProgress.isImporting}
+              disabled={localPreviewData.length === 0 || importProgress.isImporting}
               onClick={() => {
-                console.log('[EntriesList] Botão Confirmar importação clicado, previewData:', previewData.length);
+                console.log('[EntriesList] Botão Confirmar importação clicado, localPreviewData:', localPreviewData.length);
                 handleConfirmImport();
               }}
             >
               <CheckCircle className="h-4 w-4 mr-2" />
-              {importProgress.isImporting ? 'Importando...' : `Confirmar importação (${previewData.length} registros)`}
+              {importProgress.isImporting ? 'Importando...' : `Confirmar importação (${localPreviewData.length} registros)`}
             </Button>
           </DialogFooter>
         </DialogContent>

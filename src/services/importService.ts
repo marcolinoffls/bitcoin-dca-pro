@@ -423,7 +423,7 @@ export const importSpreadsheet = async (
   file: File,
   userId: string,
   onProgress?: (progress: number, stage: string) => void
-): Promise<{ count: number, entries: BitcoinEntry[], previewData: BitcoinEntry[] }> => {
+): Promise<{ count: number, entries: any[], previewData: BitcoinEntry[] }> => {
   console.log('[importService] Iniciando processo de importação de planilha:', file.name);
   
   try {
@@ -440,13 +440,16 @@ export const importSpreadsheet = async (
     console.log('[importService] Processamento concluído, registros válidos:', appEntries.length);
     
     // Retorna dados para pré-visualização antes de inserir
-    console.log('[importService] Retornando dados para pré-visualização');
+    console.log('[importService] Retornando dados para pré-visualização:', {
+      count: appEntries.length,
+      previewDataLength: appEntries.length
+    });
     onProgress?.(70, 'Concluído! Visualize os dados antes de confirmar.');
     
     return {
       count: appEntries.length,
-      entries: supabaseEntries, // Modificado para enviar os objetos para Supabase
-      previewData: appEntries
+      entries: supabaseEntries, // Dados para o Supabase
+      previewData: appEntries // Dados formatados para o app
     };
   } catch (error) {
     console.error('[importService] Erro durante importação:', error);
