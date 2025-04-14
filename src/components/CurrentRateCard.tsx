@@ -55,13 +55,13 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
         <div className={`flex items-center ${isPositive ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
           {isPositive ? (
             <Triangle 
-              className="h-3 w-3 mr-1 fill-current" 
+              className="h-2 w-2 mr-1 fill-current" 
               strokeWidth={0} 
               fill="currentColor" 
             />
           ) : (
             <Triangle 
-              className="h-3 w-3 mr-1 fill-current rotate-180" 
+              className="h-2 w-2 mr-1 fill-current rotate-180" 
               strokeWidth={0} 
               fill="currentColor" 
             />
