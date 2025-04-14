@@ -7,6 +7,7 @@ export interface BitcoinEntry {
   exchangeRate: number;
   currency: 'BRL' | 'USD';
   origin?: 'corretora' | 'p2p' | 'planilha';
+  registrationSource?: 'manual' | 'planilha';
 }
 
 export interface CurrentRate {
@@ -27,3 +28,4 @@ export interface PriceVariation {
 }
 
 export type Origin = "corretora" | "p2p" | "planilha";
+export type RegistrationSource = "manual" | "planilha";

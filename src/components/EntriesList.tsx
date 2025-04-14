@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useRef } from 'react';
 import { BitcoinEntry, CurrentRate, Origin } from '@/types';
 import { calculatePercentageChange } from '@/services/bitcoinService';
@@ -6,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { TrendingDown, TrendingUp, Trash2, Edit, AlertCircle, Filter, Plus, Upload, Download } from 'lucide-react';
+import { TrendingDown, TrendingUp, Trash2, Edit, AlertCircle, Filter, Plus, Upload, Download, FileSpreadsheet, CheckCircle } from 'lucide-react';
 import { formatNumber } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import EntryEditForm from '@/components/EntryEditForm';
@@ -36,7 +37,11 @@ interface EntriesListProps {
     stage: string;
     isImporting: boolean;
   };
-  onImportFile?: (file: File) => Promise<{ count: number, entries: BitcoinEntry[] }>;
+  previewData?: BitcoinEntry[];
+  onPrepareImport?: (file: File) => Promise<BitcoinEntry[]>;
+  onConfirmImport?: () => Promise<{ count: number }>;
+  onCancelImport?: () => void;
+  onDeleteAllSpreadsheetRecords?: () => Promise<void>;
 }
 
 /**
@@ -48,7 +53,7 @@ interface EntriesListProps {
  * - Filtragem por mês, moeda e origem
  * - Controle de linhas visíveis
  * - Resumo dos totais na parte inferior
- * - Importação de planilhas CSV e Excel
+ * - Importação de planilhas CSV e Excel com pré-visualização
  */
 const EntriesList: React.FC<EntriesListProps> = ({
   entries,
@@ -59,7 +64,11 @@ const EntriesList: React.FC<EntriesListProps> = ({
   displayUnit,
   isLoading = false,
   importProgress = { progress: 0, stage: '', isImporting: false },
-  onImportFile
+  previewData = [],
+  onPrepareImport,
+  onConfirmImport,
+  onCancelImport,
+  onDeleteAllSpreadsheetRecords
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -71,17 +80,21 @@ const EntriesList: React.FC<EntriesListProps> = ({
   const isMobile = useIsMobile();
   
   const [monthFilter, setMonthFilter] = useState<string | null>(null);
-  const [originFilter, setOriginFilter] = useState<'corretora' | 'p2p' | 'planilha' | null>(null);
+  const [originFilter, setOriginFilter] = useState<Origin | null>(null);
+  const [registrationSourceFilter, setRegistrationSourceFilter] = useState<'manual' | 'planilha' | null>(null);
   
   const [tempMonthFilter, setTempMonthFilter] = useState<string | null>(null);
-  const [tempOriginFilter, setTempOriginFilter] = useState<'corretora' | 'p2p' | 'planilha' | null>(null);
+  const [tempOriginFilter, setTempOriginFilter] = useState<Origin | null>(null);
+  const [tempRegistrationSourceFilter, setTempRegistrationSourceFilter] = useState<'manual' | 'planilha' | null>(null);
   const [isFilterActive, setIsFilterActive] = useState(false);
   
   const [rowsToShow, setRowsToShow] = useState<number>(10);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
+  const [isDeleteAllDialogOpen, setIsDeleteAllDialogOpen] = useState(false);
 
   const handleFileButtonClick = () => {
     if (fileInputRef.current) {
@@ -109,15 +122,40 @@ const EntriesList: React.FC<EntriesListProps> = ({
     }
   };
 
-  const handleStartImport = async () => {
-    if (!selectedFile || !onImportFile) {
+  const handlePrepareImport = async () => {
+    if (!selectedFile || !onPrepareImport) {
       return;
     }
     
     try {
       setIsImporting(true);
       
-      const result = await onImportFile(selectedFile);
+      await onPrepareImport(selectedFile);
+      
+      // Fechar o modal de importação e abrir o de pré-visualização
+      setIsImportDialogOpen(false);
+      setIsPreviewDialogOpen(true);
+      
+    } catch (error) {
+      toast({
+        title: "Erro na preparação",
+        description: error instanceof Error ? error.message : "Ocorreu um erro ao processar a planilha",
+        variant: "destructive",
+      });
+    } finally {
+      setIsImporting(false);
+    }
+  };
+  
+  const handleConfirmImport = async () => {
+    if (!onConfirmImport) {
+      return;
+    }
+    
+    try {
+      setIsImporting(true);
+      
+      const result = await onConfirmImport();
       
       toast({
         title: "Importação concluída!",
@@ -125,7 +163,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
         variant: "success",
       });
       
-      setIsImportDialogOpen(false);
+      setIsPreviewDialogOpen(false);
       setSelectedFile(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
@@ -139,6 +177,42 @@ const EntriesList: React.FC<EntriesListProps> = ({
       });
     } finally {
       setIsImporting(false);
+    }
+  };
+  
+  const handleCancelImport = () => {
+    if (onCancelImport) {
+      onCancelImport();
+    }
+    
+    setIsPreviewDialogOpen(false);
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+  
+  const handleDeleteAllSpreadsheet = async () => {
+    if (!onDeleteAllSpreadsheetRecords) {
+      return;
+    }
+    
+    try {
+      await onDeleteAllSpreadsheetRecords();
+      
+      toast({
+        title: "Registros excluídos",
+        description: "Todos os registros importados de planilha foram removidos.",
+        variant: "success",
+      });
+      
+      setIsDeleteAllDialogOpen(false);
+    } catch (error) {
+      toast({
+        title: "Erro na exclusão",
+        description: error instanceof Error ? error.message : "Ocorreu um erro ao excluir os registros",
+        variant: "destructive",
+      });
     }
   };
 
@@ -174,21 +248,29 @@ const EntriesList: React.FC<EntriesListProps> = ({
     if (open) {
       setTempMonthFilter(monthFilter);
       setTempOriginFilter(originFilter);
+      setTempRegistrationSourceFilter(registrationSourceFilter);
     }
   };
 
   const applyFilters = () => {
     setMonthFilter(tempMonthFilter);
     setOriginFilter(tempOriginFilter);
-    setIsFilterActive(tempMonthFilter !== null || tempOriginFilter !== null);
+    setRegistrationSourceFilter(tempRegistrationSourceFilter);
+    setIsFilterActive(
+      tempMonthFilter !== null || 
+      tempOriginFilter !== null || 
+      tempRegistrationSourceFilter !== null
+    );
     setIsFilterPopoverOpen(false);
   };
 
   const clearFilters = () => {
     setMonthFilter(null);
     setOriginFilter(null);
+    setRegistrationSourceFilter(null);
     setTempMonthFilter(null);
     setTempOriginFilter(null);
+    setTempRegistrationSourceFilter(null);
     setIsFilterActive(false);
   };
 
@@ -207,9 +289,13 @@ const EntriesList: React.FC<EntriesListProps> = ({
         return false;
       }
       
+      if (registrationSourceFilter && entry.registrationSource !== registrationSourceFilter) {
+        return false;
+      }
+      
       return true;
     });
-  }, [entries, monthFilter, originFilter]);
+  }, [entries, monthFilter, originFilter, registrationSourceFilter]);
   
   const sortedEntries = useMemo(() => {
     return [...filteredEntries].sort(
@@ -333,6 +419,55 @@ const EntriesList: React.FC<EntriesListProps> = ({
     return totals;
   };
 
+  const renderPreviewTable = () => {
+    if (previewData.length === 0) return null;
+    
+    return (
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className={isMobile ? "text-xs" : ""}>Data</TableHead>
+              <TableHead className={isMobile ? "text-xs" : ""}>Valor Investido</TableHead>
+              <TableHead className={isMobile ? "text-xs" : ""}>{displayUnit === 'SATS' ? 'Satoshis' : 'Bitcoin'}</TableHead>
+              <TableHead className={isMobile ? "text-xs" : ""}>Cotação</TableHead>
+              <TableHead className={isMobile ? "text-xs" : ""}>Moeda</TableHead>
+              <TableHead className={isMobile ? "text-xs" : ""}>Origem</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {previewData.map((entry, index) => (
+              <TableRow key={index}>
+                <TableCell className="text-xs py-2">
+                  {format(entry.date, 'dd/MM/yyyy', { locale: ptBR })}
+                </TableCell>
+                <TableCell className="text-xs py-2">
+                  {entry.currency === 'USD' ? '$' : 'R$'} {formatNumber(entry.amountInvested)}
+                </TableCell>
+                <TableCell className="text-xs py-2">
+                  {formatBitcoinAmount(entry.btcAmount)}
+                </TableCell>
+                <TableCell className="text-xs py-2">
+                  {entry.currency === 'USD' ? '$' : 'R$'} {formatNumber(entry.exchangeRate)}
+                </TableCell>
+                <TableCell className="text-xs py-2">
+                  {entry.currency}
+                </TableCell>
+                <TableCell className="text-xs py-2">
+                  {entry.origin === 'corretora' ? 'Corretora' : 
+                   entry.origin === 'p2p' ? 'P2P' : 'Planilha'}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        <div className="mt-4 text-sm text-center text-muted-foreground">
+          {previewData.length} aportes encontrados na planilha
+        </div>
+      </div>
+    );
+  };
+
   const renderEntriesTable = (currencyView: 'BRL' | 'USD') => {
     const totals = calculateTotals(currencyView);
     
@@ -382,6 +517,9 @@ const EntriesList: React.FC<EntriesListProps> = ({
                     {format(entry.date, 'dd/MM/yyyy', { locale: ptBR })}
                     {entry.origin === 'planilha' && (
                       <span className="ml-1 text-xs text-muted-foreground">(planilha)</span>
+                    )}
+                    {entry.registrationSource === 'planilha' && (
+                      <span className="ml-1 text-xs text-yellow-600">●</span>
                     )}
                   </TableCell>
                   <TableCell className={isMobile ? "text-xs py-2" : ""}>
@@ -482,7 +620,22 @@ const EntriesList: React.FC<EntriesListProps> = ({
           </TableBody>
         </Table>
         
-        <div className="flex justify-end mt-4">
+        <div className="flex justify-between mt-4">
+          <div>
+            {/* Botão para excluir todos os aportes de planilha, só exibe se houver registros de planilha */}
+            {entries.some(entry => entry.registrationSource === 'planilha') && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsDeleteAllDialogOpen(true)}
+                className="text-xs"
+              >
+                <Trash2 className="h-3 w-3 mr-1 text-red-500" />
+                Excluir registros de planilha
+              </Button>
+            )}
+          </div>
+          
           <div className="flex items-center">
             <span className="text-sm mr-2">Exibir:</span>
             <Select value={rowsToShow.toString()} onValueChange={(value) => setRowsToShow(parseInt(value))}>
@@ -559,7 +712,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
                     <label className="text-sm font-medium">Por origem</label>
                     <Select 
                       value={tempOriginFilter || 'all'} 
-                      onValueChange={(value) => setTempOriginFilter(value === 'all' ? null : value as 'corretora' | 'p2p' | 'planilha')}
+                      onValueChange={(value) => setTempOriginFilter(value === 'all' ? null : value as Origin)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Todas as origens" />
@@ -569,6 +722,23 @@ const EntriesList: React.FC<EntriesListProps> = ({
                         <SelectItem value="corretora">Corretora</SelectItem>
                         <SelectItem value="p2p">P2P</SelectItem>
                         <SelectItem value="planilha">Planilha</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Por tipo de registro</label>
+                    <Select 
+                      value={tempRegistrationSourceFilter || 'all'} 
+                      onValueChange={(value) => setTempRegistrationSourceFilter(value === 'all' ? null : value as 'manual' | 'planilha')}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Todos os tipos" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos os tipos</SelectItem>
+                        <SelectItem value="manual">Registros manuais</SelectItem>
+                        <SelectItem value="planilha">Importados de planilha</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -620,6 +790,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
         </CardContent>
       </Card>
 
+      {/* Modal de Edição */}
       <Dialog open={isEditDialogOpen} onOpenChange={(open) => {
         setIsEditDialogOpen(open);
         if (!open) {
@@ -644,6 +815,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
         </DialogContent>
       </Dialog>
       
+      {/* Modal de Exclusão */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-sm rounded-2xl px-6">
           <DialogHeader>
@@ -673,6 +845,37 @@ const EntriesList: React.FC<EntriesListProps> = ({
         </DialogContent>
       </Dialog>
       
+      {/* Modal de Exclusão em Lote para aportes importados */}
+      <Dialog open={isDeleteAllDialogOpen} onOpenChange={setIsDeleteAllDialogOpen}>
+        <DialogContent className="sm:max-w-sm rounded-2xl px-6">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-red-500" />
+              Excluir Registros Importados
+            </DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir todos os aportes importados de planilha? Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4 flex justify-between gap-3">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsDeleteAllDialogOpen(false)}
+              className="flex-1 rounded-xl"
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleDeleteAllSpreadsheet}
+              className="flex-1 bg-red-500 hover:bg-red-600 text-white rounded-xl"
+            >
+              Excluir todos
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Modal de Importação de Planilha */}
       <Dialog open={isImportDialogOpen} onOpenChange={(open) => {
         if (!importProgress.isImporting) {
           setIsImportDialogOpen(open);
@@ -775,9 +978,53 @@ const EntriesList: React.FC<EntriesListProps> = ({
             <Button 
               className="bg-bitcoin hover:bg-bitcoin/90 text-white"
               disabled={!selectedFile || importProgress.isImporting}
-              onClick={handleStartImport}
+              onClick={handlePrepareImport}
             >
-              {importProgress.isImporting ? 'Importando...' : 'Iniciar importação'}
+              {importProgress.isImporting ? 'Processando...' : 'Avançar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Modal de Preview da importação */}
+      <Dialog open={isPreviewDialogOpen} onOpenChange={(open) => {
+        if (!importProgress.isImporting) {
+          setIsPreviewDialogOpen(open);
+          if (!open && onCancelImport) {
+            onCancelImport();
+          }
+        }
+      }}>
+        <DialogContent className="sm:max-w-5xl md:max-w-4xl rounded-2xl px-6 max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="sticky top-0 bg-background z-10 py-3">
+            <DialogTitle className="flex items-center gap-2">
+              <FileSpreadsheet className="h-5 w-5 text-green-600" />
+              Pré-visualização da Importação
+            </DialogTitle>
+            <DialogDescription>
+              Confira os dados da planilha e confirme a importação. Verifique se os valores estão corretos antes de confirmar.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-2">
+            {renderPreviewTable()}
+          </div>
+          
+          <DialogFooter className="flex justify-end gap-3 mt-4 sticky bottom-0 bg-background pt-2">
+            <Button 
+              variant="outline" 
+              onClick={handleCancelImport}
+              disabled={importProgress.isImporting}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              className="bg-green-600 hover:bg-green-700 text-white"
+              disabled={previewData.length === 0 || importProgress.isImporting}
+              onClick={handleConfirmImport}
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              {importProgress.isImporting ? 'Importando...' : `Confirmar importação (${previewData.length} registros)`}
             </Button>
           </DialogFooter>
         </DialogContent>

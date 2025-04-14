@@ -7,6 +7,7 @@
  * - Exclui aportes
  * 
  * Atualizações:
+ * - Adicionado suporte à nova coluna origem_registro para rastrear aportes criados manualmente e por importação
  * - Corrigido problema de atualização da data não ser persistida corretamente
  * - Adicionados logs para monitorar as conversões de data
  * - Melhorada a manipulação dos valores para conversão correta entre string e number
@@ -16,7 +17,7 @@
  * - Atualizado para suportar novos tipos de origem (planilha) nos aportes
  */
 
-import { BitcoinEntry, CurrentRate } from '@/types';
+import { BitcoinEntry, CurrentRate, Origin } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -58,7 +59,8 @@ export const fetchBitcoinEntries = async () => {
       btcAmount: Number(entry.bitcoin),
       exchangeRate: Number(entry.cotacao),
       currency: entry.moeda as 'BRL' | 'USD',
-      origin: entry.origem_aporte as 'corretora' | 'p2p' | 'planilha',
+      origin: entry.origem_aporte as Origin,
+      registrationSource: entry.origem_registro as 'manual' | 'planilha'
     };
   }) || [];
   
@@ -75,7 +77,7 @@ export const createBitcoinEntry = async (
   exchangeRate: number,
   currency: 'BRL' | 'USD',
   date: Date,
-  origin: 'corretora' | 'p2p' | 'planilha'
+  origin: Origin
 ) => {
   // Validar se a data é válida
   if (!(date instanceof Date) || isNaN(date.getTime())) {
@@ -99,6 +101,7 @@ export const createBitcoinEntry = async (
       bitcoin: btcAmount,
       cotacao: exchangeRate,
       origem_aporte: origin,
+      origem_registro: 'manual', // Registros criados via formulário são 'manual'
       user_id: userId
     });
 
@@ -114,6 +117,7 @@ export const createBitcoinEntry = async (
     exchangeRate,
     currency,
     origin,
+    registrationSource: 'manual'
   };
 };
 
@@ -127,7 +131,7 @@ export const updateBitcoinEntry = async (
   exchangeRate: number,
   currency: 'BRL' | 'USD',
   date: Date,
-  origin: 'corretora' | 'p2p' | 'planilha'
+  origin: Origin
 ) => {
   // Garantir que a data é um objeto Date válido
   if (!(date instanceof Date) || isNaN(date.getTime())) {
@@ -147,6 +151,7 @@ export const updateBitcoinEntry = async (
     bitcoin: btcAmount,
     cotacao: exchangeRate,
     origem_aporte: origin
+    // Não atualizamos origem_registro para preservar a origem do registro
   };
   
   console.log('Dados completos sendo enviados para atualização:', updateData);
@@ -174,6 +179,20 @@ export const deleteBitcoinEntry = async (entryId: string) => {
     .from('aportes')
     .delete()
     .eq('id', entryId);
+
+  if (error) {
+    throw error;
+  }
+};
+
+/**
+ * Deletes all entries with registration source 'planilha'
+ */
+export const deleteAllSpreadsheetEntries = async () => {
+  const { error } = await supabase
+    .from('aportes')
+    .delete()
+    .eq('origem_registro', 'planilha');
 
   if (error) {
     throw error;

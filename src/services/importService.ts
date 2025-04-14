@@ -1,3 +1,4 @@
+
 /**
  * Serviço para importação de planilhas
  * 
@@ -244,7 +245,8 @@ export const prepareImportedEntries = (
         cotacao: exchangeRate,
         moeda: item.moeda || 'BRL',
         cotacao_moeda: item.moeda || 'BRL',
-        origem_aporte: item.origem || 'planilha' // Marcar origem como planilha
+        origem_aporte: item.origem || 'planilha', // Marcar origem como planilha
+        origem_registro: 'planilha'  // Nova coluna: define que veio de importação
       };
       
       // Objeto BitcoinEntry para o app
@@ -255,7 +257,8 @@ export const prepareImportedEntries = (
         btcAmount: item.bitcoin,
         exchangeRate,
         currency: item.moeda || 'BRL',
-        origin: item.origem || 'planilha' // Marcar origem como planilha
+        origin: item.origem || 'planilha', // Marcar origem como planilha
+        registrationSource: 'planilha'  // Nova propriedade para rastrear a origem do registro
       };
       
       supabaseEntries.push(supabaseEntry);
@@ -312,7 +315,7 @@ export const importSpreadsheet = async (
   file: File,
   userId: string,
   onProgress?: (progress: number, stage: string) => void
-): Promise<{ count: number, entries: BitcoinEntry[] }> => {
+): Promise<{ count: number, entries: BitcoinEntry[], previewData: BitcoinEntry[] }> => {
   try {
     // Fase 1: Leitura do arquivo (25%)
     onProgress?.(25, 'Lendo arquivo...');
@@ -322,19 +325,33 @@ export const importSpreadsheet = async (
     onProgress?.(50, 'Processando dados...');
     const { supabaseEntries, appEntries } = prepareImportedEntries(rawData, userId);
     
-    // Fase 3: Importação para o Supabase (75%)
-    onProgress?.(75, 'Enviando ao servidor...');
-    const result = await importEntriesToSupabase(supabaseEntries);
-    
-    // Fase 4: Concluído (100%)
-    onProgress?.(100, 'Concluído!');
-    
+    // Retorna dados para pré-visualização antes de inserir
     return {
-      count: result.count,
-      entries: appEntries
+      count: appEntries.length,
+      entries: appEntries,
+      previewData: appEntries
     };
   } catch (error) {
     console.error('Erro durante importação:', error);
+    throw error;
+  }
+};
+
+/**
+ * Confirma a importação após a pré-visualização
+ * @param entries Entradas preparadas para inserção
+ * @returns Resultado da importação
+ */
+export const confirmImport = async (entries: any[]): Promise<{ count: number }> => {
+  try {
+    // Fase 3: Importação para o Supabase
+    const result = await importEntriesToSupabase(entries);
+    
+    return {
+      count: result.count
+    };
+  } catch (error) {
+    console.error('Erro ao confirmar importação:', error);
     throw error;
   }
 };

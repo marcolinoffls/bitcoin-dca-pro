@@ -5,12 +5,14 @@
  * Gerencia toda a lógica de aportes:
  * - Busca aportes no Supabase
  * - Permite adicionar, editar e excluir aportes
- * - Importação de planilhas CSV/Excel
+ * - Importação de planilhas CSV/Excel com pré-visualização
  * - Integra com a cotação atual do Bitcoin
  *
  * Utiliza React Query para cache e atualização reativa
  * 
  * Atualizações:
+ * - Adicionado suporte à nova coluna origem_registro
+ * - Implementada pré-visualização de dados antes da importação
  * - Corrigido o problema de carregamento inicial após login
  * - Adicionada escuta da mudança de estado de autenticação
  * - Melhorada a invalidação de queries ao mudar o usuário
@@ -20,17 +22,24 @@
  * - Melhorada a validação da data para garantir que seja salva corretamente
  * - Melhorado o tratamento de erros e validação de datas
  * - Corrigido problema de timezone, forçando o horário local ao interpretar datas
- * - Adicionada funcionalidade de importação de planilhas
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { BitcoinEntry, CurrentRate } from '@/types';
+import { BitcoinEntry, CurrentRate, Origin } from '@/types';
 import { fetchCurrentBitcoinRate } from '@/services/bitcoinService';
-import { fetchBitcoinEntries, updateBitcoinEntry, deleteBitcoinEntry } from '@/services/bitcoinEntryService';
-import { importSpreadsheet } from '@/services/importService';
+import { 
+  fetchBitcoinEntries, 
+  updateBitcoinEntry, 
+  deleteBitcoinEntry,
+  deleteAllSpreadsheetEntries
+} from '@/services/bitcoinEntryService';
+import { 
+  importSpreadsheet, 
+  confirmImport 
+} from '@/services/importService';
 
 // Interface para mapear os dados do Supabase para os tipos da aplicação
 interface SupabaseAporte {
@@ -41,6 +50,7 @@ interface SupabaseAporte {
   cotacao: number;
   moeda: 'BRL' | 'USD';
   origem_aporte: 'corretora' | 'p2p' | 'planilha';
+  origem_registro: 'manual' | 'planilha';
   user_id: string;
   cotacao_moeda: string;
   created_at: string;
@@ -64,6 +74,10 @@ export const useBitcoinEntries = () => {
 
   // Estado local para armazenar o aporte sendo editado
   const [editingEntry, setEditingEntry] = useState<BitcoinEntry | null>(null);
+  
+  // Estado para armazenar os dados de pré-visualização da importação
+  const [previewData, setPreviewData] = useState<BitcoinEntry[]>([]);
+  const [pendingImport, setPendingImport] = useState<any[]>([]);
   
   // Estado para controlar o progresso de importação
   const [importProgress, setImportProgress] = useState<{
@@ -244,11 +258,27 @@ export const useBitcoinEntries = () => {
       throw error;
     }
   };
+
+  /**
+   * Exclui todos os aportes importados de planilha
+   */
+  const deleteAllSpreadsheetRecords = async () => {
+    if (!user) return;
+    
+    try {
+      await deleteAllSpreadsheetEntries();
+      await queryClient.invalidateQueries({ queryKey: ['entries'] }); // Atualiza lista após exclusão
+    } catch (error) {
+      console.error('Erro ao excluir aportes de planilha:', error);
+      throw error;
+    }
+  };
   
   /**
-   * Importa aportes a partir de um arquivo de planilha
+   * Prepara a importação de aportes a partir de um arquivo de planilha
+   * Retorna os dados para pré-visualização, sem salvá-los ainda
    */
-  const importEntriesFromSpreadsheet = async (file: File) => {
+  const prepareImportFromSpreadsheet = async (file: File) => {
     if (!user) {
       throw new Error('Usuário não autenticado');
     }
@@ -256,7 +286,7 @@ export const useBitcoinEntries = () => {
     try {
       setImportProgress({
         progress: 0,
-        stage: 'Iniciando importação...',
+        stage: 'Iniciando preparação...',
         isImporting: true
       });
       
@@ -273,13 +303,60 @@ export const useBitcoinEntries = () => {
         }
       );
       
+      // Armazenar dados para pré-visualização
+      setPreviewData(result.previewData);
+      setPendingImport(result.entries); // Array para Supabase
+      
+      // Finalizar o progresso de preparação
+      setImportProgress({
+        progress: 70,
+        stage: 'Dados preparados para importação',
+        isImporting: false
+      });
+      
+      return result.previewData;
+    } catch (error) {
+      // Em caso de erro, resetar o progresso
+      setImportProgress({
+        progress: 0,
+        stage: '',
+        isImporting: false
+      });
+      
+      console.error('Erro na preparação da importação:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Confirma a importação após a pré-visualização
+   */
+  const confirmImportEntries = async () => {
+    if (!user || pendingImport.length === 0) {
+      throw new Error('Nenhum dado pendente para importação');
+    }
+    
+    try {
+      setImportProgress({
+        progress: 75,
+        stage: 'Enviando dados ao servidor...',
+        isImporting: true
+      });
+      
+      // Confirma a importação no Supabase
+      const result = await confirmImport(pendingImport);
+      
       // Atualizar o cache de queries para exibir os novos dados
       await queryClient.invalidateQueries({ queryKey: ['entries'] });
+      
+      // Limpar os dados de pré-visualização após importação
+      setPreviewData([]);
+      setPendingImport([]);
       
       // Finalizar o progresso
       setImportProgress({
         progress: 100,
-        stage: 'Concluído',
+        stage: 'Importação concluída',
         isImporting: false
       });
       
@@ -292,9 +369,22 @@ export const useBitcoinEntries = () => {
         isImporting: false
       });
       
-      console.error('Erro na importação:', error);
+      console.error('Erro na confirmação da importação:', error);
       throw error;
     }
+  };
+  
+  /**
+   * Cancela a importação e limpa os dados de pré-visualização
+   */
+  const cancelImport = () => {
+    setPreviewData([]);
+    setPendingImport([]);
+    setImportProgress({
+      progress: 0,
+      stage: '',
+      isImporting: false
+    });
   };
 
   /**
@@ -324,13 +414,17 @@ export const useBitcoinEntries = () => {
     currentRate,
     editingEntry,
     importProgress,
+    previewData,
     addEntry,
     updateEntry,
     deleteEntry,
+    deleteAllSpreadsheetRecords,
     editEntry,
     cancelEdit,
     updateCurrentRate,
-    importEntriesFromSpreadsheet,
+    prepareImportFromSpreadsheet,
+    confirmImportEntries,
+    cancelImport,
     refetch,
   };
 };

@@ -19,6 +19,7 @@ export type Database = {
           id: string
           moeda: string
           origem_aporte: string
+          origem_registro: string
           user_id: string | null
           valor_investido: number
         }
@@ -31,6 +32,7 @@ export type Database = {
           id?: string
           moeda: string
           origem_aporte?: string
+          origem_registro?: string
           user_id?: string | null
           valor_investido: number
         }
@@ -43,6 +45,7 @@ export type Database = {
           id?: string
           moeda?: string
           origem_aporte?: string
+          origem_registro?: string
           user_id?: string | null
           valor_investido?: number
         }
