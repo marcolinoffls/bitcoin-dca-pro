@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useBitcoinRate } from '@/hooks/useBitcoinRate';
 import EntryForm from '@/components/EntryForm';
@@ -31,7 +30,6 @@ const Index = () => {
 
   const { user } = useAuth();
   
-  // Forçar refetch quando o componente montar ou o usuário mudar
   const {
     entries,
     isLoading: isEntriesLoading,
@@ -43,12 +41,9 @@ const Index = () => {
     refetch: refetchEntries
   } = useBitcoinEntries();
 
-  // Efeito para garantir que os dados sejam carregados quando o usuário logar
   useEffect(() => {
     if (user) {
       console.log('Usuário autenticado detectado no Index, forçando refetch de aportes');
-      // Pequeno timeout para garantir que a UI tenha tempo de renderizar
-      // antes de iniciar a requisição de dados
       setTimeout(() => {
         refetchEntries();
       }, 100);
@@ -108,7 +103,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="container mx-auto py-6 px-4">
+      <div className="container mx-auto py-6 px-4 max-w-5xl">
         <header className="mb-6">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
@@ -157,107 +152,53 @@ const Index = () => {
           />
         </div>
 
-        {/* Layout Mobile (não alterar) */}
-        {isMobile && (
-          <>
-            <div className="grid grid-cols-1 gap-5 mb-6">
-              <div>
-                <StatisticsCards
-                  entries={entries}
-                  currentRate={bitcoinRate}
-                  selectedCurrency={selectedCurrency}
-                  displayUnit={displayUnit}
-                  isLoading={isEntriesLoading}
-                />
-              </div>
-
-              <div>
-                <div className="mb-5">
-                  <CurrentRateCard
-                    currentRate={bitcoinRate}
-                    priceVariation={priceVariation}
-                    isLoading={isRateLoading}
-                    onRefresh={fetchRateUpdate}
-                  />
-                </div>
-                <div>
-                  <EntryForm
-                    onAddEntry={handleAddEntry}
-                    currentRate={bitcoinRate}
-                    onCancelEdit={cancelEdit}
-                    displayUnit={displayUnit}
-                    editingEntry={editingEntry}
-                  />
-                </div>
-              </div>
-            </div>
-
+        <div className="flex flex-col gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <EntriesList
+              <StatisticsCards
                 entries={entries}
                 currentRate={bitcoinRate}
-                onDelete={handleDeleteEntry}
-                onEdit={handleEditEntry}
                 selectedCurrency={selectedCurrency}
                 displayUnit={displayUnit}
                 isLoading={isEntriesLoading}
               />
             </div>
-          </>
-        )}
-
-        {/* Layout Desktop (novo layout) */}
-        {!isMobile && (
-          <>
-            {/* Primeira linha: 3 cards alinhados horizontalmente */}
-            <div className="grid grid-cols-3 gap-5 mb-6">
-              {/* Card Total / Portfólio */}
-              <div>
-                <StatisticsCards
-                  entries={entries}
-                  currentRate={bitcoinRate}
-                  selectedCurrency={selectedCurrency}
-                  displayUnit={displayUnit}
-                  isLoading={isEntriesLoading}
-                />
-              </div>
-              
-              {/* Card Cotação Atual */}
-              <div>
-                <CurrentRateCard
-                  currentRate={bitcoinRate}
-                  priceVariation={priceVariation}
-                  isLoading={isRateLoading}
-                  onRefresh={fetchRateUpdate}
-                />
-              </div>
+            
+            <div className="hidden md:block">
             </div>
-
-            {/* Segunda linha: Card Registrar Novo Aporte (largura total) */}
-            <div className="mb-6">
-              <EntryForm
-                onAddEntry={handleAddEntry}
-                currentRate={bitcoinRate}
-                onCancelEdit={cancelEdit}
-                displayUnit={displayUnit}
-                editingEntry={editingEntry}
-              />
-            </div>
-
-            {/* Terceira linha: Card Aportes Registrados */}
+            
             <div>
-              <EntriesList
-                entries={entries}
+              <CurrentRateCard
                 currentRate={bitcoinRate}
-                onDelete={handleDeleteEntry}
-                onEdit={handleEditEntry}
-                selectedCurrency={selectedCurrency}
-                displayUnit={displayUnit}
-                isLoading={isEntriesLoading}
+                priceVariation={priceVariation}
+                isLoading={isRateLoading}
+                onRefresh={fetchRateUpdate}
               />
             </div>
-          </>
-        )}
+          </div>
+
+          <div>
+            <EntryForm
+              onAddEntry={handleAddEntry}
+              currentRate={bitcoinRate}
+              onCancelEdit={cancelEdit}
+              displayUnit={displayUnit}
+              editingEntry={editingEntry}
+            />
+          </div>
+
+          <div>
+            <EntriesList
+              entries={entries}
+              currentRate={bitcoinRate}
+              onDelete={handleDeleteEntry}
+              onEdit={handleEditEntry}
+              selectedCurrency={selectedCurrency}
+              displayUnit={displayUnit}
+              isLoading={isEntriesLoading}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
