@@ -1,138 +1,124 @@
-/* index.css */
 
-/* Reset básico */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-/* Define fonte global e cor de fundo */
-body {
-  font-family: 'Inter', sans-serif;
-  background-color: #f9fafb; /* cinza claro */
-  color: #111827;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/* Garante que o layout ocupe pelo menos a altura total da tela */
-.min-h-screen {
-  min-height: 100vh;
-}
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
 
-/* Ajustes para dark mode */
-.dark .bg-gray-900 {
-  background-color: #111827;
-}
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
 
-/* Container centralizado */
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-}
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
 
-/* Responsividade padrão */
-@media (max-width: 768px) {
-  .container {
-    padding: 1rem;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
 
-/* === Ajustes específicos do layout do Index.tsx === */
-
-/* Define espaçamento consistente nos grids principais */
-.grid {
-  display: grid;
-  gap: 1.5rem;
-}
-
-/* Ajuste de layout para desktop: estatísticas + cotação/form */
-@media (min-width: 1024px) {
-  .grid-cols-3 {
-    grid-template-columns: repeat(3, 1fr);
+@layer base {
+  * {
+    @apply border-border;
   }
 
-  .col-span-2 {
-    grid-column: span 2 / span 2;
+  body {
+    @apply bg-background text-foreground font-inter;
   }
 }
 
-/* Ajuste para o header do app */
-header {
-  margin-bottom: 1.5rem;
+/* Customização do calendário */
+.rdp-month {
+  background-color: white;
+  border-radius: 0.5rem;
 }
 
-header h1 {
-  text-transform: uppercase;
+.rdp-caption {
+  padding: 0.5rem 0;
 }
 
-/* Frase motivacional abaixo do título */
-.text-muted-foreground {
-  color: #6b7280; /* cinza médio */
+.rdp-day:focus-visible {
+  outline: none !important;
 }
 
-/* Botões de controle de unidade/moeda */
-.flex.justify-center.gap-4.mb-6 {
-  flex-wrap: wrap;
+/* Custom Input Styles */
+.input-bitcoin {
+  @apply focus-visible:ring-1 focus-visible:ring-bitcoin focus-visible:border-bitcoin transition-all duration-200;
 }
 
-/* Lista de entradas de aportes */
-.entries-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 1.5rem;
-}
-
-.entries-table thead {
-  background-color: #f3f4f6;
-  font-weight: bold;
-}
-
-.entries-table th,
-.entries-table td {
-  padding: 0.75rem 1rem;
-  text-align: left;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-/* Estilo para quando há valores ocultos (ex: bolinhas estilo Nubank) */
-.hidden-balance {
-  letter-spacing: 6px;
-  font-size: 1.25rem;
-  font-weight: 600;
-}
-
-/* Transição suave ao alternar visualizações */
-.transition-all {
-  transition: all 0.3s ease-in-out;
-}
-
-/* Tamanhos para ícones com espaçamento */
-.icon-img {
-  width: 32px;
-  height: 32px;
-  margin-right: 0.5rem;
-  object-fit: contain;
-}
-
-/* Ajuste para alinhar logotipo e texto lado a lado no topo */
-.logo-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-/* Oculta valores com bolinhas sem afetar altura */
-.balance-obscured {
-  font-size: 1.25rem;
-  letter-spacing: 6px;
-  color: transparent;
-  text-shadow: 0 0 0 #6b7280;
-}
-
-/* Garante altura fixa ao esconder valores */
-.balance-wrapper {
-  min-height: 3.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-}
