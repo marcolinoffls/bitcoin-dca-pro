@@ -1,11 +1,8 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-/**
- * Interface do componente FormActions
- * - Atualizada para aceitar origem 'planilha' em conformidade com o sistema
- */
 interface FormActionsProps {
   isEditing: boolean;
   displayUnit: 'BTC' | 'SATS';
@@ -24,11 +21,12 @@ const FormActions: React.FC<FormActionsProps> = ({
   const isMobile = useIsMobile();
 
   return (
-    <div className={`flex justify-center ${className}`}>
+    <div className={`flex ${isMobile ? 'flex-col' : 'justify-end'} ${className}`}>
       {!isEditing ? (
         <Button 
           type="submit" 
-          className="bg-bitcoin hover:bg-bitcoin/90 rounded-xl px-8 py-3 h-auto font-medium transition-all duration-200 w-full"
+          className={`bg-bitcoin hover:bg-bitcoin/90 rounded-xl px-8 py-3 h-auto font-medium transition-all duration-200 
+            ${isMobile ? 'w-full' : 'w-1/3'}`}
         >
           Registrar
         </Button>

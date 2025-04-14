@@ -1,12 +1,3 @@
-import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { BitcoinEntry, CurrentRate } from '@/types';
-import { ArrowDown, ArrowUp, Eye, EyeOff } from 'lucide-react';
-import { formatNumber } from '@/lib/utils';
-import { calculateTotalBitcoin } from '@/services/bitcoinService';
-import { Badge } from '@/components/ui/badge';
-import { useBalanceVisibility } from '@/hooks/useBalanceVisibility';
-
 /**
  * Componente que exibe o card de "Total em Bitcoin"
  * 
@@ -17,6 +8,15 @@ import { useBalanceVisibility } from '@/hooks/useBalanceVisibility';
  * - Total investido
  * - Opção para ocultar/mostrar os valores sensíveis usando bolinhas
  */
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { BitcoinEntry, CurrentRate } from '@/types';
+import { ArrowDown, ArrowUp, Eye, EyeOff } from 'lucide-react';
+import { formatNumber } from '@/lib/utils';
+import { calculateTotalBitcoin } from '@/services/bitcoinService';
+import { Badge } from '@/components/ui/badge';
+import { useBalanceVisibility } from '@/hooks/useBalanceVisibility';
+
 interface BitcoinTotalCardProps {
   entries: BitcoinEntry[];
   currentRate: CurrentRate;
@@ -30,26 +30,19 @@ const BitcoinTotalCard: React.FC<BitcoinTotalCardProps> = ({
   selectedCurrency,
   displayUnit,
 }) => {
-  // Hook para controlar a visibilidade do saldo
   const { isVisible, toggleVisibility } = useBalanceVisibility();
   
-  // Cálculo do total de Bitcoin
   const totalBitcoin = calculateTotalBitcoin(entries);
-  
-  // Formatação de acordo com a unidade selecionada (BTC ou SATS)
   const formattedTotalBitcoin = displayUnit === 'SATS' 
     ? formatNumber(totalBitcoin * 100000000, 0)
     : formatNumber(totalBitcoin, 8);
   
-  // Cálculo do valor atual
   const currentRateValue = selectedCurrency === 'USD' ? currentRate?.usd || 0 : currentRate?.brl || 0;
   const currencySymbol = selectedCurrency === 'USD' ? '$' : 'R$';
   const totalValueCurrent = totalBitcoin * currentRateValue;
   
-  // Cálculo do total investido
   const totalInvested = entries.reduce((total, entry) => {
     const entryValue = entry.amountInvested;
-    // Se a moeda do aporte for diferente da selecionada, fazemos a conversão aproximada
     if (entry.currency !== selectedCurrency && currentRate) {
       const conversionRate = currentRate.usd / currentRate.brl;
       return total + (entry.currency === 'USD' 
@@ -59,20 +52,13 @@ const BitcoinTotalCard: React.FC<BitcoinTotalCardProps> = ({
     return total + entryValue;
   }, 0);
   
-  // Cálculo da variação percentual
   const percentChange = totalInvested > 0 
     ? ((totalValueCurrent - totalInvested) / totalInvested) * 100 
     : 0;
   
   const isPositiveChange = percentChange >= 0;
   
-  // Função para gerar bolinhas de acordo com o tamanho do valor
-  const generateDots = (value: string) => {
-    const length = value.length;
-    return '•'.repeat(Math.max(8, Math.min(length, 12)));
-  };
-  
-  // Classes para aplicar efeito de transição suave
+  // Classes para transição suave
   const hiddenClass = isVisible ? '' : 'opacity-0 absolute';
   const dotsClass = isVisible ? 'opacity-0 absolute' : 'opacity-100 relative';
 
@@ -138,7 +124,7 @@ const BitcoinTotalCard: React.FC<BitcoinTotalCardProps> = ({
                 {currencySymbol} {formatNumber(totalValueCurrent)}
               </p>
               <p className={`text-2xl font-bold transition-all duration-300 ${dotsClass}`}>
-                {generateDots(`${currencySymbol}${formatNumber(totalValueCurrent)}`)}
+                ●●●●
               </p>
             </div>
             <div className="relative">
@@ -146,7 +132,7 @@ const BitcoinTotalCard: React.FC<BitcoinTotalCardProps> = ({
                 Total investido: {currencySymbol} {formatNumber(totalInvested)}
               </p>
               <p className={`text-xs text-gray-400 mt-1 transition-all duration-300 ${dotsClass}`}>
-                Total investido: {generateDots(`${currencySymbol}${formatNumber(totalInvested)}`)}
+                Total investido: ●●●●
               </p>
             </div>
           </div>
@@ -157,7 +143,7 @@ const BitcoinTotalCard: React.FC<BitcoinTotalCardProps> = ({
                 {formattedTotalBitcoin} {displayUnit}
               </p>
               <p className={`font-semibold transition-all duration-300 ${dotsClass}`}>
-                {generateDots(`${formattedTotalBitcoin} ${displayUnit}`)}
+                ●●●●
               </p>
             </div>
           </div>

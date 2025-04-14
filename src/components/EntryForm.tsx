@@ -226,12 +226,12 @@ const EntryForm: React.FC<EntryFormProps> = ({
 
           <div className="flex flex-col gap-3">
             {!editingEntry && (
-              <div className={`${isMobile ? '' : 'flex justify-end gap-4'}`}>
+              <div className={`${isMobile ? 'flex flex-col gap-3' : 'flex justify-end gap-4'}`}>
                 <Button 
                   type="button"
                   variant="outline"
-                  className={`flex items-center justify-center gap-2 text-bitcoin border-bitcoin/50 hover:bg-bitcoin/10 w-full 
-                    ${isMobile ? '' : 'w-1/3'}`}
+                  className={`flex items-center justify-center gap-2 text-bitcoin border-bitcoin/50 hover:bg-bitcoin/10
+                    ${isMobile ? 'w-full' : 'w-1/3'}`}
                   onClick={openSatisfactionModal}
                 >
                   <Upload className="h-4 w-4" />
