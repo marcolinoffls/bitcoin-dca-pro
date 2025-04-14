@@ -17,6 +17,7 @@
  * - Convertido valores string para number para manipulação mais segura
  * - Mantido formato de exibição para o usuário com strings formatadas
  * - Adicionada função setExchangeRate para permitir definir a taxa diretamente
+ * - Definido BRL como moeda padrão inicial (ao invés de detectar)
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -51,7 +52,7 @@ export const useEntryFormLogic = (
   const [btcAmount, setBtcAmount] = useState<string>('');               // valor em BTC ou SATS como string formatada
   const [exchangeRate, setExchangeRate] = useState<number>(0);          // número puro para cálculos
   const [exchangeRateDisplay, setExchangeRateDisplay] = useState<string>(''); // string formatada para exibição
-  const [currency, setCurrency] = useState<Currency>('BRL');
+  const [currency, setCurrency] = useState<Currency>('BRL');            // MODIFICADO: BRL como padrão
   const [origin, setOrigin] = useState<Origin>('corretora');
   const [date, setDate] = useState<Date>(new Date());
 
@@ -162,7 +163,7 @@ export const useEntryFormLogic = (
     setBtcAmount('');
     setExchangeRate(0);
     setExchangeRateDisplay('');
-    setCurrency('BRL');
+    setCurrency('BRL'); // MODIFICADO: Garante que BRL seja sempre o padrão ao resetar
     setOrigin('corretora');
     setDate(new Date());
   }, []);
@@ -177,6 +178,7 @@ export const useEntryFormLogic = (
     setExchangeRateDisplay,
     setExchangeRate,
     currency,
+    setCurrency, // MODIFICADO: Exportamos o setCurrency diretamente para permitir alterá-lo de fora
     origin,
     date,
     setDate,
