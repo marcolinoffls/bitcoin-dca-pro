@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { BitcoinEntry, CurrentRate } from '@/types';
@@ -16,9 +15,7 @@ import { useBalanceVisibility } from '@/hooks/useBalanceVisibility';
  * - Valor atual em BRL ou USD
  * - Variação percentual em relação ao investido
  * - Total investido
- * - Opção para ocultar/mostrar os valores sensíveis
- * 
- * Segue design de referência fornecido com layout limpo e moderno
+ * - Opção para ocultar/mostrar os valores sensíveis usando bolinhas
  */
 interface BitcoinTotalCardProps {
   entries: BitcoinEntry[];
@@ -69,9 +66,16 @@ const BitcoinTotalCard: React.FC<BitcoinTotalCardProps> = ({
   
   const isPositiveChange = percentChange >= 0;
   
-  // Classes para aplicar efeito de blur quando o saldo estiver oculto
-  const hiddenClass = isVisible ? '' : 'filter blur-sm select-none';
+  // Função para gerar bolinhas de acordo com o tamanho do valor
+  const generateDots = (value: string) => {
+    const length = value.length;
+    return '•'.repeat(Math.max(8, Math.min(length, 12)));
+  };
   
+  // Classes para aplicar efeito de transição suave
+  const hiddenClass = isVisible ? '' : 'opacity-0 absolute';
+  const dotsClass = isVisible ? 'opacity-0 absolute' : 'opacity-100 relative';
+
   return (
     <Card className="overflow-hidden rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-200">
       <CardContent className="p-5">
@@ -129,18 +133,33 @@ const BitcoinTotalCard: React.FC<BitcoinTotalCardProps> = ({
         <div className="flex justify-between items-end mt-4">
           <div>
             <p className="text-xs text-gray-400 mb-1">Portfólio</p>
-            <p className={`text-2xl font-bold transition-all duration-300 ${hiddenClass}`}>
-              {currencySymbol} {formatNumber(totalValueCurrent)}
-            </p>
-            <p className={`text-xs text-gray-400 mt-1 transition-all duration-300 ${hiddenClass}`}>
-              Total investido: {currencySymbol} {formatNumber(totalInvested)}
-            </p>
+            <div className="relative">
+              <p className={`text-2xl font-bold transition-all duration-300 ${hiddenClass}`}>
+                {currencySymbol} {formatNumber(totalValueCurrent)}
+              </p>
+              <p className={`text-2xl font-bold transition-all duration-300 ${dotsClass}`}>
+                {generateDots(`${currencySymbol}${formatNumber(totalValueCurrent)}`)}
+              </p>
+            </div>
+            <div className="relative">
+              <p className={`text-xs text-gray-400 mt-1 transition-all duration-300 ${hiddenClass}`}>
+                Total investido: {currencySymbol} {formatNumber(totalInvested)}
+              </p>
+              <p className={`text-xs text-gray-400 mt-1 transition-all duration-300 ${dotsClass}`}>
+                Total investido: {generateDots(`${currencySymbol}${formatNumber(totalInvested)}`)}
+              </p>
+            </div>
           </div>
           
           <div className="text-right">
-            <p className={`font-semibold transition-all duration-300 ${hiddenClass}`}>
-              {formattedTotalBitcoin} {displayUnit}
-            </p>
+            <div className="relative">
+              <p className={`font-semibold transition-all duration-300 ${hiddenClass}`}>
+                {formattedTotalBitcoin} {displayUnit}
+              </p>
+              <p className={`font-semibold transition-all duration-300 ${dotsClass}`}>
+                {generateDots(`${formattedTotalBitcoin} ${displayUnit}`)}
+              </p>
+            </div>
           </div>
         </div>
       </CardContent>

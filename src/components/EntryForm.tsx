@@ -1,4 +1,3 @@
-
 /**
  * Componente: EntryForm
  * 
@@ -71,7 +70,6 @@ const EntryForm: React.FC<EntryFormProps> = ({
   const [isSatisfactionModalOpen, setIsSatisfactionModalOpen] = useState(false);
   const [successToastOpen, setSuccessToastOpen] = useState(false);
 
-  // Importa a lógica do formulário (centraliza os estados e handlers)
   const {
     amountInvested,
     setAmountInvested,
@@ -93,93 +91,74 @@ const EntryForm: React.FC<EntryFormProps> = ({
     reset
   } = useEntryFormLogic(editingEntry, currentRate, displayUnit);
 
-  // Corrige o bug: limpa o formulário quando o modo de edição é encerrado
   useEffect(() => {
     if (!editingEntry) {
-      reset(); // reseta os campos
+      reset();
     }
   }, [editingEntry, reset]);
 
-  // Função que reseta o formulário e informa o fim da edição
   const resetForm = () => {
     reset();
     if (onCancelEdit) {
-      onCancelEdit(); // atualiza estado global
+      onCancelEdit();
     }
   };
 
-  // Envia os dados preenchidos
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     let parsedAmount = parseLocalNumber(amountInvested);
     let parsedBtc = parseLocalNumber(btcAmount);
 
-    // Converte de SATS para BTC se necessário
     if (displayUnit === 'SATS') {
       parsedBtc = parsedBtc / 100000000;
     }
 
     const parsedRate = exchangeRate;
 
-    // Validação básica
     if (isNaN(parsedAmount) || isNaN(parsedBtc) || isNaN(parsedRate) || parsedRate === 0) {
       return;
     }
 
-    // Executa ação de criar ou editar
     onAddEntry(parsedAmount, parsedBtc, parsedRate, currency, date, origin);
     
-    // Mostra o toast de sucesso após o envio bem-sucedido
     if (!editingEntry) {
       setSuccessToastOpen(true);
     }
 
-    // Limpa formulário após envio
     resetForm();
   };
 
-  // Abrir o modal de importação do Satisfaction
   const openSatisfactionModal = () => {
     setIsSatisfactionModalOpen(true);
   };
 
-  // Fechar o modal de importação do Satisfaction
   const closeSatisfactionModal = () => {
     setIsSatisfactionModalOpen(false);
   };
 
-  // Fechar o toast de sucesso
   const closeSuccessToast = () => {
     setSuccessToastOpen(false);
   };
 
-  /**
-   * Processa os dados extraídos do Satisfaction e preenche o formulário
-   */
   const handleDataExtracted = (data: {
     exchangeRate?: number;
     amountInvested?: number;
     btcAmount?: number;
     date?: Date;
   }) => {
-    // Definir origem como P2P
     handleOriginChange('p2p');
     
-    // Preencher taxa de câmbio se disponível
     if (data.exchangeRate) {
       setExchangeRate(data.exchangeRate);
       handleExchangeRateChange(formatNumber(data.exchangeRate));
     }
     
-    // Preencher valor investido se disponível
     if (data.amountInvested) {
       setAmountInvested(formatNumber(data.amountInvested));
     }
     
-    // Preencher quantidade de Bitcoin se disponível
     if (data.btcAmount) {
-      // Formatar conforme a unidade de exibição (BTC ou SATS)
       if (displayUnit === 'SATS') {
         const sats = Math.round(data.btcAmount * 100000000);
         setBtcAmount(formatNumber(sats, 0));
@@ -188,7 +167,6 @@ const EntryForm: React.FC<EntryFormProps> = ({
       }
     }
     
-    // Preencher a data se disponível
     if (data.date) {
       setDate(data.date);
     }
@@ -198,7 +176,6 @@ const EntryForm: React.FC<EntryFormProps> = ({
     <Card className="rounded-xl shadow-md hover:shadow-lg transition-all duration-200">
       <CardHeader className={isMobile ? 'pb-2' : 'pb-3'}>
         <CardTitle className={`${isMobile ? 'text-lg' : 'text-xl'} flex items-center gap-2`}>
-          {/* Novo ícone para o card de Novo Aporte */}
           <div className="h-8 w-8">
             <img 
               src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/novo-aporte.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvbm92by1hcG9ydGUucG5nIiwiaWF0IjoxNzQ0NDk3MTY4LCJleHAiOjE3NzYwMzMxNjh9.gSYsPjL3OqW6iNLDHtvyuoYh6SBlJUm30UL16I4NPI8" 
@@ -212,19 +189,16 @@ const EntryForm: React.FC<EntryFormProps> = ({
 
       <CardContent className={isMobile ? 'pb-3' : ''}>
         <form onSubmit={handleSubmit} className={`space-y-${isMobile ? '3' : '4'}`}>
-          {/* Campo de Data */}
           <DatePickerField 
             date={date} 
             onDateChange={setDate} 
           />
 
-          {/* Seleção de moeda (USD ou BRL) */}
           <CurrencyField 
             currency={currency} 
             onCurrencyChange={handleCurrencyChange} 
           />
 
-          {/* Valores: Investimento e BTC */}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <AmountField 
               currency={currency} 
@@ -238,7 +212,6 @@ const EntryForm: React.FC<EntryFormProps> = ({
             />
           </div>
 
-          {/* Cotação de BTC */}
           <ExchangeRateField 
             currency={currency} 
             exchangeRate={exchangeRate}
@@ -246,47 +219,45 @@ const EntryForm: React.FC<EntryFormProps> = ({
             onExchangeRateChange={handleExchangeRateChange} 
           />
 
-          {/* Origem (Corretora ou P2P) */}
           <OriginSelector
             origin={origin}
             onOriginChange={handleOriginChange}
           />
 
-          {/* Ações: Calcular, Resetar, Confirmar */}
           <div className="flex flex-col gap-3">
-            {/* Mostrar botão de importar apenas quando não estiver em modo de edição */}
             {!editingEntry && (
-              <Button 
-                type="button"
-                variant="outline"
-                className="flex items-center justify-center gap-2 text-bitcoin border-bitcoin/50 hover:bg-bitcoin/10"
-                onClick={openSatisfactionModal}
-              >
-                <Upload className="h-4 w-4" />
-                Importar do Satisfaction (P2P)
-              </Button>
+              <div className={`${isMobile ? '' : 'flex justify-end gap-4'}`}>
+                <Button 
+                  type="button"
+                  variant="outline"
+                  className={`flex items-center justify-center gap-2 text-bitcoin border-bitcoin/50 hover:bg-bitcoin/10 w-full 
+                    ${isMobile ? '' : 'w-1/3'}`}
+                  onClick={openSatisfactionModal}
+                >
+                  <Upload className="h-4 w-4" />
+                  Importar do Satisfaction (P2P)
+                </Button>
+                
+                <FormActions 
+                  isEditing={!!editingEntry} 
+                  displayUnit={displayUnit} 
+                  onCalculateFromAmount={calculateFromAmount} 
+                  onCalculateFromBtc={calculateFromBtc} 
+                  onReset={resetForm}
+                  className={isMobile ? '' : 'w-1/3'}
+                />
+              </div>
             )}
-            
-            {/* Componente FormActions existente - redução do espaçamento */}
-            <FormActions 
-              isEditing={!!editingEntry} 
-              displayUnit={displayUnit} 
-              onCalculateFromAmount={calculateFromAmount} 
-              onCalculateFromBtc={calculateFromBtc} 
-              onReset={resetForm} 
-            />
           </div>
         </form>
       </CardContent>
 
-      {/* Modal de importação do Satisfaction */}
       <SatisfactionImportModal 
         isOpen={isSatisfactionModalOpen} 
         onClose={closeSatisfactionModal} 
         onDataExtracted={handleDataExtracted}
       />
 
-      {/* Toast de sucesso com animação e som */}
       <SuccessToast
         message="Aporte registrado com sucesso!"
         isOpen={successToastOpen}

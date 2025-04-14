@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -13,21 +12,23 @@ interface FormActionsProps {
   onCalculateFromAmount?: () => void;
   onCalculateFromBtc?: () => void;
   onReset?: () => void;
+  className?: string;
 }
 
 const FormActions: React.FC<FormActionsProps> = ({ 
   isEditing, 
   displayUnit, 
-  onReset 
+  onReset,
+  className = '' 
 }) => {
   const isMobile = useIsMobile();
 
   return (
-    <div className="flex justify-center">
+    <div className={`flex justify-center ${className}`}>
       {!isEditing ? (
         <Button 
           type="submit" 
-          className="bg-bitcoin hover:bg-bitcoin/90 rounded-xl px-8 py-3 h-auto font-medium transition-all duration-200 w-full sm:w-auto sm:min-w-[160px]"
+          className="bg-bitcoin hover:bg-bitcoin/90 rounded-xl px-8 py-3 h-auto font-medium transition-all duration-200 w-full"
         >
           Registrar
         </Button>
