@@ -10,6 +10,9 @@ import {
 } from "@/components/ui/toast"
 import { CheckCircle, Bitcoin } from "lucide-react"
 
+// Tipos expandidos para incluir a variante bitcoin
+type ExtendedVariant = 'default' | 'destructive' | 'success' | 'warning' | 'bitcoin';
+
 export function Toaster() {
   const { toasts } = useToast()
 
@@ -26,7 +29,7 @@ export function Toaster() {
           variant === 'bitcoin';
         
         return (
-          <Toast key={id} variant={variant} {...props}>
+          <Toast key={id} variant={variant as ExtendedVariant} {...props}>
             <div className="flex items-start gap-2">
               {/* Adiciona ícone de Bitcoin quando o toast mencionar Bitcoin */}
               {showBitcoinIcon && (

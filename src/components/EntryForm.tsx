@@ -29,7 +29,7 @@ import CurrencyField from '@/components/form/CurrencyField';
 import AmountField from '@/components/form/AmountField';
 import BtcAmountField from '@/components/form/BtcAmountField';
 import ExchangeRateField from '@/components/form/ExchangeRateField';
-import OriginSelector from '@/components/form/OriginSelector';
+import OriginSelector, { Origin } from '@/components/form/OriginSelector';
 import FormActions from '@/components/form/FormActions';
 import { useEntryFormLogic } from '@/components/form/EntryFormLogic';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -84,7 +84,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
     handleExchangeRateChange,
     setExchangeRate,
     currency,
-    setCurrency, // ADICIONADO: Importamos o setCurrency diretamente
+    setCurrency, 
     origin,
     date,
     setDate,
@@ -92,6 +92,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
     handleCurrencyChange,
     calculateFromAmount,
     calculateFromBtc,
+    handleOriginChange,
     reset
   } = useEntryFormLogic(editingEntry, currentRate, displayUnit);
 

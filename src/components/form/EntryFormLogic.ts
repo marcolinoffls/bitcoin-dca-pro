@@ -18,14 +18,15 @@
  * - Mantido formato de exibição para o usuário com strings formatadas
  * - Adicionada função setExchangeRate para permitir definir a taxa diretamente
  * - Definido BRL como moeda padrão inicial (ao invés de detectar)
+ * - Exportada função handleOriginChange diretamente para corrigir erro de referência
  */
 
 import { useCallback, useEffect, useState } from 'react';
 import { formatNumber } from '@/lib/utils';
 
-type Currency = 'BRL' | 'USD';
-type DisplayUnit = 'BTC' | 'SATS';
-type Origin = 'corretora' | 'p2p' | 'planilha';
+export type Currency = 'BRL' | 'USD';
+export type DisplayUnit = 'BTC' | 'SATS';
+export type Origin = 'corretora' | 'p2p' | 'planilha';
 
 interface CurrentRate {
   usd: number;
@@ -123,6 +124,13 @@ export const useEntryFormLogic = (
   };
 
   /**
+   * Atualiza a origem do aporte
+   */
+  const handleOriginChange = (newOrigin: Origin) => {
+    setOrigin(newOrigin);
+  };
+
+  /**
    * Calcula manualmente o valor em BTC ou SATS com base no valor investido
    * Esta função agora só é chamada quando o usuário clica no botão de calcular,
    * e não mais automaticamente quando o valor investido é alterado
@@ -178,7 +186,7 @@ export const useEntryFormLogic = (
     setExchangeRateDisplay,
     setExchangeRate,
     currency,
-    setCurrency, // MODIFICADO: Exportamos o setCurrency diretamente para permitir alterá-lo de fora
+    setCurrency,
     origin,
     date,
     setDate,
@@ -187,7 +195,7 @@ export const useEntryFormLogic = (
     handleExchangeRateChange,
     calculateFromAmount,
     calculateFromBtc,
-    handleOriginChange: setOrigin,
+    handleOriginChange, // Agora exportado diretamente
     reset
   };
 };
