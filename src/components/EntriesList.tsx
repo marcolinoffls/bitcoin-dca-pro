@@ -1,25 +1,26 @@
+
 import React, { useState, useMemo } from 'react';
-import { BitcoinEntry, CurrentRate, Origin } from '@/types';
-import { calculatePercentageChange } from '@/services/bitcoinService';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { TrendingDown, TrendingUp, Trash2, Edit, AlertCircle, Filter, FileUp } from 'lucide-react';
-import { formatNumber } from '@/lib/utils';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import EntryEditForm from '@/components/EntryEditForm';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { calculatePercentageChange } from '@/services/bitcoinService';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { FileUp, Filter } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { BitcoinEntry, CurrentRate } from '@/types';
+import EntryEditForm from '@/components/EntryEditForm';
 import ImportCsvModal from './ImportCsvModal';
+import { EntriesTable } from './entries/EntriesTable';
+import { EntryFilters } from './entries/EntryFilters';
+import { ROWS_PER_PAGE_OPTIONS } from './entries/constants';
+import { useQueryClient } from '@tanstack/react-query';
 
-/**
- * Interface que define as propriedades do componente EntriesList
- */
 interface EntriesListProps {
   entries: BitcoinEntry[];
   currentRate: CurrentRate;
@@ -30,9 +31,6 @@ interface EntriesListProps {
   isLoading?: boolean;
 }
 
-/**
- * Componente que exibe a lista de aportes do usuário em formato de tabela
- */
 const EntriesList: React.FC<EntriesListProps> = ({
   entries,
   currentRate,
@@ -43,12 +41,13 @@ const EntriesList: React.FC<EntriesListProps> = ({
   isLoading = false,
 }) => {
   const { toast } = useToast();
+  const isMobile = useIsMobile();
+  const queryClient = useQueryClient();
   
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
   const [viewCurrency, setViewCurrency] = useState<'BRL' | 'USD'>(selectedCurrency);
-  const isMobile = useIsMobile();
   
   const [monthFilter, setMonthFilter] = useState<string | null>(null);
   const [originFilter, setOriginFilter] = useState<Origin | null>(null);
@@ -61,7 +60,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
   
   const [rowsToShow, setRowsToShow] = useState<number>(10);
   const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
-  const [isDeleteAllDialogOpen, setIsDeleteAllDialogOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const handleEditClick = (id: string) => {
@@ -162,6 +160,39 @@ const EntriesList: React.FC<EntriesListProps> = ({
     }));
   }, [entries]);
 
+  const calculateTotals = (currencyView: 'BRL' | 'USD') => {
+    const totals = {
+      totalInvested: 0,
+      totalBtc: 0,
+      avgPrice: 0,
+      percentChange: 0,
+      currentValue: 0
+    };
+    
+    if (filteredEntries.length === 0) return totals;
+    
+    filteredEntries.forEach(entry => {
+      let investedValue = entry.amountInvested;
+      
+      if (entry.currency !== currencyView) {
+        investedValue = entry.currency === 'USD'
+          ? entry.amountInvested * (currentRate.brl / currentRate.usd)
+          : entry.amountInvested / (currentRate.brl / currentRate.usd);
+      }
+      
+      totals.totalInvested += investedValue;
+      totals.totalBtc += entry.btcAmount;
+    });
+    
+    totals.avgPrice = totals.totalBtc !== 0 ? totals.totalInvested / totals.totalBtc : 0;
+    
+    const currentRateValue = currencyView === 'USD' ? currentRate.usd : currentRate.brl;
+    totals.percentChange = calculatePercentageChange(totals.avgPrice, currentRateValue);
+    totals.currentValue = totals.totalBtc * currentRateValue;
+    
+    return totals;
+  };
+
   if (isLoading) {
     return (
       <Card className="mt-6">
@@ -222,218 +253,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
     ? entries.find(entry => entry.id === selectedEntryId) 
     : null;
 
-  const formatBitcoinAmount = (amount: number) => {
-    if (displayUnit === 'SATS') {
-      const satoshis = amount * 100000000;
-      return formatNumber(satoshis, 0);
-    }
-    return formatNumber(amount, 8);
-  };
-
-  const calculateTotals = (currencyView: 'BRL' | 'USD') => {
-    const totals = {
-      totalInvested: 0,
-      totalBtc: 0,
-      avgPrice: 0,
-      percentChange: 0,
-      currentValue: 0
-    };
-    
-    if (filteredEntries.length === 0) return totals;
-    
-    filteredEntries.forEach(entry => {
-      let investedValue = entry.amountInvested;
-      
-      if (entry.currency !== currencyView) {
-        investedValue = entry.currency === 'USD'
-          ? entry.amountInvested * (currentRate.brl / currentRate.usd)
-          : entry.amountInvested / (currentRate.brl / currentRate.usd);
-      }
-      
-      totals.totalInvested += investedValue;
-      totals.totalBtc += entry.btcAmount;
-    });
-    
-    totals.avgPrice = totals.totalBtc !== 0 ? totals.totalInvested / totals.totalBtc : 0;
-    
-    const currentRateValue = currencyView === 'USD' ? currentRate.usd : currentRate.brl;
-    totals.percentChange = calculatePercentageChange(totals.avgPrice, currentRateValue);
-    totals.currentValue = totals.totalBtc * currentRateValue;
-    
-    return totals;
-  };
-
-  const renderEntriesTable = (currencyView: 'BRL' | 'USD') => {
-    const totals = calculateTotals(currencyView);
-    
-    return (
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className={isMobile ? "text-xs" : ""}>Data</TableHead>
-              <TableHead className={isMobile ? "text-xs" : ""}>Valor Investido</TableHead>
-              <TableHead className={isMobile ? "text-xs" : ""}>{displayUnit === 'SATS' ? 'Satoshis' : 'Bitcoin'}</TableHead>
-              <TableHead className={isMobile ? "text-xs" : ""}>Cotação</TableHead>
-              <TableHead className={isMobile ? "text-xs" : ""}>Variação</TableHead>
-              <TableHead className={isMobile ? "text-xs" : ""}>Valor Atual</TableHead>
-              <TableHead className={`text-right ${isMobile ? "text-xs" : ""}`}>Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sortedEntries.map((entry) => {
-              const currentRateValue = currencyView === 'USD' ? currentRate.usd : currentRate.brl;
-              
-              let entryRateInViewCurrency = entry.exchangeRate;
-              
-              if (entry.currency !== currencyView) {
-                entryRateInViewCurrency = entry.currency === 'USD' 
-                  ? entry.exchangeRate * (currentRate.brl / currentRate.usd)
-                  : entry.exchangeRate / (currentRate.brl / currentRate.usd);
-              }
-              
-              const percentChange = calculatePercentageChange(
-                entryRateInViewCurrency,
-                currentRateValue
-              );
-              
-              let investedValue = entry.amountInvested;
-              if (entry.currency !== currencyView) {
-                investedValue = entry.currency === 'USD'
-                  ? entry.amountInvested * (currentRate.brl / currentRate.usd)
-                  : entry.amountInvested / (currentRate.brl / currentRate.usd);
-              }
-              
-              const currentValue = investedValue * (1 + percentChange / 100);
-              
-              return (
-                <TableRow key={entry.id}>
-                  <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                    {format(entry.date, 'dd/MM/yyyy', { locale: ptBR })}
-                    {entry.origin === 'planilha' && (
-                      <span className="ml-1 text-xs text-muted-foreground">(planilha)</span>
-                    )}
-                    {entry.registrationSource === 'planilha' && (
-                      <span className="ml-1 text-xs text-yellow-600">●</span>
-                    )}
-                  </TableCell>
-                  <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                    {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(investedValue)}
-                  </TableCell>
-                  <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                    {formatBitcoinAmount(entry.btcAmount)}
-                  </TableCell>
-                  <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                    {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(entryRateInViewCurrency)}
-                  </TableCell>
-                  <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                    <div className="flex items-center">
-                      {percentChange > 0 ? (
-                        <TrendingUp className="h-4 w-4 mr-1 text-green-500" />
-                      ) : (
-                        <TrendingDown className="h-4 w-4 mr-1 text-red-500" />
-                      )}
-                      <span
-                        className={
-                          percentChange > 0 ? 'text-green-500' : 'text-red-500'
-                        }
-                      >
-                        {formatNumber(percentChange)}%
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                    <div className={percentChange > 0 ? 'text-green-500' : 'text-red-500'}>
-                      {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(currentValue)}
-                      <div className="text-xs text-muted-foreground">
-                        {percentChange > 0 ? '+' : ''}{formatNumber(currentValue - investedValue)}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className={`text-right ${isMobile ? "text-xs py-2" : ""}`}>
-                    <div className="flex justify-end">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditClick(entry.id)}
-                        className="mr-1"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteClick(entry.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-            
-            <TableRow className="bg-gray-100/80 font-semibold border-t-2">
-              <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                TOTAIS
-              </TableCell>
-              <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(totals.totalInvested)}
-              </TableCell>
-              <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                {formatBitcoinAmount(totals.totalBtc)}
-              </TableCell>
-              <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(totals.avgPrice)}
-              </TableCell>
-              <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                <div className="flex items-center">
-                  {totals.percentChange > 0 ? (
-                    <TrendingUp className="h-4 w-4 mr-1 text-green-500" />
-                  ) : (
-                    <TrendingDown className="h-4 w-4 mr-1 text-red-500" />
-                  )}
-                  <span
-                    className={
-                      totals.percentChange > 0 ? 'text-green-500' : 'text-red-500'
-                    }
-                  >
-                    {formatNumber(totals.percentChange)}%
-                  </span>
-                </div>
-              </TableCell>
-              <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                <div className={totals.percentChange > 0 ? 'text-green-500' : 'text-red-500'}>
-                  {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(totals.currentValue)}
-                  <div className="text-xs text-muted-foreground">
-                    {totals.percentChange > 0 ? '+' : ''}{formatNumber(totals.currentValue - totals.totalInvested)}
-                  </div>
-                </div>
-              </TableCell>
-              <TableCell></TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-        
-        <div className="flex justify-end mt-4">
-          <div className="flex items-center">
-            <span className="text-sm mr-2">Exibir:</span>
-            <Select value={rowsToShow.toString()} onValueChange={(value) => setRowsToShow(parseInt(value))}>
-              <SelectTrigger className="w-20">
-                <SelectValue placeholder="10 linhas" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="10">10 linhas</SelectItem>
-                <SelectItem value="30">30 linhas</SelectItem>
-                <SelectItem value="50">50 linhas</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <>
       <Card className="mt-6">
@@ -477,79 +296,17 @@ const EntriesList: React.FC<EntriesListProps> = ({
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-80 p-4">
-                  <div className="space-y-4">
-                    <h4 className="font-medium">Filtrar aportes</h4>
-                    
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Por mês</label>
-                      <Select 
-                        value={tempMonthFilter || 'all'} 
-                        onValueChange={(value) => setTempMonthFilter(value === 'all' ? null : value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Todos os meses" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Todos os meses</SelectItem>
-                          {availableMonths.map(month => (
-                            <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Por origem</label>
-                      <Select 
-                        value={tempOriginFilter || 'all'} 
-                        onValueChange={(value) => setTempOriginFilter(value === 'all' ? null : value as Origin)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Todas as origens" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Todas as origens</SelectItem>
-                          <SelectItem value="corretora">Corretora</SelectItem>
-                          <SelectItem value="p2p">P2P</SelectItem>
-                          <SelectItem value="planilha">Planilha</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Por tipo de registro</label>
-                      <Select 
-                        value={tempRegistrationSourceFilter || 'all'} 
-                        onValueChange={(value) => setTempRegistrationSourceFilter(value === 'all' ? null : value as 'manual' | 'planilha')}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Todos os tipos" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Todos os tipos</SelectItem>
-                          <SelectItem value="manual">Registros manuais</SelectItem>
-                          <SelectItem value="planilha">Importados de planilha</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="flex flex-col gap-2 mt-4">
-                      <Button 
-                        className="w-full bg-bitcoin hover:bg-bitcoin/90 text-white" 
-                        onClick={applyFilters}
-                      >
-                        Confirmar filtros
-                      </Button>
-                      
-                      <Button 
-                        variant="outline" 
-                        className="w-full" 
-                        onClick={clearFilters}
-                      >
-                        Limpar filtros
-                      </Button>
-                    </div>
-                  </div>
+                  <EntryFilters
+                    availableMonths={availableMonths}
+                    tempMonthFilter={tempMonthFilter}
+                    tempOriginFilter={tempOriginFilter}
+                    tempRegistrationSourceFilter={tempRegistrationSourceFilter}
+                    setTempMonthFilter={setTempMonthFilter}
+                    setTempOriginFilter={setTempOriginFilter}
+                    setTempRegistrationSourceFilter={setTempRegistrationSourceFilter}
+                    applyFilters={applyFilters}
+                    clearFilters={clearFilters}
+                  />
                 </PopoverContent>
               </Popover>
             </div>
@@ -562,10 +319,62 @@ const EntriesList: React.FC<EntriesListProps> = ({
               <TabsTrigger value="usd" className="rounded-r-md rounded-l-none border-l">Exibir em USD ($)</TabsTrigger>
             </TabsList>
             <TabsContent value="brl">
-              {renderEntriesTable('BRL')}
+              <div className="overflow-x-auto">
+                <EntriesTable 
+                  entries={sortedEntries}
+                  currencyView="BRL"
+                  currentRate={currentRate}
+                  displayUnit={displayUnit}
+                  isMobile={isMobile}
+                  handleEditClick={handleEditClick}
+                  handleDeleteClick={handleDeleteClick}
+                  totals={calculateTotals('BRL')}
+                />
+                <div className="flex justify-end mt-4">
+                  <div className="flex items-center">
+                    <span className="text-sm mr-2">Exibir:</span>
+                    <Select value={rowsToShow.toString()} onValueChange={(value) => setRowsToShow(parseInt(value))}>
+                      <SelectTrigger className="w-20">
+                        <SelectValue placeholder="10 linhas" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ROWS_PER_PAGE_OPTIONS.map(option => (
+                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
             </TabsContent>
             <TabsContent value="usd">
-              {renderEntriesTable('USD')}
+              <div className="overflow-x-auto">
+                <EntriesTable 
+                  entries={sortedEntries}
+                  currencyView="USD"
+                  currentRate={currentRate}
+                  displayUnit={displayUnit}
+                  isMobile={isMobile}
+                  handleEditClick={handleEditClick}
+                  handleDeleteClick={handleDeleteClick}
+                  totals={calculateTotals('USD')}
+                />
+                <div className="flex justify-end mt-4">
+                  <div className="flex items-center">
+                    <span className="text-sm mr-2">Exibir:</span>
+                    <Select value={rowsToShow.toString()} onValueChange={(value) => setRowsToShow(parseInt(value))}>
+                      <SelectTrigger className="w-20">
+                        <SelectValue placeholder="10 linhas" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ROWS_PER_PAGE_OPTIONS.map(option => (
+                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
             </TabsContent>
           </Tabs>
         </CardContent>
