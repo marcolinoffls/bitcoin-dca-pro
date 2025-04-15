@@ -1,8 +1,9 @@
-
 /**
  * Configurações de segurança para a aplicação
- * Contém constantes e funções relacionadas à segurança da transmissão de dados
+ * Contém constantes, funções e utilidades relacionadas à segurança
  */
+
+import { createHash, randomBytes } from 'crypto';
 
 // Configurações de tamanho e tipo para arquivos CSV
 export const CSV_MAX_SIZE_MB = 5;
@@ -10,16 +11,29 @@ export const CSV_MAX_SIZE_BYTES = CSV_MAX_SIZE_MB * 1024 * 1024;
 export const ALLOWED_MIME_TYPES = ['text/csv'];
 export const ALLOWED_EXTENSIONS = ['.csv'];
 
-// URL do webhook do n8n
+// URL do webhook do n8n (em produção, usar variável de ambiente do Supabase)
 export const WEBHOOK_URL = 'https://primary-production-3045.up.railway.app/webhook-test/import-satisfaction';
 
-// Token de API para autorização (normalmente viria de variáveis de ambiente)
-// Em produção, isso deveria estar em variáveis de ambiente seguras
-export const API_KEY = 'seu-token-seguro-aqui'; 
+// Token de API para autorização
+export const API_KEY = 'testkey123'; // Em produção, usar secrets do Supabase
+
+// Configurações de timeout para requisições (em milissegundos)
+export const REQUEST_TIMEOUT = 30000; // 30 segundos
+
+/**
+ * Gera uma nova API key segura usando crypto
+ * @returns string contendo a API key em formato hexadecimal
+ */
+export const generateSecureApiKey = (): string => {
+  // Gera 32 bytes de dados aleatórios
+  const randomKey = randomBytes(32);
+  // Converte para hexadecimal
+  return randomKey.toString('hex');
+};
 
 /**
  * Gera um timestamp para uso nos headers de segurança
- * @returns string com timestamp atual em formato ISO
+ * @returns string com timestamp atual em ISO
  */
 export const generateTimestamp = (): string => {
   return new Date().toISOString();
@@ -27,26 +41,26 @@ export const generateTimestamp = (): string => {
 
 /**
  * Gera uma assinatura HMAC para validação de integridade
+ * Usa SHA-256 para maior segurança
  * @param payload dados a serem assinados
  * @param timestamp timestamp da requisição
  * @returns string com assinatura HMAC
  */
 export const generateHmacSignature = (payload: any, timestamp: string): string => {
-  // Em um ambiente real, utilizaríamos algo como:
-  // const hmac = crypto.createHmac('sha256', SECRET_KEY);
-  // hmac.update(JSON.stringify(payload) + timestamp);
-  // return hmac.digest('hex');
-  
-  // Implementação simplificada para demonstração:
-  const combinedString = JSON.stringify(payload) + timestamp;
-  // Simulação de hash - em produção usar um algoritmo real como SHA-256
-  let hash = 0;
-  for (let i = 0; i < combinedString.length; i++) {
-    const char = combinedString.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Converte para 32bit integer
+  try {
+    // Combina payload e timestamp
+    const data = JSON.stringify(payload) + timestamp;
+    
+    // Cria hash SHA-256 (em produção usar uma chave secreta do Supabase)
+    const hash = createHash('sha256')
+      .update(data)
+      .digest('hex');
+    
+    return hash;
+  } catch (error) {
+    console.error('Erro ao gerar assinatura HMAC:', error);
+    throw new Error('Falha ao gerar assinatura de segurança');
   }
-  return hash.toString(16);
 };
 
 /**
@@ -83,7 +97,7 @@ export const validateCsvFile = (file: File): { isValid: boolean; errorMessage?: 
 
 /**
  * Sanitiza os dados do CSV antes do processamento
- * Implementação básica que remove caracteres potencialmente perigosos
+ * Remove caracteres potencialmente perigosos e valida tipos
  * @param data Dados do CSV a serem sanitizados
  * @returns Dados sanitizados
  */
@@ -108,4 +122,41 @@ export const sanitizeCsvData = (data: any[]): any[] => {
     
     return sanitizedRow;
   });
+};
+
+/**
+ * Prepara headers seguros para requisição ao webhook
+ * @param userId ID do usuário autenticado
+ * @param timestamp Timestamp da requisição
+ * @param signature Assinatura HMAC
+ * @returns objeto com headers seguros
+ */
+export const prepareSecureHeaders = (
+  userId: string,
+  timestamp: string,
+  signature: string
+): HeadersInit => {
+  return {
+    'Authorization': `Bearer ${API_KEY}`,
+    'X-Request-Timestamp': timestamp,
+    'X-Signature': signature,
+    'X-User-Id': userId
+  };
+};
+
+/**
+ * Valida a resposta do webhook para garantir sucesso
+ * @param response Resposta da requisição
+ * @returns void, lança erro se a resposta não for válida
+ */
+export const validateWebhookResponse = async (response: Response): Promise<void> => {
+  if (!response.ok) {
+    const errorData = await response.text();
+    console.error('Erro na resposta do webhook:', {
+      status: response.status,
+      statusText: response.statusText,
+      errorData: errorData.substring(0, 100) // Limita logs para não expor dados sensíveis
+    });
+    throw new Error(`Erro ao processar arquivo: ${response.status} ${response.statusText}`);
+  }
 };

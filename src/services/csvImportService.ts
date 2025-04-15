@@ -1,20 +1,17 @@
-
-import { BitcoinEntry, Origin } from '@/types';
-import { supabase } from '@/integrations/supabase/client';
-import Papa from 'papaparse';
-import { useAuth } from '@/hooks/useAuth';
 import { 
   validateCsvFile, 
   sanitizeCsvData, 
-  generateTimestamp, 
-  generateHmacSignature, 
-  API_KEY, 
-  WEBHOOK_URL 
+  generateTimestamp,
+  generateHmacSignature,
+  prepareSecureHeaders,
+  validateWebhookResponse,
+  WEBHOOK_URL,
+  REQUEST_TIMEOUT
 } from '@/config/security';
+import { BitcoinEntry, Origin } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
+import Papa from 'papaparse';
 
-/**
- * Interface para mapear os dados do CSV para a estrutura do banco
- */
 interface CsvAporte {
   data: string;
   valor: string;
@@ -146,15 +143,19 @@ export const importCSV = async (file: File) => {
  * @param userEmail Email do usuário autenticado
  * @returns Promise com resultado do envio
  */
-export const sendSecureCSVToWebhook = async (file: File, userId: string, userEmail: string) => {
+export const sendSecureCSVToWebhook = async (
+  file: File, 
+  userId: string, 
+  userEmail: string
+): Promise<{ success: boolean; message: string }> => {
   try {
-    // Validar arquivo antes de qualquer processamento
+    // Validar arquivo antes do processamento
     const validation = validateCsvFile(file);
     if (!validation.isValid) {
       throw new Error(validation.errorMessage);
     }
     
-    // Ler o arquivo como binário
+    // Ler arquivo como binário
     const fileBuffer = await file.arrayBuffer();
     
     // Preparar dados para envio
@@ -162,12 +163,10 @@ export const sendSecureCSVToWebhook = async (file: File, userId: string, userEma
     
     // Criar FormData para envio multipart/form-data
     const formData = new FormData();
-    
-    // Adicionar arquivo como blob
     const fileBlob = new Blob([fileBuffer], { type: 'text/csv' });
     formData.append('file', fileBlob, file.name);
     
-    // Adicionar metadados adicionais
+    // Adicionar metadados
     formData.append('fileName', file.name);
     formData.append('userId', userId);
     formData.append('userEmail', userEmail);
@@ -185,44 +184,32 @@ export const sendSecureCSVToWebhook = async (file: File, userId: string, userEma
     // Gerar assinatura
     const signature = generateHmacSignature(payloadForSignature, timestamp);
     
-    // Configurar timeout para a requisição
+    // Configurar headers seguros
+    const headers = prepareSecureHeaders(userId, timestamp, signature);
+    
+    // Configurar timeout
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
     
     try {
-      // Enviar para o webhook com headers de segurança
+      // Enviar para webhook
       const response = await fetch(WEBHOOK_URL, {
         method: 'POST',
         body: formData,
-        headers: {
-          // Content-Type é definido automaticamente pelo navegador para FormData
-          'Authorization': `Bearer ${API_KEY}`,
-          'X-Request-Timestamp': timestamp,
-          'X-Signature': signature,
-          'X-User-Id': userId
-        },
+        headers,
         signal: controller.signal
       });
       
       clearTimeout(timeoutId);
       
-      // Verificar resposta
-      if (!response.ok) {
-        const errorData = await response.text();
-        console.error('Erro na resposta do webhook:', {
-          status: response.status,
-          statusText: response.statusText,
-          errorData: errorData.substring(0, 100) // Limita logs para não expor dados sensíveis
-        });
-        throw new Error(`Erro ao processar arquivo: ${response.status} ${response.statusText}`);
-      }
+      // Validar resposta
+      await validateWebhookResponse(response);
       
-      // Resposta de sucesso
       return {
         success: true,
         message: 'Arquivo enviado e processado com sucesso!'
       };
-    } catch (fetchError) {
+    } catch (fetchError: any) {
       clearTimeout(timeoutId);
       
       if (fetchError.name === 'AbortError') {
