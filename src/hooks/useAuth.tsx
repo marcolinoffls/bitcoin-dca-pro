@@ -1,8 +1,7 @@
-
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 /**
  * Hook de autenticação que gerencia o estado de autenticação do usuário
@@ -132,20 +131,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Nova função para solicitar redefinição de senha
+  // Função melhorada para solicitar redefinição de senha
   const resetPassword = async (email: string) => {
     try {
+      console.log("Enviando solicitação de redefinição de senha para:", email);
+      
+      // Usando a URL completa para garantir o redirecionamento correto
+      const resetRedirectUrl = `${window.location.origin}/reset-password`;
+      console.log("URL de redirecionamento configurada:", resetRedirectUrl);
+      
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + '/reset-password',
+        redirectTo: resetRedirectUrl,
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Erro na API do Supabase:", error);
+        throw error;
+      }
       
       toast({
         title: "Email enviado",
         description: "Verifique sua caixa de entrada para redefinir sua senha.",
       });
     } catch (error: any) {
+      console.error("Erro completo ao enviar email de redefinição:", error);
+      
+      // Garantindo que sempre temos uma mensagem de erro amigável
+      if (!error.message || error.message === '{}' || error.message === '!') {
+        error.message = 'Ocorreu um erro ao enviar o email. Por favor, tente novamente.';
+      }
+      
       toast({
         title: "Erro ao enviar email",
         description: error.message,

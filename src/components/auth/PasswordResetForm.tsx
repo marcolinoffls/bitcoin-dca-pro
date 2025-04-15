@@ -65,7 +65,10 @@ const PasswordResetForm = ({ accessToken, isTokenLoading }: PasswordResetFormPro
     try {
       console.log("Tentando definir a sessão com o token");
       
-      const { error: sessionError } = await supabase.auth.setSession({
+      // Adicionando mais logs para debug
+      console.log("Token de acesso recebido:", accessToken ? "Presente" : "Ausente");
+      
+      const { error: sessionError, data: sessionData } = await supabase.auth.setSession({
         access_token: accessToken,
         refresh_token: '',
       });
@@ -75,11 +78,13 @@ const PasswordResetForm = ({ accessToken, isTokenLoading }: PasswordResetFormPro
         throw sessionError;
       }
 
-      console.log("Tentando atualizar a senha do usuário");
+      console.log("Sessão definida com sucesso, atualizando senha");
       
-      const { error } = await supabase.auth.updateUser({ 
+      const { error, data } = await supabase.auth.updateUser({ 
         password: password 
       });
+      
+      console.log("Resposta da atualização de senha:", data ? "Sucesso" : "Falha");
       
       if (error) {
         console.error("Erro ao atualizar a senha:", error);
@@ -95,13 +100,14 @@ const PasswordResetForm = ({ accessToken, isTokenLoading }: PasswordResetFormPro
     } catch (error: any) {
       console.error('Erro ao redefinir a senha:', error.message);
       
+      // Tratamento de erro melhorado com mensagens mais claras
       let errorMessage = 'Ocorreu um erro ao redefinir a senha. Por favor, tente novamente.';
       
       if (error.message?.includes('JWT')) {
         errorMessage = 'Link expirado. Por favor, solicite uma nova redefinição de senha.';
       } else if (error.message?.includes('rate limit')) {
         errorMessage = 'Muitas tentativas. Por favor, aguarde alguns minutos antes de tentar novamente.';
-      } else if (error.message) {
+      } else if (error.message && error.message !== '{}' && error.message !== '!') {
         errorMessage = error.message;
       }
       
@@ -115,6 +121,27 @@ const PasswordResetForm = ({ accessToken, isTokenLoading }: PasswordResetFormPro
     return (
       <div className="flex justify-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-bitcoin"></div>
+      </div>
+    );
+  }
+
+  // Se não houver token, exibir mensagem de erro amigável
+  if (!accessToken) {
+    return (
+      <div className="space-y-4">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Link inválido ou expirado. Por favor, solicite uma nova redefinição de senha.
+          </AlertDescription>
+        </Alert>
+        
+        <Button 
+          onClick={() => navigate('/auth')}
+          className="w-full bg-bitcoin hover:bg-bitcoin/90 rounded-lg py-3"
+        >
+          Voltar para a página de login
+        </Button>
       </div>
     );
   }

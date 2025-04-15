@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate, useLocation } from 'react-router-dom';
@@ -10,8 +11,16 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
+/**
+ * Página de autenticação
+ * 
+ * Este componente gerencia:
+ * 1. Login com email/senha
+ * 2. Cadastro de novos usuários
+ * 3. Redefinição de senha
+ */
 const Auth = () => {
-  const { user, loading, signIn, signUp } = useAuth();
+  const { user, loading, signIn, signUp, resetPassword } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -96,18 +105,28 @@ const Auth = () => {
     }
 
     setIsSubmitting(true);
+    setPasswordError('');
+    
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth?tab=reset`,
-      });
-      
-      if (error) throw error;
-      
+      // Utilizando a função do hook useAuth em vez de chamar diretamente o Supabase
+      await resetPassword(email);
       setResetSent(true);
-      setResetRequested(false);
     } catch (error: any) {
-      console.error('Error resetting password:', error.message);
-      setPasswordError(error.message);
+      console.error('Erro ao enviar email de redefinição:', error);
+      // Mensagem de erro mais amigável
+      let errorMessage = 'Ocorreu um erro ao enviar o email. Por favor, tente novamente.';
+      
+      if (error.message?.includes('rate limit')) {
+        errorMessage = 'Muitas tentativas. Por favor, aguarde alguns minutos antes de tentar novamente.';
+      } else if (error.message) {
+        // Garantindo uma mensagem de erro amigável
+        errorMessage = error.message.replace(/[{}[\]]/g, '').trim();
+        if (errorMessage === '' || errorMessage === '!' || errorMessage.length < 5) {
+          errorMessage = 'Ocorreu um erro ao processar sua solicitação. Por favor, tente novamente.';
+        }
+      }
+      
+      setPasswordError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
