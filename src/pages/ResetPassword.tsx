@@ -23,21 +23,40 @@ const ResetPassword = () => {
   // Extrai o token de acesso da URL ao montar o componente
   useEffect(() => {
     const extractToken = () => {
-      // Verifica hash primeiro (formato #access_token=XXX)
-      const hashParams = new URLSearchParams(location.hash.substring(1));
-      const hashToken = hashParams.get('access_token');
-      if (hashToken) return hashToken;
+      // Verifica se há um hash e extrai o access_token
+      if (location.hash) {
+        try {
+          // Remove o # inicial
+          const hashParams = new URLSearchParams(location.hash.substring(1));
+          const hashToken = hashParams.get('access_token');
+          
+          if (hashToken) {
+            console.log("Token encontrado no hash da URL");
+            return hashToken;
+          }
+        } catch (error) {
+          console.error("Erro ao extrair token do hash:", error);
+        }
+      }
       
-      // Verifica query params (formato ?token=XXX)
-      const queryParams = new URLSearchParams(location.search);
-      const queryToken = queryParams.get('token') || queryParams.get('access_token');
-      if (queryToken) return queryToken;
+      // Tenta extrair de query params como fallback
+      try {
+        const queryParams = new URLSearchParams(location.search);
+        const queryToken = queryParams.get('token') || queryParams.get('access_token');
+        
+        if (queryToken) {
+          console.log("Token encontrado nos query params da URL");
+          return queryToken;
+        }
+      } catch (error) {
+        console.error("Erro ao extrair token dos query params:", error);
+      }
       
       return null;
     };
 
     const token = extractToken();
-    console.log("Token encontrado na URL:", token ? "Sim" : "Não");
+    console.log("Status do token:", token ? "Token encontrado" : "Token não encontrado");
     setAccessToken(token);
     setIsTokenLoading(false);
   }, [location]);

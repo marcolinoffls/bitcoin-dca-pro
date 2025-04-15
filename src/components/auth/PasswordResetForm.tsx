@@ -68,45 +68,55 @@ const PasswordResetForm = ({ accessToken, isTokenLoading }: PasswordResetFormPro
       // Adicionando mais logs para debug
       console.log("Token de acesso recebido:", accessToken ? "Presente" : "Ausente");
       
-      const { error: sessionError, data: sessionData } = await supabase.auth.setSession({
+      // Tente definir a sessão com o token fornecido
+      const { error: sessionError } = await supabase.auth.setSession({
         access_token: accessToken,
         refresh_token: '',
       });
 
       if (sessionError) {
         console.error("Erro ao definir a sessão:", sessionError);
+        
+        // Tratamento específico para erros de token
+        if (sessionError.message?.includes('JWT')) {
+          throw new Error('Link expirado. Por favor, solicite uma nova redefinição de senha.');
+        }
         throw sessionError;
       }
 
       console.log("Sessão definida com sucesso, atualizando senha");
       
-      const { error, data } = await supabase.auth.updateUser({ 
+      // Atualize a senha do usuário
+      const { error } = await supabase.auth.updateUser({ 
         password: password 
       });
-      
-      console.log("Resposta da atualização de senha:", data ? "Sucesso" : "Falha");
       
       if (error) {
         console.error("Erro ao atualizar a senha:", error);
         throw error;
       }
       
+      // Exiba um toast de sucesso
       toast({
         title: "Senha atualizada com sucesso",
         description: "Sua senha foi redefinida. Agora você pode fazer login com sua nova senha.",
+        variant: "success",
       });
       
+      // Navegue para a página de autenticação
       navigate('/auth');
     } catch (error: any) {
-      console.error('Erro ao redefinir a senha:', error.message);
+      console.error('Erro ao redefinir a senha:', error);
       
       // Tratamento de erro melhorado com mensagens mais claras
       let errorMessage = 'Ocorreu um erro ao redefinir a senha. Por favor, tente novamente.';
       
-      if (error.message?.includes('JWT')) {
-        errorMessage = 'Link expirado. Por favor, solicite uma nova redefinição de senha.';
+      if (error.message?.includes('JWT') || error.message?.includes('token')) {
+        errorMessage = 'Link expirado ou inválido. Por favor, solicite uma nova redefinição de senha.';
       } else if (error.message?.includes('rate limit')) {
         errorMessage = 'Muitas tentativas. Por favor, aguarde alguns minutos antes de tentar novamente.';
+      } else if (error.message?.includes('User not found') || error.message?.includes('Invalid user')) {
+        errorMessage = 'Usuário não encontrado. O link pode ter expirado.';
       } else if (error.message && error.message !== '{}' && error.message !== '!') {
         errorMessage = error.message;
       }
@@ -117,6 +127,7 @@ const PasswordResetForm = ({ accessToken, isTokenLoading }: PasswordResetFormPro
     }
   };
 
+  // Exibir loading enquanto o token está sendo carregado
   if (isTokenLoading) {
     return (
       <div className="flex justify-center py-8">
@@ -146,6 +157,7 @@ const PasswordResetForm = ({ accessToken, isTokenLoading }: PasswordResetFormPro
     );
   }
 
+  // Renderize o formulário de redefinição de senha
   return (
     <form onSubmit={handleResetPassword}>
       <div className="space-y-4">

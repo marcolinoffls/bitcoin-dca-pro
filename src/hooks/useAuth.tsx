@@ -1,3 +1,4 @@
+
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -136,8 +137,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       console.log("Enviando solicitação de redefinição de senha para:", email);
       
-      // Usando a URL completa para garantir o redirecionamento correto
-      const resetRedirectUrl = `${window.location.origin}/reset-password`;
+      // Obtém a URL base do site atual para garantir que o redirecionamento funcione corretamente
+      const baseUrl = window.location.origin;
+      const resetRedirectUrl = `${baseUrl}/reset-password`;
+      
       console.log("URL de redirecionamento configurada:", resetRedirectUrl);
       
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -149,21 +152,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw error;
       }
       
+      // Exibe mensagem de sucesso se não houver erros
       toast({
         title: "Email enviado",
-        description: "Verifique sua caixa de entrada para redefinir sua senha.",
+        description: "Verifique sua caixa de entrada para redefinir sua senha. Lembre-se de verificar a pasta de spam caso não encontre o email.",
+        variant: "success", // Usar variante de sucesso para destacar a mensagem positiva
       });
     } catch (error: any) {
       console.error("Erro completo ao enviar email de redefinição:", error);
       
-      // Garantindo que sempre temos uma mensagem de erro amigável
+      // Tratamento de erros melhorado com mensagens mais amigáveis
+      let mensagemErro = '';
+      
       if (!error.message || error.message === '{}' || error.message === '!') {
-        error.message = 'Ocorreu um erro ao enviar o email. Por favor, tente novamente.';
+        // Para erros com mensagens vazias ou inválidas
+        mensagemErro = 'Ocorreu um erro ao enviar o email de redefinição. Por favor, verifique se o email está correto e tente novamente.';
+      } else if (error.message.includes('rate limit')) {
+        // Para erros de limite de taxa
+        mensagemErro = 'Muitas tentativas em pouco tempo. Por favor, aguarde alguns minutos antes de tentar novamente.';
+      } else if (error.message.includes('Unable to validate email address')) {
+        // Para erros de validação de email
+        mensagemErro = 'Email inválido. Por favor, verifique se o endereço está correto.';
+      } else if (error.message.includes('not found')) {
+        // Caso específico de email não encontrado
+        mensagemErro = 'Email não encontrado. Verifique se digitou corretamente ou crie uma nova conta.';
+      } else {
+        // Para outros erros com mensagem válida
+        mensagemErro = error.message;
       }
       
       toast({
         title: "Erro ao enviar email",
-        description: error.message,
+        description: mensagemErro,
         variant: "destructive",
       });
       throw error;
