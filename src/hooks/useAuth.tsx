@@ -4,6 +4,15 @@ import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 
+/**
+ * Hook de autenticação que gerencia o estado de autenticação do usuário
+ * Este hook contém toda a lógica para:
+ * 1. Login e logout do usuário
+ * 2. Cadastro de novos usuários
+ * 3. Detecção de mudanças no estado de autenticação
+ * 4. Fornecimento do estado de autenticação para o restante da aplicação
+ */
+
 type AuthContextType = {
   session: Session | null;
   user: User | null;
@@ -11,6 +20,7 @@ type AuthContextType = {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,18 +39,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       (event, newSession) => {
         console.log("Evento de autenticação detectado:", event);
         
+        // Verifique se a URL atual é de redefinição de senha para tratar de forma especial
+        const isResetPasswordPage = window.location.pathname.includes('reset-password');
+        
+        // Não atualize a sessão para PASSWORD_RECOVERY, isso é tratado separadamente
         if (event !== 'PASSWORD_RECOVERY') {
           setSession(newSession);
           setUser(newSession?.user ?? null);
-          
-          // Evento SIGNED_IN ocorre apenas quando o usuário faz login diretamente
-          // e não durante a inicialização da sessão
-          if (event === 'SIGNED_IN') {
-            console.log('Usuário fez login com sucesso');
-            // Removido o toast de login bem-sucedido
-          }
         }
         
+        // Eventos específicos que exigem feedback visual
         if (event === 'SIGNED_OUT') {
           toast({
             title: "Logout efetuado",
@@ -48,6 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           });
         } else if (event === 'PASSWORD_RECOVERY') {
           console.log("Evento de recuperação de senha detectado");
+          // Não exibimos toast aqui para não confundir o usuário
         } else if (event === 'USER_UPDATED') {
           toast({
             title: "Perfil atualizado",
@@ -61,6 +70,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data: { session: newSession } }) => {
       const isResetPasswordPage = window.location.pathname.includes('reset-password');
       
+      // Em páginas de redefinição de senha com token no hash, não restauramos a sessão
+      // para permitir o processamento correto do token
       if (!isResetPasswordPage || !window.location.hash.includes('access_token')) {
         console.log('Sessão recuperada na inicialização:', newSession ? 'Sim' : 'Não');
         setSession(newSession);
@@ -79,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       console.log('Login bem-sucedido');
-      // Removido o toast de login bem-sucedido
+      // Sem toast de login bem-sucedido, isso evita conflitos com outras mensagens
     } catch (error: any) {
       toast({
         title: "Erro ao fazer login",
@@ -121,8 +132,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Nova função para solicitar redefinição de senha
+  const resetPassword = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + '/reset-password',
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Email enviado",
+        description: "Verifique sua caixa de entrada para redefinir sua senha.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao enviar email",
+        description: error.message,
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ session, user, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ 
+      session, 
+      user, 
+      loading, 
+      signIn, 
+      signUp, 
+      signOut,
+      resetPassword
+    }}>
       {children}
     </AuthContext.Provider>
   );

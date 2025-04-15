@@ -10,6 +10,15 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+/**
+ * Componente de redefinição de senha
+ * 
+ * Este componente é utilizado para permitir que os usuários redefinam suas senhas
+ * após receberem um link de recuperação por email.
+ * 
+ * Ele extrai o token de acesso da URL, valida os campos de senha e atualiza
+ * a senha do usuário no Supabase quando o formulário é enviado.
+ */
 const ResetPassword = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -17,37 +26,36 @@ const ResetPassword = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [passwordError, setPasswordError] = useState('');
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [isTokenLoading, setIsTokenLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
 
   // Extrai o token de acesso da URL ao montar o componente
-  // Função melhorada para capturar o token de diferentes formatos de URL
   useEffect(() => {
-    // Função para extrair o token de vários formatos possíveis
     const extractToken = () => {
-      // Verifica se o token está no hash (formato #access_token=XXX)
+      // Verifica hash primeiro (formato #access_token=XXX)
       const hashParams = new URLSearchParams(location.hash.substring(1));
       const hashToken = hashParams.get('access_token');
       if (hashToken) return hashToken;
       
-      // Verifica se o token está nos parâmetros de consulta (formato ?token=XXX)
+      // Verifica query params (formato ?token=XXX)
       const queryParams = new URLSearchParams(location.search);
       const queryToken = queryParams.get('token') || queryParams.get('access_token');
       if (queryToken) return queryToken;
       
-      // Verifica se há um formato de URL específico para a recuperação de senha
-      // Alguns provedores usam diretamente o parâmetro na URL
       return null;
     };
 
     const token = extractToken();
-    console.log("Token encontrado na URL:", token ? "Sim" : "Não"); // Log para depuração
+    console.log("Token encontrado na URL:", token ? "Sim" : "Não");
     setAccessToken(token);
     
     if (!token) {
       setPasswordError('Link inválido ou expirado. Por favor, solicite uma nova redefinição de senha.');
     }
+    
+    setIsTokenLoading(false);
   }, [location]);
 
   // Alterna a visibilidade da senha
@@ -57,15 +65,21 @@ const ResetPassword = () => {
 
   // Valida a senha inserida
   const validatePassword = () => {
+    // Reinicia o erro
+    setPasswordError('');
+    
+    // Verifica comprimento mínimo
     if (password.length < 6) {
       setPasswordError('A senha deve ter pelo menos 6 caracteres');
       return false;
     }
+    
+    // Verifica se as senhas coincidem
     if (password !== confirmPassword) {
       setPasswordError('As senhas não coincidem');
       return false;
     }
-    setPasswordError('');
+    
     return true;
   };
 
@@ -73,10 +87,12 @@ const ResetPassword = () => {
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Valida os campos
     if (!validatePassword()) {
       return;
     }
 
+    // Verifica se o token está presente
     if (!accessToken) {
       setPasswordError('Link inválido ou expirado. Por favor, solicite uma nova redefinição de senha.');
       return;
@@ -85,7 +101,7 @@ const ResetPassword = () => {
     setIsSubmitting(true);
     
     try {
-      console.log("Tentando definir a sessão com o token"); // Log para depuração
+      console.log("Tentando definir a sessão com o token");
       
       // Define o token de acesso na sessão
       const { error: sessionError } = await supabase.auth.setSession({
@@ -94,11 +110,11 @@ const ResetPassword = () => {
       });
 
       if (sessionError) {
-        console.error("Erro ao definir a sessão:", sessionError); // Log para depuração
+        console.error("Erro ao definir a sessão:", sessionError);
         throw sessionError;
       }
 
-      console.log("Tentando atualizar a senha do usuário"); // Log para depuração
+      console.log("Tentando atualizar a senha do usuário");
       
       // Atualiza a senha do usuário
       const { error } = await supabase.auth.updateUser({ 
@@ -106,7 +122,7 @@ const ResetPassword = () => {
       });
       
       if (error) {
-        console.error("Erro ao atualizar a senha:", error); // Log para depuração
+        console.error("Erro ao atualizar a senha:", error);
         throw error;
       }
       
@@ -115,10 +131,23 @@ const ResetPassword = () => {
         description: "Sua senha foi redefinida. Agora você pode fazer login com sua nova senha.",
       });
       
-      navigate('/');
+      // Redireciona para a página de login após sucesso
+      navigate('/auth');
     } catch (error: any) {
       console.error('Erro ao redefinir a senha:', error.message);
-      setPasswordError(error.message || 'Ocorreu um erro ao redefinir a senha. Por favor, tente novamente.');
+      
+      // Mensagem de erro mais amigável baseada no tipo de erro
+      let errorMessage = 'Ocorreu um erro ao redefinir a senha. Por favor, tente novamente.';
+      
+      if (error.message?.includes('JWT')) {
+        errorMessage = 'Link expirado. Por favor, solicite uma nova redefinição de senha.';
+      } else if (error.message?.includes('rate limit')) {
+        errorMessage = 'Muitas tentativas. Por favor, aguarde alguns minutos antes de tentar novamente.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setPasswordError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -126,6 +155,9 @@ const ResetPassword = () => {
 
   return (
     <div className="container flex items-center justify-center min-h-screen py-8">
+      {/* Título invisível para SEO */}
+      <h1 className="sr-only">Redefinição de Senha - Bitcoin DCA Pro</h1>
+      
       <Card className="w-full max-w-md rounded-xl shadow-lg border-0">
         <CardHeader className="text-center pb-6">
           <div className="flex items-center justify-center mb-4">
@@ -142,84 +174,92 @@ const ResetPassword = () => {
         </CardHeader>
 
         <CardContent>
-          <form onSubmit={handleResetPassword}>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="new-password">Nova Senha</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    id="new-password" 
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="pl-10 pr-10 rounded-lg"
-                    disabled={!accessToken || isSubmitting}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={toggleShowPassword}
-                    className="absolute right-0 top-0 h-10 w-10 p-0 text-muted-foreground"
-                    disabled={!accessToken || isSubmitting}
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    <span className="sr-only">{showPassword ? "Esconder senha" : "Mostrar senha"}</span>
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  A senha deve ter pelo menos 6 caracteres
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="confirm-password">Confirmar Senha</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    id="confirm-password" 
-                    type={showPassword ? "text" : "password"}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                    className="pl-10 pr-10 rounded-lg"
-                    disabled={!accessToken || isSubmitting}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={toggleShowPassword}
-                    className="absolute right-0 top-0 h-10 w-10 p-0 text-muted-foreground"
-                    disabled={!accessToken || isSubmitting}
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    <span className="sr-only">{showPassword ? "Esconder senha" : "Mostrar senha"}</span>
-                  </Button>
-                </div>
-              </div>
-              
-              {passwordError && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{passwordError}</AlertDescription>
-                </Alert>
-              )}
-
-              <Button 
-                type="submit" 
-                className="w-full bg-bitcoin hover:bg-bitcoin/90 rounded-lg py-3"
-                disabled={!accessToken || isSubmitting}
-              >
-                {isSubmitting ? (
-                  <span className="flex items-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Atualizando...
-                  </span>
-                ) : 'Redefinir Senha'}
-              </Button>
+          {isTokenLoading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-bitcoin"></div>
             </div>
-          </form>
+          ) : (
+            <form onSubmit={handleResetPassword}>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new-password">Nova Senha</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      id="new-password" 
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="pl-10 pr-10 rounded-lg"
+                      disabled={!accessToken || isSubmitting}
+                      minLength={6}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={toggleShowPassword}
+                      className="absolute right-0 top-0 h-10 w-10 p-0 text-muted-foreground"
+                      disabled={!accessToken || isSubmitting}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      <span className="sr-only">{showPassword ? "Esconder senha" : "Mostrar senha"}</span>
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    A senha deve ter pelo menos 6 caracteres
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password">Confirmar Senha</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      id="confirm-password" 
+                      type={showPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                      className="pl-10 pr-10 rounded-lg"
+                      disabled={!accessToken || isSubmitting}
+                      minLength={6}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={toggleShowPassword}
+                      className="absolute right-0 top-0 h-10 w-10 p-0 text-muted-foreground"
+                      disabled={!accessToken || isSubmitting}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      <span className="sr-only">{showPassword ? "Esconder senha" : "Mostrar senha"}</span>
+                    </Button>
+                  </div>
+                </div>
+                
+                {passwordError && (
+                  <Alert variant="destructive" className="mt-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{passwordError}</AlertDescription>
+                  </Alert>
+                )}
+
+                <Button 
+                  type="submit" 
+                  className="w-full bg-bitcoin hover:bg-bitcoin/90 rounded-lg py-3 mt-4"
+                  disabled={!accessToken || isSubmitting || !password || !confirmPassword || password.length < 6}
+                >
+                  {isSubmitting ? (
+                    <span className="flex items-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Atualizando...
+                    </span>
+                  ) : 'Redefinir Senha'}
+                </Button>
+              </div>
+            </form>
+          )}
         </CardContent>
 
         <CardFooter className="flex justify-center">
