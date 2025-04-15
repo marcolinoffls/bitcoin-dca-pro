@@ -10,7 +10,7 @@
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { InfoCircle } from 'lucide-react';
+import { Info } from 'lucide-react';
 
 interface ExchangeRateFieldProps {
   currency: 'BRL' | 'USD';
@@ -64,7 +64,7 @@ const ExchangeRateField: React.FC<ExchangeRateFieldProps> = ({
         />
         {isCalculated && (
           <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-            <InfoCircle size={18} className="text-amber-600" />
+            <Info size={18} className="text-amber-600" />
           </div>
         )}
       </div>

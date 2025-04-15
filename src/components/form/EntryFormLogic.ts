@@ -18,6 +18,8 @@
  * - Mantido formato de exibição para o usuário com strings formatadas
  * - Adicionada função setExchangeRate para permitir definir a taxa diretamente
  * - Adicionado suporte a cotação opcional, com cálculo automático
+ * - Corrigido tratamento da cotação como campo opcional
+ * - Melhorada validação do formulário para suportar cotação opcional
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -37,7 +39,7 @@ interface EditingEntry {
   date: Date;
   amountInvested: number;
   btcAmount: number;
-  exchangeRate: number;
+  exchangeRate?: number; // Agora é opcional
   currency: Currency;
   origin?: Origin;
 }
@@ -50,7 +52,7 @@ export const useEntryFormLogic = (
   // Estados principais do formulário - display strings para UI e valores numéricos para cálculos
   const [amountInvested, setAmountInvested] = useState<string>('');     // valor em real/dólar como string formatada
   const [btcAmount, setBtcAmount] = useState<string>('');               // valor em BTC ou SATS como string formatada
-  const [exchangeRate, setExchangeRate] = useState<number>(0);          // número puro para cálculos
+  const [exchangeRate, setExchangeRate] = useState<number | undefined>(undefined); // Agora pode ser undefined para indicar não preenchido
   const [exchangeRateDisplay, setExchangeRateDisplay] = useState<string>(''); // string formatada para exibição
   const [currency, setCurrency] = useState<Currency>('BRL');
   const [origin, setOrigin] = useState<Origin>('corretora');
@@ -91,12 +93,21 @@ export const useEntryFormLogic = (
           ? formatNumber(btcAmount * 100000000, 0)
           : formatNumber(btcAmount, 8)
       );
-      setExchangeRate(exchangeRate);
-      setExchangeRateDisplay(formatNumber(exchangeRate));
+      
+      // Se exchangeRate for undefined, deixamos os campos vazios
+      if (exchangeRate !== undefined) {
+        setExchangeRate(exchangeRate);
+        setExchangeRateDisplay(formatNumber(exchangeRate));
+        setIsExchangeRateCalculated(false);
+      } else {
+        setExchangeRate(undefined);
+        setExchangeRateDisplay('');
+        setIsExchangeRateCalculated(true);
+      }
+      
       setCurrency(currency);
       setOrigin(origin || 'corretora');
       setDate(date);
-      setIsExchangeRateCalculated(false);
     }
   }, [editingEntry, displayUnit]);
 
@@ -119,6 +130,14 @@ export const useEntryFormLogic = (
    */
   const handleExchangeRateChange = (displayValue: string) => {
     setExchangeRateDisplay(displayValue);
+    
+    // Se o valor estiver vazio, define a cotação como undefined para indicar que é opcional
+    if (!displayValue.trim()) {
+      setExchangeRate(undefined);
+      setIsExchangeRateCalculated(false);
+      return;
+    }
+    
     const parsed = parseLocalNumber(displayValue);
     if (!isNaN(parsed)) {
       setExchangeRate(parsed);
@@ -133,7 +152,7 @@ export const useEntryFormLogic = (
    */
   const calculateFromAmount = () => {
     const parsedAmount = parseLocalNumber(amountInvested);
-    if (isNaN(parsedAmount) || exchangeRate <= 0) return;
+    if (isNaN(parsedAmount) || !exchangeRate || exchangeRate <= 0) return;
 
     const btc = parsedAmount / exchangeRate;
 
@@ -151,7 +170,7 @@ export const useEntryFormLogic = (
    */
   const calculateFromBtc = () => {
     const parsedBtc = parseLocalNumber(btcAmount);
-    if (isNaN(parsedBtc) || exchangeRate <= 0) return;
+    if (isNaN(parsedBtc) || !exchangeRate || exchangeRate <= 0) return;
 
     const btc = displayUnit === 'SATS' ? parsedBtc / 100000000 : parsedBtc;
     const invested = btc * exchangeRate;
@@ -213,15 +232,13 @@ export const useEntryFormLogic = (
       return 'A quantidade de Bitcoin deve ser um número positivo';
     }
     
-    // Se a cotação não foi fornecida, não valida
-    if (!exchangeRateDisplay.trim()) {
-      return null;
-    }
-    
     // Se a cotação foi fornecida, valida
-    const parsedRate = parseLocalNumber(exchangeRateDisplay);
-    if (isNaN(parsedRate) || parsedRate <= 0) {
-      return 'A cotação deve ser um número positivo';
+    // Mas se não foi fornecida, deixamos passar (é opcional)
+    if (exchangeRateDisplay.trim()) {
+      const parsedRate = parseLocalNumber(exchangeRateDisplay);
+      if (isNaN(parsedRate) || parsedRate <= 0) {
+        return 'A cotação deve ser um número positivo';
+      }
     }
     
     return null;
@@ -233,7 +250,7 @@ export const useEntryFormLogic = (
   const reset = useCallback(() => {
     setAmountInvested('');
     setBtcAmount('');
-    setExchangeRate(0);
+    setExchangeRate(undefined); // Agora iniciamos com undefined para indicar campo opcional
     setExchangeRateDisplay('');
     setCurrency('BRL');
     setOrigin('corretora');
