@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { TrendingDown, TrendingUp, Trash2, Edit, AlertCircle, Filter, Plus, Upload, Download, FileSpreadsheet, CheckCircle } from 'lucide-react';
+import { TrendingDown, TrendingUp, Trash2, Edit, AlertCircle, Filter } from 'lucide-react';
 import { formatNumber } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import EntryEditForm from '@/components/EntryEditForm';
@@ -14,7 +14,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 
 /**
@@ -28,16 +27,6 @@ interface EntriesListProps {
   selectedCurrency: 'BRL' | 'USD';
   displayUnit: 'BTC' | 'SATS';
   isLoading?: boolean;
-  importProgress?: {
-    progress: number;
-    stage: string;
-    isImporting: boolean;
-  };
-  previewData?: BitcoinEntry[];
-  onPrepareImport?: (file: File) => Promise<BitcoinEntry[]>;
-  onConfirmImport?: () => Promise<{ count: number }>;
-  onCancelImport?: () => void;
-  onDeleteAllSpreadsheetRecords?: () => Promise<void>;
 }
 
 /**
@@ -51,14 +40,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
   selectedCurrency,
   displayUnit,
   isLoading = false,
-  importProgress = { progress: 0, stage: '', isImporting: false },
-  previewData = [],
-  onPrepareImport,
-  onConfirmImport,
-  onCancelImport,
-  onDeleteAllSpreadsheetRecords
 }) => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -77,183 +59,8 @@ const EntriesList: React.FC<EntriesListProps> = ({
   const [isFilterActive, setIsFilterActive] = useState(false);
   
   const [rowsToShow, setRowsToShow] = useState<number>(10);
-  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
-  const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isImporting, setIsImporting] = useState(false);
   const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
   const [isDeleteAllDialogOpen, setIsDeleteAllDialogOpen] = useState(false);
-  const [localPreviewData, setLocalPreviewData] = useState<BitcoinEntry[]>([]);
-  
-  useEffect(() => {
-    console.log('[EntriesList] previewData prop atualizado:', previewData.length);
-    if (previewData && previewData.length > 0) {
-      setLocalPreviewData(previewData);
-      console.log('[EntriesList] Estado localPreviewData atualizado com dados de props:', previewData.length);
-    }
-  }, [previewData]);
-
-  const handleFileButtonClick = () => {
-    console.log('[EntriesList] Botão de seleção de arquivo clicado');
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0] || null;
-    console.log('[EntriesList] Arquivo selecionado:', file ? { 
-      name: file.name, 
-      type: file.type, 
-      size: file.size 
-    } : 'nenhum');
-    
-    if (file) {
-      const fileType = file.name.split('.').pop()?.toLowerCase();
-      console.log('[EntriesList] Tipo do arquivo:', fileType);
-      
-      if (fileType === 'csv' || fileType === 'xlsx') {
-        setSelectedFile(file);
-        console.log('[EntriesList] Arquivo válido selecionado:', file.name);
-        toast({
-          title: "Arquivo selecionado",
-          description: `O arquivo ${file.name} foi selecionado para importação.`,
-          variant: "default",
-        });
-      } else {
-        console.error('[EntriesList] Tipo de arquivo não suportado:', fileType);
-        toast({
-          title: "Tipo de arquivo não suportado",
-          description: "Por favor, selecione um arquivo .csv ou .xlsx",
-          variant: "destructive",
-        });
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
-      }
-    }
-  };
-
-  const handlePrepareImport = async () => {
-    console.log('[EntriesList] Iniciando handlePrepareImport');
-    
-    if (!selectedFile) {
-      console.error('[EntriesList] Erro: Nenhum arquivo selecionado');
-      toast({
-        title: "Erro",
-        description: "Nenhum arquivo selecionado",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (!onPrepareImport) {
-      console.error('[EntriesList] Erro: Função onPrepareImport não fornecida');
-      toast({
-        title: "Erro",
-        description: "Função de importação não disponível",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    try {
-      console.log('[EntriesList] Iniciando importação do arquivo:', selectedFile.name);
-      setIsImporting(true);
-      
-      console.log('[EntriesList] Chamando onPrepareImport...');
-      const previewResult = await onPrepareImport(selectedFile);
-      console.log('[EntriesList] Preview obtido com sucesso, registros:', previewResult.length);
-      
-      // Atualizar estado local com os dados recebidos
-      setLocalPreviewData(previewResult);
-      console.log('[EntriesList] Estado localPreviewData atualizado com', previewResult.length, 'registros');
-      
-      // Fechar o modal de importação e abrir o de pré-visualização
-      console.log('[EntriesList] Fechando modal de importação e abrindo modal de pré-visualização');
-      setIsImportDialogOpen(false);
-      setIsPreviewDialogOpen(true);
-      
-    } catch (error) {
-      console.error('[EntriesList] Erro na preparação da importação:', error);
-      toast({
-        title: "Erro na preparação",
-        description: error instanceof Error ? error.message : "Ocorreu um erro ao processar a planilha",
-        variant: "destructive",
-      });
-    } finally {
-      setIsImporting(false);
-    }
-  };
-  
-  const handleConfirmImport = async () => {
-    if (!onConfirmImport) {
-      return;
-    }
-    
-    try {
-      setIsImporting(true);
-      
-      const result = await onConfirmImport();
-      
-      toast({
-        title: "Importação concluída!",
-        description: `Foram adicionados ${result.count} aportes à sua carteira.`,
-        variant: "success",
-      });
-      
-      setIsPreviewDialogOpen(false);
-      setSelectedFile(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-      
-    } catch (error) {
-      toast({
-        title: "Erro na importação",
-        description: error instanceof Error ? error.message : "Ocorreu um erro ao importar a planilha",
-        variant: "destructive",
-      });
-    } finally {
-      setIsImporting(false);
-    }
-  };
-  
-  const handleCancelImport = () => {
-    if (onCancelImport) {
-      onCancelImport();
-    }
-    
-    setIsPreviewDialogOpen(false);
-    setSelectedFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-  
-  const handleDeleteAllSpreadsheet = async () => {
-    if (!onDeleteAllSpreadsheetRecords) {
-      return;
-    }
-    
-    try {
-      await onDeleteAllSpreadsheetRecords();
-      
-      toast({
-        title: "Registros excluídos",
-        description: "Todos os registros importados de planilha foram removidos.",
-        variant: "success",
-      });
-      
-      setIsDeleteAllDialogOpen(false);
-    } catch (error) {
-      toast({
-        title: "Erro na exclusão",
-        description: error instanceof Error ? error.message : "Ocorreu um erro ao excluir os registros",
-        variant: "destructive",
-      });
-    }
-  };
 
   const handleEditClick = (id: string) => {
     setSelectedEntryId(id);
@@ -276,10 +83,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
   const handleEditClose = () => {
     setIsEditDialogOpen(false);
     onEdit('');
-  };
-
-  const openImportDialog = () => {
-    setIsImportDialogOpen(true);
   };
 
   const handleFilterPopoverOpenChange = (open: boolean) => {
@@ -458,65 +261,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
     return totals;
   };
 
-  const renderPreviewTable = () => {
-    const dataToShow = localPreviewData;
-    console.log('[EntriesList] Renderizando tabela de pré-visualização com dados:', dataToShow.length);
-    
-    if (!dataToShow || dataToShow.length === 0) {
-      console.log('[EntriesList] Sem dados para pré-visualização');
-      return (
-        <div className="py-4 text-center text-muted-foreground">
-          Nenhum dado encontrado para pré-visualização
-        </div>
-      );
-    }
-    
-    return (
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className={isMobile ? "text-xs" : ""}>Data</TableHead>
-              <TableHead className={isMobile ? "text-xs" : ""}>Valor Investido</TableHead>
-              <TableHead className={isMobile ? "text-xs" : ""}>{displayUnit === 'SATS' ? 'Satoshis' : 'Bitcoin'}</TableHead>
-              <TableHead className={isMobile ? "text-xs" : ""}>Cotação</TableHead>
-              <TableHead className={isMobile ? "text-xs" : ""}>Moeda</TableHead>
-              <TableHead className={isMobile ? "text-xs" : ""}>Origem</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {dataToShow.map((entry, index) => (
-              <TableRow key={index}>
-                <TableCell className="text-xs py-2">
-                  {format(entry.date, 'dd/MM/yyyy', { locale: ptBR })}
-                </TableCell>
-                <TableCell className="text-xs py-2">
-                  {entry.currency === 'USD' ? '$' : 'R$'} {formatNumber(entry.amountInvested)}
-                </TableCell>
-                <TableCell className="text-xs py-2">
-                  {formatBitcoinAmount(entry.btcAmount)}
-                </TableCell>
-                <TableCell className="text-xs py-2">
-                  {entry.currency === 'USD' ? '$' : 'R$'} {formatNumber(entry.exchangeRate)}
-                </TableCell>
-                <TableCell className="text-xs py-2">
-                  {entry.currency}
-                </TableCell>
-                <TableCell className="text-xs py-2">
-                  {entry.origin === 'corretora' ? 'Corretora' : 
-                   entry.origin === 'p2p' ? 'P2P' : 'Planilha'}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-        <div className="mt-4 text-sm text-center text-muted-foreground">
-          {dataToShow.length} aportes encontrados na planilha
-        </div>
-      </div>
-    );
-  };
-
   const renderEntriesTable = (currencyView: 'BRL' | 'USD') => {
     const totals = calculateTotals(currencyView);
     
@@ -669,21 +413,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
           </TableBody>
         </Table>
         
-        <div className="flex justify-between mt-4">
-          <div>
-            {entries.some(entry => entry.registrationSource === 'planilha') && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsDeleteAllDialogOpen(true)}
-                className="text-xs"
-              >
-                <Trash2 className="h-3 w-3 mr-1 text-red-500" />
-                Excluir registros de planilha
-              </Button>
-            )}
-          </div>
-          
+        <div className="flex justify-end mt-4">
           <div className="flex items-center">
             <span className="text-sm mr-2">Exibir:</span>
             <Select value={rowsToShow.toString()} onValueChange={(value) => setRowsToShow(parseInt(value))}>
@@ -810,16 +540,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
                 </div>
               </PopoverContent>
             </Popover>
-            
-            <Button 
-              variant="outline" 
-              size={isMobile ? "sm" : "default"}
-              className="flex items-center gap-2"
-              onClick={openImportDialog}
-            >
-              <Plus size={16} />
-              {!isMobile && <span>Importar Planilha</span>}
-            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -886,211 +606,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
               className="flex-1 bg-bitcoin hover:bg-bitcoin/90 text-white rounded-xl"
             >
               Confirmar exclusão
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={isDeleteAllDialogOpen} onOpenChange={setIsDeleteAllDialogOpen}>
-        <DialogContent className="sm:max-w-sm rounded-2xl px-6">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-red-500" />
-              Excluir Registros Importados
-            </DialogTitle>
-            <DialogDescription>
-              Tem certeza que deseja excluir todos os aportes importados de planilha? Esta ação não pode ser desfeita.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="mt-4 flex justify-between gap-3">
-            <Button 
-              variant="outline" 
-              onClick={() => setIsDeleteAllDialogOpen(false)}
-              className="flex-1 rounded-xl"
-            >
-              Cancelar
-            </Button>
-            <Button 
-              onClick={handleDeleteAllSpreadsheet}
-              className="flex-1 bg-red-500 hover:bg-red-600 text-white rounded-xl"
-            >
-              Excluir todos
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={isImportDialogOpen} onOpenChange={(open) => {
-        console.log('[EntriesList] Modal de importação onOpenChange:', open, 'importProgress.isImporting:', importProgress.isImporting);
-        if (!importProgress.isImporting) {
-          setIsImportDialogOpen(open);
-          if (!open) {
-            console.log('[EntriesList] Limpando dados de importação ao fechar modal');
-            setSelectedFile(null);
-            if (fileInputRef.current) {
-              fileInputRef.current.value = '';
-            }
-          }
-        } else {
-          console.log('[EntriesList] Ignorando tentativa de fechar modal durante importação');
-        }
-      }}>
-        <DialogContent className="sm:max-w-lg rounded-2xl px-6 max-h-[90vh] overflow-y-auto">
-          <DialogHeader className="sticky top-0 bg-background z-10 py-3">
-            <DialogTitle>Importar Planilha</DialogTitle>
-            <DialogDescription>
-              Importe seus aportes a partir de uma planilha no formato CSV ou Excel.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 py-2">
-            <div className="rounded-lg border p-3 bg-gray-50">
-              <h3 className="text-sm font-medium mb-1">Instruções de preenchimento</h3>
-              <ul className="text-sm space-y-0.5">
-                <li>• A planilha deve conter as colunas: <span className="font-semibold">Data, Valor Investido e Bitcoin</span></li>
-                <li>• O campo cotação é opcional - será calculado automaticamente se ausente</li>
-                <li>• Formato de data recomendado: DD/MM/AAAA</li>
-                <li>• Use vírgula ( , ) como separador decimal</li>
-              </ul>
-              
-              <div className="mt-2">
-                <a 
-                  href="https://docs.google.com/spreadsheets/d/1gQXqirgJdUdA7ljN-IdTGHUeEAixTdBhiyCeJ9OKvvk/edit?usp=sharing" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="inline-flex items-center text-bitcoin hover:underline text-sm"
-                >
-                  📄 Acessar modelo de planilha no Google Sheets
-                </a>
-              </div>
-            </div>
-            
-            <div className="border rounded-lg p-4 flex flex-col items-center justify-center">
-              <Download className="h-8 w-8 text-muted-foreground mb-2" />
-              <p className="text-center text-sm text-muted-foreground mb-2">
-                Arraste e solte seu arquivo aqui, ou clique para selecionar
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Suporta CSV (.csv) e Excel (.xlsx)
-              </p>
-              
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                className="hidden" 
-                accept=".csv,.xlsx" 
-                onChange={handleFileChange}
-              />
-              
-              <Button 
-                variant="outline" 
-                className="mt-3 w-full"
-                onClick={handleFileButtonClick}
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                Selecionar arquivo
-              </Button>
-              
-              {selectedFile && (
-                <div className="mt-2 p-2 bg-gray-100 rounded-md w-full">
-                  <p className="text-xs text-muted-foreground flex items-center">
-                    <FileSpreadsheet className="h-3 w-3 mr-1" />
-                    Arquivo selecionado: {selectedFile.name}
-                  </p>
-                </div>
-              )}
-            </div>
-            
-            {importProgress.isImporting && (
-              <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">{importProgress.stage}</span>
-                  <span className="text-sm">{importProgress.progress}%</span>
-                </div>
-                <Progress value={importProgress.progress} className="h-2" />
-              </div>
-            )}
-          </div>
-          <DialogFooter className="flex justify-end gap-3 mt-4 sticky bottom-0 bg-background pt-2">
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                console.log('[EntriesList] Botão Cancelar clicado no modal de importação');
-                if (!importProgress.isImporting) {
-                  setIsImportDialogOpen(false);
-                  setSelectedFile(null);
-                  if (fileInputRef.current) {
-                    fileInputRef.current.value = '';
-                  }
-                }
-              }}
-              disabled={importProgress.isImporting}
-            >
-              Cancelar
-            </Button>
-            <Button 
-              className="bg-bitcoin hover:bg-bitcoin/90 text-white"
-              disabled={!selectedFile || importProgress.isImporting}
-              onClick={() => {
-                console.log('[EntriesList] Botão Avançar clicado, selectedFile:', selectedFile?.name);
-                handlePrepareImport();
-              }}
-            >
-              {importProgress.isImporting ? 'Processando...' : 'Avançar'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={isPreviewDialogOpen} onOpenChange={(open) => {
-        console.log('[EntriesList] Modal de pré-visualização onOpenChange:', open, 'importProgress.isImporting:', importProgress.isImporting, 'localPreviewData.length:', localPreviewData.length);
-        if (!importProgress.isImporting) {
-          setIsPreviewDialogOpen(open);
-          if (!open && onCancelImport) {
-            console.log('[EntriesList] Cancelando importação ao fechar modal de pré-visualização');
-            onCancelImport();
-            setLocalPreviewData([]);
-          }
-        } else {
-          console.log('[EntriesList] Ignorando tentativa de fechar modal durante importação');
-        }
-      }}>
-        <DialogContent className="sm:max-w-5xl md:max-w-4xl rounded-2xl px-6 max-h-[90vh] overflow-y-auto">
-          <DialogHeader className="sticky top-0 bg-background z-10 py-3">
-            <DialogTitle className="flex items-center gap-2">
-              <FileSpreadsheet className="h-5 w-5 text-green-600" />
-              Pré-visualização da Importação
-            </DialogTitle>
-            <DialogDescription>
-              Confira os dados da planilha e confirme a importação. Verifique se os valores estão corretos antes de confirmar.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="py-2">
-            {renderPreviewTable()}
-          </div>
-          
-          <DialogFooter className="flex justify-end gap-3 mt-4 sticky bottom-0 bg-background pt-2">
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                console.log('[EntriesList] Botão Cancelar clicado no modal de pré-visualização');
-                handleCancelImport();
-                setLocalPreviewData([]);
-              }}
-              disabled={importProgress.isImporting}
-            >
-              Cancelar
-            </Button>
-            <Button 
-              className="bg-green-600 hover:bg-green-700 text-white"
-              disabled={localPreviewData.length === 0 || importProgress.isImporting}
-              onClick={() => {
-                console.log('[EntriesList] Botão Confirmar importação clicado, localPreviewData:', localPreviewData.length);
-                handleConfirmImport();
-              }}
-            >
-              <CheckCircle className="h-4 w-4 mr-2" />
-              {importProgress.isImporting ? 'Importando...' : `Confirmar importação (${localPreviewData.length} registros)`}
             </Button>
           </DialogFooter>
         </DialogContent>
