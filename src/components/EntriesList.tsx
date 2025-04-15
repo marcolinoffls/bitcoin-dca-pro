@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { BitcoinEntry, CurrentRate, Origin } from '@/types';
 import { calculatePercentageChange } from '@/services/bitcoinService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { TrendingDown, TrendingUp, Trash2, Edit, AlertCircle, Filter } from 'lucide-react';
+import { TrendingDown, TrendingUp, Trash2, Edit, AlertCircle, Filter, FileUp } from 'lucide-react';
 import { formatNumber } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import EntryEditForm from '@/components/EntryEditForm';
@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import ImportCsvModal from './ImportCsvModal';
 
 /**
  * Interface que define as propriedades do componente EntriesList
@@ -61,6 +62,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
   const [rowsToShow, setRowsToShow] = useState<number>(10);
   const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
   const [isDeleteAllDialogOpen, setIsDeleteAllDialogOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const handleEditClick = (id: string) => {
     setSelectedEntryId(id);
@@ -450,96 +452,107 @@ const EntriesList: React.FC<EntriesListProps> = ({
               </div>
             </CardTitle>
             
-            <Popover open={isFilterPopoverOpen} onOpenChange={handleFilterPopoverOpenChange}>
-              <PopoverTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size={isMobile ? "sm" : "default"} 
-                  className={`flex items-center gap-2 ${isFilterActive ? 'border-bitcoin text-bitcoin' : ''}`}
-                >
-                  <Filter size={16} className={isFilterActive ? 'text-bitcoin' : ''} />
-                  {!isMobile && <span>Filtrar</span>}
-                  {isFilterActive && (
-                    <span className="absolute top-0 right-0 h-2 w-2 bg-bitcoin rounded-full"></span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80 p-4">
-                <div className="space-y-4">
-                  <h4 className="font-medium">Filtrar aportes</h4>
-                  
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Por mês</label>
-                    <Select 
-                      value={tempMonthFilter || 'all'} 
-                      onValueChange={(value) => setTempMonthFilter(value === 'all' ? null : value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Todos os meses" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos os meses</SelectItem>
-                        {availableMonths.map(month => (
-                          <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Por origem</label>
-                    <Select 
-                      value={tempOriginFilter || 'all'} 
-                      onValueChange={(value) => setTempOriginFilter(value === 'all' ? null : value as Origin)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Todas as origens" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todas as origens</SelectItem>
-                        <SelectItem value="corretora">Corretora</SelectItem>
-                        <SelectItem value="p2p">P2P</SelectItem>
-                        <SelectItem value="planilha">Planilha</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Por tipo de registro</label>
-                    <Select 
-                      value={tempRegistrationSourceFilter || 'all'} 
-                      onValueChange={(value) => setTempRegistrationSourceFilter(value === 'all' ? null : value as 'manual' | 'planilha')}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Todos os tipos" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos os tipos</SelectItem>
-                        <SelectItem value="manual">Registros manuais</SelectItem>
-                        <SelectItem value="planilha">Importados de planilha</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="flex flex-col gap-2 mt-4">
-                    <Button 
-                      className="w-full bg-bitcoin hover:bg-bitcoin/90 text-white" 
-                      onClick={applyFilters}
-                    >
-                      Confirmar filtros
-                    </Button>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size={isMobile ? "sm" : "default"}
+                onClick={() => setIsImportModalOpen(true)}
+                className="flex items-center gap-2"
+              >
+                <FileUp size={16} />
+                {!isMobile && <span>Importar CSV</span>}
+              </Button>
+              <Popover open={isFilterPopoverOpen} onOpenChange={handleFilterPopoverOpenChange}>
+                <PopoverTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size={isMobile ? "sm" : "default"}
+                    className={`flex items-center gap-2 ${isFilterActive ? 'border-bitcoin text-bitcoin' : ''}`}
+                  >
+                    <Filter size={16} className={isFilterActive ? 'text-bitcoin' : ''} />
+                    {!isMobile && <span>Filtrar</span>}
+                    {isFilterActive && (
+                      <span className="absolute top-0 right-0 h-2 w-2 bg-bitcoin rounded-full"></span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-4">
+                  <div className="space-y-4">
+                    <h4 className="font-medium">Filtrar aportes</h4>
                     
-                    <Button 
-                      variant="outline" 
-                      className="w-full" 
-                      onClick={clearFilters}
-                    >
-                      Limpar filtros
-                    </Button>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Por mês</label>
+                      <Select 
+                        value={tempMonthFilter || 'all'} 
+                        onValueChange={(value) => setTempMonthFilter(value === 'all' ? null : value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Todos os meses" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todos os meses</SelectItem>
+                          {availableMonths.map(month => (
+                            <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Por origem</label>
+                      <Select 
+                        value={tempOriginFilter || 'all'} 
+                        onValueChange={(value) => setTempOriginFilter(value === 'all' ? null : value as Origin)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Todas as origens" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todas as origens</SelectItem>
+                          <SelectItem value="corretora">Corretora</SelectItem>
+                          <SelectItem value="p2p">P2P</SelectItem>
+                          <SelectItem value="planilha">Planilha</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Por tipo de registro</label>
+                      <Select 
+                        value={tempRegistrationSourceFilter || 'all'} 
+                        onValueChange={(value) => setTempRegistrationSourceFilter(value === 'all' ? null : value as 'manual' | 'planilha')}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Todos os tipos" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todos os tipos</SelectItem>
+                          <SelectItem value="manual">Registros manuais</SelectItem>
+                          <SelectItem value="planilha">Importados de planilha</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="flex flex-col gap-2 mt-4">
+                      <Button 
+                        className="w-full bg-bitcoin hover:bg-bitcoin/90 text-white" 
+                        onClick={applyFilters}
+                      >
+                        Confirmar filtros
+                      </Button>
+                      
+                      <Button 
+                        variant="outline" 
+                        className="w-full" 
+                        onClick={clearFilters}
+                      >
+                        Limpar filtros
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </PopoverContent>
-            </Popover>
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -610,6 +623,18 @@ const EntriesList: React.FC<EntriesListProps> = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ImportCsvModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['entries'] });
+          toast({
+            title: "Aportes importados",
+            description: "Seus aportes foram importados com sucesso"
+          });
+        }}
+      />
     </>
   );
 };
