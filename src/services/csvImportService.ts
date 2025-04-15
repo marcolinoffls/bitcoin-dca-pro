@@ -1,6 +1,16 @@
+
 import { BitcoinEntry, Origin } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import Papa from 'papaparse';
+import { useAuth } from '@/hooks/useAuth';
+import { 
+  validateCsvFile, 
+  sanitizeCsvData, 
+  generateTimestamp, 
+  generateHmacSignature, 
+  API_KEY, 
+  WEBHOOK_URL 
+} from '@/config/security';
 
 /**
  * Interface para mapear os dados do CSV para a estrutura do banco
@@ -25,12 +35,17 @@ export const processCSV = (file: File): Promise<CsvAporte[]> => {
       skipEmptyLines: true,
       complete: (results) => {
         if (results.errors.length > 0) {
+          console.error('Erros ao processar CSV:', results.errors);
           reject(new Error('Erro ao processar arquivo CSV'));
           return;
         }
-        resolve(results.data as CsvAporte[]);
+        
+        // Sanitiza os dados antes de retornar
+        const sanitizedData = sanitizeCsvData(results.data as CsvAporte[]);
+        resolve(sanitizedData as CsvAporte[]);
       },
       error: (error) => {
+        console.error('Erro no parse do CSV:', error);
         reject(error);
       }
     });
@@ -125,33 +140,99 @@ export const importCSV = async (file: File) => {
 };
 
 /**
- * Converte o arquivo CSV para binário e envia para o webhook do n8n
+ * Prepara e envia o arquivo CSV para o webhook do n8n com todas as medidas de segurança
  * @param file Arquivo CSV a ser enviado
- * @param webhookUrl URL do webhook do n8n
+ * @param userId ID do usuário autenticado
+ * @param userEmail Email do usuário autenticado
+ * @returns Promise com resultado do envio
  */
-export const sendCsvToWebhook = async (file: File, webhookUrl: string) => {
+export const sendSecureCSVToWebhook = async (file: File, userId: string, userEmail: string) => {
   try {
-    // Lê o arquivo como binário
-    const fileBuffer = await file.arrayBuffer();
-
-    // Configura o cabeçalho e o corpo da requisição
-    const response = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/octet-stream', // Envia como binário
-        'Content-Disposition': `attachment; filename="${file.name}"`,
-      },
-      body: fileBuffer,
-    });
-
-    // Verifica a resposta do webhook
-    if (!response.ok) {
-      throw new Error(`Erro ao enviar para o webhook: ${response.statusText}`);
+    // Validar arquivo antes de qualquer processamento
+    const validation = validateCsvFile(file);
+    if (!validation.isValid) {
+      throw new Error(validation.errorMessage);
     }
-
-    console.log('Arquivo enviado com sucesso para o webhook!');
+    
+    // Ler o arquivo como binário
+    const fileBuffer = await file.arrayBuffer();
+    
+    // Preparar dados para envio
+    const timestamp = generateTimestamp();
+    
+    // Criar FormData para envio multipart/form-data
+    const formData = new FormData();
+    
+    // Adicionar arquivo como blob
+    const fileBlob = new Blob([fileBuffer], { type: 'text/csv' });
+    formData.append('file', fileBlob, file.name);
+    
+    // Adicionar metadados adicionais
+    formData.append('fileName', file.name);
+    formData.append('userId', userId);
+    formData.append('userEmail', userEmail);
+    formData.append('timestamp', timestamp);
+    
+    // Dados para assinatura HMAC
+    const payloadForSignature = {
+      fileName: file.name,
+      userId,
+      userEmail,
+      timestamp,
+      fileSize: file.size
+    };
+    
+    // Gerar assinatura
+    const signature = generateHmacSignature(payloadForSignature, timestamp);
+    
+    // Configurar timeout para a requisição
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos
+    
+    try {
+      // Enviar para o webhook com headers de segurança
+      const response = await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          // Content-Type é definido automaticamente pelo navegador para FormData
+          'Authorization': `Bearer ${API_KEY}`,
+          'X-Request-Timestamp': timestamp,
+          'X-Signature': signature,
+          'X-User-Id': userId
+        },
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      // Verificar resposta
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Erro na resposta do webhook:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData: errorData.substring(0, 100) // Limita logs para não expor dados sensíveis
+        });
+        throw new Error(`Erro ao processar arquivo: ${response.status} ${response.statusText}`);
+      }
+      
+      // Resposta de sucesso
+      return {
+        success: true,
+        message: 'Arquivo enviado e processado com sucesso!'
+      };
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      
+      if (fetchError.name === 'AbortError') {
+        throw new Error('A requisição excedeu o tempo limite. Tente novamente mais tarde.');
+      }
+      
+      throw fetchError;
+    }
   } catch (error) {
-    console.error('Erro ao enviar o arquivo para o webhook:', error);
+    console.error('Erro ao enviar CSV para webhook:', error instanceof Error ? error.message : 'Erro desconhecido');
     throw error;
   }
 };

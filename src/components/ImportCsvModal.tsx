@@ -8,9 +8,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { FileUp, AlertCircle } from 'lucide-react';
-import { importCSV } from '@/services/csvImportService';
+import { FileUp, AlertCircle, Shield } from 'lucide-react';
+import { importCSV, sendSecureCSVToWebhook } from '@/services/csvImportService';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { validateCsvFile } from '@/config/security';
+import { Progress } from '@/components/ui/progress';
 
 interface ImportCsvModalProps {
   isOpen: boolean;
@@ -19,7 +22,7 @@ interface ImportCsvModalProps {
 }
 
 /**
- * Modal para importação de aportes via arquivo CSV
+ * Modal para importação de aportes via arquivo CSV com opção de envio seguro para webhook
  */
 const ImportCsvModal: React.FC<ImportCsvModalProps> = ({
   isOpen,
@@ -27,7 +30,26 @@ const ImportCsvModal: React.FC<ImportCsvModalProps> = ({
   onSuccess,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [uploadMode, setUploadMode] = useState<'local' | 'webhook'>('local');
+  const [uploadProgress, setUploadProgress] = useState(0);
   const { toast } = useToast();
+  const { user } = useAuth();
+
+  // Função para simular o progresso do upload
+  const simulateProgress = () => {
+    setUploadProgress(0);
+    const interval = setInterval(() => {
+      setUploadProgress((prev) => {
+        const newProgress = prev + 5;
+        if (newProgress >= 100) {
+          clearInterval(interval);
+          return 100;
+        }
+        return newProgress;
+      });
+    }, 100);
+    return interval;
+  };
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -36,29 +58,53 @@ const ImportCsvModal: React.FC<ImportCsvModalProps> = ({
       return;
     }
 
-    // Validação do tipo de arquivo
-    if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
+    // Validação do arquivo
+    const validation = validateCsvFile(file);
+    if (!validation.isValid) {
       toast({
         title: "Arquivo inválido",
-        description: "Por favor, selecione apenas arquivos .csv",
+        description: validation.errorMessage,
         variant: "destructive"
       });
       return;
     }
 
     setIsLoading(true);
+    
     try {
-      await importCSV(file);
-      toast({
-        title: "Sucesso!",
-        description: "Aportes importados com sucesso",
-      });
+      // Simular progresso de upload
+      const progressInterval = simulateProgress();
+
+      if (uploadMode === 'local') {
+        // Importação local para o Supabase
+        await importCSV(file);
+        toast({
+          title: "Sucesso!",
+          description: "Aportes importados com sucesso",
+        });
+      } else if (uploadMode === 'webhook' && user) {
+        // Envio seguro para webhook externo
+        await sendSecureCSVToWebhook(
+          file, 
+          user.id,
+          user.email || 'email-nao-disponivel'
+        );
+        toast({
+          title: "Envio seguro concluído!",
+          description: "Seu arquivo foi enviado de forma segura para processamento externo.",
+        });
+      }
+      
+      // Limpa o intervalo do progresso simulado
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+      
       onSuccess();
       onClose();
     } catch (error) {
-      console.error('Erro ao importar:', error);
+      console.error('Erro detalhado:', error);
       toast({
-        title: "Erro ao importar",
+        title: "Erro ao processar",
         description: error instanceof Error ? error.message : "Erro ao processar arquivo",
         variant: "destructive"
       });
@@ -78,9 +124,45 @@ const ImportCsvModal: React.FC<ImportCsvModalProps> = ({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
+          {/* Seletor de modo de upload */}
+          <div className="flex space-x-2 rounded-lg border p-2">
+            <Button
+              variant={uploadMode === 'local' ? "default" : "outline"}
+              size="sm"
+              className="flex-1"
+              onClick={() => setUploadMode('local')}
+            >
+              <FileUp className="h-4 w-4 mr-2" />
+              Importar Localmente
+            </Button>
+            <Button
+              variant={uploadMode === 'webhook' ? "default" : "outline"}
+              size="sm"
+              className="flex-1"
+              onClick={() => setUploadMode('webhook')}
+            >
+              <Shield className="h-4 w-4 mr-2" />
+              Envio Seguro Externo
+            </Button>
+          </div>
+
+          {/* Descrição do modo selecionado */}
+          <div className="px-1 text-sm text-muted-foreground">
+            {uploadMode === 'local' ? (
+              "Os dados serão importados diretamente para sua conta."
+            ) : (
+              "O arquivo será enviado de forma segura para processamento externo via webhook."
+            )}
+          </div>
+
+          {/* Área de drop do arquivo */}
           <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed p-6">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-              <FileUp className="h-6 w-6" />
+              {uploadMode === 'local' ? (
+                <FileUp className="h-6 w-6" />
+              ) : (
+                <Shield className="h-6 w-6" />
+              )}
             </div>
             <div className="text-center">
               <p className="text-sm text-muted-foreground">
@@ -98,7 +180,7 @@ const ImportCsvModal: React.FC<ImportCsvModalProps> = ({
               className="relative"
               onClick={() => document.getElementById('csvFile')?.click()}
             >
-              {isLoading ? 'Importando...' : 'Selecionar arquivo'}
+              {isLoading ? 'Processando...' : 'Selecionar arquivo'}
             </Button>
             <input
               id="csvFile"
@@ -109,15 +191,31 @@ const ImportCsvModal: React.FC<ImportCsvModalProps> = ({
             />
           </div>
 
+          {/* Barra de progresso */}
+          {isLoading && (
+            <div className="w-full space-y-2">
+              <Progress value={uploadProgress} className="h-2" />
+              <p className="text-xs text-center text-muted-foreground">
+                {uploadProgress < 100 ? 'Processando arquivo...' : 'Concluído!'}
+              </p>
+            </div>
+          )}
+
+          {/* Informações de segurança */}
           <div className="flex items-start gap-2 rounded-md bg-muted p-3">
             <AlertCircle className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
             <div className="text-sm text-muted-foreground">
-              <p>Certifique-se que seu arquivo CSV:</p>
+              <p>Informações de segurança:</p>
               <ul className="list-disc ml-4 mt-1">
-                <li>Tem cabeçalhos nas colunas</li>
-                <li>Usa vírgula (,) como separador</li>
-                <li>Datas estão no formato YYYY-MM-DD</li>
-                <li>Valores numéricos usam ponto (.) como separador decimal</li>
+                <li>Tamanho máximo: 5MB</li>
+                <li>Apenas arquivos CSV são permitidos</li>
+                <li>Os dados são validados e sanitizados</li>
+                {uploadMode === 'webhook' && (
+                  <>
+                    <li>A transmissão é protegida com assinatura digital</li>
+                    <li>Seus dados são enviados com segurança via HTTPS</li>
+                  </>
+                )}
               </ul>
             </div>
           </div>
