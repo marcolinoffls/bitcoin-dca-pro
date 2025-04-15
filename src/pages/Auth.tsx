@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate, useLocation } from 'react-router-dom';
@@ -113,20 +112,12 @@ const Auth = () => {
       setResetSent(true);
     } catch (error: any) {
       console.error('Erro ao enviar email de redefinição:', error);
-      // Mensagem de erro mais amigável
-      let errorMessage = 'Ocorreu um erro ao enviar o email. Por favor, tente novamente.';
       
-      if (error.message?.includes('rate limit')) {
-        errorMessage = 'Muitas tentativas. Por favor, aguarde alguns minutos antes de tentar novamente.';
-      } else if (error.message) {
-        // Garantindo uma mensagem de erro amigável
-        errorMessage = error.message.replace(/[{}[\]]/g, '').trim();
-        if (errorMessage === '' || errorMessage === '!' || errorMessage.length < 5) {
-          errorMessage = 'Ocorreu um erro ao processar sua solicitação. Por favor, tente novamente.';
-        }
+      // Mensagem de erro já tratada no hook useAuth
+      if (error.message?.includes('SMTP') || error.message?.includes('Authentication failed')) {
+        setPasswordError('Problema com o servidor de email. Por favor, entre em contato com o suporte técnico informando: "Erro SMTP".');
       }
-      
-      setPasswordError(errorMessage);
+      // Outras mensagens de erro já são tratadas no hook useAuth e exibidas via toast
     } finally {
       setIsSubmitting(false);
     }
