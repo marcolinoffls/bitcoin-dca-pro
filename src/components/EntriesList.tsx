@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { BitcoinEntry, CurrentRate } from '@/types';
+import { BitcoinEntry, CurrentRate, Origin } from '@/types';
 import EntryEditForm from '@/components/EntryEditForm';
 import ImportCsvModal from './ImportCsvModal';
 import { EntriesTable } from './entries/EntriesTable';
