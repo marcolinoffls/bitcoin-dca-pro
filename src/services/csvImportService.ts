@@ -1,4 +1,3 @@
-
 import { BitcoinEntry, Origin } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import Papa from 'papaparse';
@@ -51,19 +50,29 @@ const validateAndFormatData = (data: CsvAporte[]): Partial<BitcoinEntry>[] => {
       throw new Error(`Data inválida: ${row.data}`);
     }
 
-    // Converte valores numéricos
-    const amountInvested = Number(row.valor.replace(',', '.'));
+    // Remove prefixos e converte valores numéricos
+    const amountInvested = Number(
+      row.valor.replace('R$', '').replace(',', '.').trim()
+    );
     if (isNaN(amountInvested)) {
       throw new Error(`Valor investido inválido: ${row.valor}`);
     }
 
-    const btcAmount = Number(row.bitcoin.replace(',', '.'));
+    const btcAmount = Number(
+      row.bitcoin.replace('BTC', '').replace(',', '.').trim()
+    );
     if (isNaN(btcAmount)) {
       throw new Error(`Quantidade de bitcoin inválida: ${row.bitcoin}`);
     }
 
     // Valores opcionais
-    const exchangeRate = row.cotacao ? Number(row.cotacao.replace(',', '.')) : amountInvested / btcAmount;
+    const exchangeRate = row.cotacao
+      ? Number(row.cotacao.replace(',', '.').trim())
+      : amountInvested / btcAmount;
+    if (isNaN(exchangeRate)) {
+      throw new Error(`Cotação inválida: ${row.cotacao}`);
+    }
+
     const origin = (row.origem?.toLowerCase() as Origin) || 'corretora';
 
     // Retorna objeto formatado
