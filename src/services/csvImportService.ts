@@ -123,3 +123,35 @@ export const importCSV = async (file: File) => {
     throw error;
   }
 };
+
+/**
+ * Converte o arquivo CSV para binário e envia para o webhook do n8n
+ * @param file Arquivo CSV a ser enviado
+ * @param webhookUrl URL do webhook do n8n
+ */
+export const sendCsvToWebhook = async (file: File, webhookUrl: string) => {
+  try {
+    // Lê o arquivo como binário
+    const fileBuffer = await file.arrayBuffer();
+
+    // Configura o cabeçalho e o corpo da requisição
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/octet-stream', // Envia como binário
+        'Content-Disposition': `attachment; filename="${file.name}"`,
+      },
+      body: fileBuffer,
+    });
+
+    // Verifica a resposta do webhook
+    if (!response.ok) {
+      throw new Error(`Erro ao enviar para o webhook: ${response.statusText}`);
+    }
+
+    console.log('Arquivo enviado com sucesso para o webhook!');
+  } catch (error) {
+    console.error('Erro ao enviar o arquivo para o webhook:', error);
+    throw error;
+  }
+};
