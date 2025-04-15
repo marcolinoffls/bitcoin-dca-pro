@@ -22,6 +22,7 @@
  * - Garantido que a data selecionada no calendário seja aplicada imediatamente
  * - Corrigido problema de timezone, forçando o horário local ao interpretar datas
  * - Corrigido problema de validação dos campos numéricos, aceitando vírgula ou ponto
+ * - Adicionado suporte a cotação opcional com cálculo automático
  */
 
 import React, { useState, useEffect } from 'react';
@@ -40,6 +41,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { BtcInput } from '@/components/form/BtcInput';
 import DatePickerField from '@/components/form/DatePickerField';
+import { FormError } from '@/components/auth/FormError';
 
 interface EntryEditFormProps {
   entry: BitcoinEntry;
@@ -84,6 +86,9 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
   const [exchangeRateDisplay, setExchangeRateDisplay] = useState(formatNumber(entry.exchangeRate));
   const [currency, setCurrency] = useState<'BRL' | 'USD'>(entry.currency);
   const [origin, setOrigin] = useState<'corretora' | 'p2p' | 'planilha'>(entry.origin || 'corretora');
+  const [formError, setFormError] = useState<string | null>(null);
+  const [rateInfoMessage, setRateInfoMessage] = useState<string | null>(null);
+  const [isExchangeRateCalculated, setIsExchangeRateCalculated] = useState<boolean>(false);
   
   // Garantir que a data seja sempre uma instância de Date válida com fuso horário local
   const [date, setDate] = useState<Date>(() => {
@@ -131,6 +136,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
     const val = parseLocalNumber(formattedValue);
     if (!isNaN(val)) {
       setExchangeRate(val);
+      setIsExchangeRateCalculated(false);
     }
   };
 
@@ -140,6 +146,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
       const newRate = newCurrency === 'USD' ? currentRate.usd : currentRate.brl;
       setExchangeRate(newRate);
       setExchangeRateDisplay(formatNumber(newRate));
+      setIsExchangeRateCalculated(false);
     }
   };
 
@@ -155,8 +162,79 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
     }
   };
 
+  /**
+   * Calcula automaticamente a cotação baseada no valor investido e na quantidade de BTC
+   * Retorna true se o cálculo foi bem-sucedido, false caso contrário
+   */
+  const calculateExchangeRate = (): boolean => {
+    const parsedAmount = parseLocalNumber(amountInvestedDisplay);
+    const parsedBtc = parseLocalNumber(btcAmountDisplay);
+    
+    // Verificações de segurança
+    if (isNaN(parsedAmount) || parsedAmount <= 0) return false;
+    
+    // Converte SATS para BTC se necessário
+    const btc = displayUnit === 'SATS' ? parsedBtc / 100000000 : parsedBtc;
+    
+    // Evita divisão por zero
+    if (isNaN(btc) || btc <= 0) return false;
+    
+    const calculatedRate = parsedAmount / btc;
+    
+    // Atualiza os estados
+    setExchangeRate(calculatedRate);
+    setExchangeRateDisplay(formatNumber(calculatedRate));
+    setIsExchangeRateCalculated(true);
+    
+    return true;
+  };
+
+  /**
+   * Valida o formulário, verificando se os campos obrigatórios estão preenchidos
+   * e se os valores são válidos
+   */
+  const validateForm = (): string | null => {
+    const parsedAmount = parseLocalNumber(amountInvestedDisplay);
+    const parsedBtc = parseLocalNumber(btcAmountDisplay);
+    
+    // Verificar valor investido
+    if (!amountInvestedDisplay.trim()) {
+      return 'O valor investido é obrigatório';
+    }
+    
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      return 'O valor investido deve ser um número positivo';
+    }
+    
+    // Verificar quantidade de BTC
+    if (!btcAmountDisplay.trim()) {
+      return 'A quantidade de Bitcoin é obrigatória';
+    }
+    
+    if (isNaN(parsedBtc) || parsedBtc <= 0) {
+      return 'A quantidade de Bitcoin deve ser um número positivo';
+    }
+    
+    // Se a data é inválida
+    if (!(date instanceof Date) || isNaN(date.getTime())) {
+      return 'Selecione uma data válida';
+    }
+    
+    // Se a cotação foi preenchida, validar
+    if (exchangeRateDisplay.trim()) {
+      const parsedRate = parseLocalNumber(exchangeRateDisplay);
+      if (isNaN(parsedRate) || parsedRate <= 0) {
+        return 'A cotação deve ser um número positivo';
+      }
+    }
+    
+    return null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
+    setRateInfoMessage(null);
 
     if (!user) {
       toast({
@@ -167,33 +245,34 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
       return;
     }
 
+    // Validação inicial do formulário
+    const validationError = validateForm();
+    if (validationError) {
+      setFormError(validationError);
+      return;
+    }
+
     // Converte os valores de string para number para processamento
     let parsedAmount = parseLocalNumber(amountInvestedDisplay);
     let parsedBtc = parseLocalNumber(btcAmountDisplay);
     // Converte SATS para BTC se necessário
     if (displayUnit === 'SATS') parsedBtc = parsedBtc / 100000000;
     
-    if (
-      isNaN(parsedAmount) ||
-      isNaN(parsedBtc) ||
-      isNaN(exchangeRate) ||
-      exchangeRate === 0
-    ) {
-      toast({
-        title: 'Erro nos dados',
-        description: 'Por favor, verifique os valores inseridos.',
-        variant: 'destructive',
-      });
-      return;
+    // Se a cotação não foi preenchida ou é zero, calcula automaticamente
+    let parsedRate = exchangeRate;
+    if (!exchangeRateDisplay.trim() || parsedRate === 0) {
+      const success = calculateExchangeRate();
+      if (!success) {
+        setFormError("Não foi possível calcular a cotação. Verifique os valores informados.");
+        return;
+      }
+      parsedRate = exchangeRate; // Usa o valor calculado
+      setRateInfoMessage("Cotação calculada automaticamente com base no valor investido e quantidade de bitcoin.");
     }
 
     // Garantir que a data é válida
     if (!(date instanceof Date) || isNaN(date.getTime())) {
-      toast({
-        title: 'Data inválida',
-        description: 'Por favor, selecione uma data válida.',
-        variant: 'destructive',
-      });
+      setFormError('Data inválida. Por favor, selecione uma data válida.');
       return;
     }
 
@@ -202,7 +281,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
       id: entry.id,
       amountInvested: parsedAmount,
       btcAmount: parsedBtc,
-      exchangeRate: exchangeRate,
+      exchangeRate: parsedRate,
       currency: currency,
       date: date,
       formattedDate: format(date, "dd/MM/yyyy", { locale: ptBR }),
@@ -214,7 +293,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
       await updateEntry(entry.id, {
         amountInvested: parsedAmount,
         btcAmount: parsedBtc,
-        exchangeRate: exchangeRate,
+        exchangeRate: parsedRate,
         currency: currency,
         date: date, // Garante que a data atualizada seja enviada
         origin: origin
@@ -273,22 +352,34 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
 
       {/* Cotação */}
       <div className="flex flex-col space-y-1.5 mt-4">
-        <Label>Cotação no momento da compra</Label>
+        <Label>
+          Cotação no momento da compra
+          <span className="text-muted-foreground text-xs ml-1">(opcional)</span>
+        </Label>
         <div className="relative">
           <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-muted-foreground">
             {currency === 'USD' ? '$' : 'R$'}
           </span>
           <Input
-            placeholder="0,00"
+            placeholder="Deixe vazio para cálculo automático"
             value={exchangeRateDisplay}
             onChange={(e) => handleExchangeRateChange(e.target.value)}
-            className="pl-8 rounded-xl"
+            className={`pl-8 rounded-xl ${isExchangeRateCalculated ? 'bg-amber-50 dark:bg-amber-950/20' : ''}`}
             type="text"
             inputMode="decimal"
-            required
           />
         </div>
       </div>
+
+      {/* Exibe mensagem de informação sobre cotação calculada */}
+      {rateInfoMessage && (
+        <FormError message={rateInfoMessage} variant="warning" />
+      )}
+
+      {/* Exibe mensagem de erro de validação */}
+      {formError && (
+        <FormError message={formError} variant="destructive" />
+      )}
 
       {/* Origem do aporte */}
       <OriginSelector origin={origin} onOriginChange={setOrigin} />

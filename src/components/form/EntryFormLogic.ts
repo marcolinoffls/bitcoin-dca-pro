@@ -17,6 +17,7 @@
  * - Convertido valores string para number para manipulação mais segura
  * - Mantido formato de exibição para o usuário com strings formatadas
  * - Adicionada função setExchangeRate para permitir definir a taxa diretamente
+ * - Adicionado suporte a cotação opcional, com cálculo automático
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -54,6 +55,7 @@ export const useEntryFormLogic = (
   const [currency, setCurrency] = useState<Currency>('BRL');
   const [origin, setOrigin] = useState<Origin>('corretora');
   const [date, setDate] = useState<Date>(new Date());
+  const [isExchangeRateCalculated, setIsExchangeRateCalculated] = useState<boolean>(false);
 
   /**
    * Converte string de moeda local (ex: 1.000,50) para número real (ex: 1000.50)
@@ -94,6 +96,7 @@ export const useEntryFormLogic = (
       setCurrency(currency);
       setOrigin(origin || 'corretora');
       setDate(date);
+      setIsExchangeRateCalculated(false);
     }
   }, [editingEntry, displayUnit]);
 
@@ -107,6 +110,7 @@ export const useEntryFormLogic = (
       const newRate = newCurrency === 'USD' ? currentRate.usd : currentRate.brl;
       setExchangeRate(newRate);
       setExchangeRateDisplay(formatNumber(newRate));
+      setIsExchangeRateCalculated(false);
     }
   };
 
@@ -118,6 +122,7 @@ export const useEntryFormLogic = (
     const parsed = parseLocalNumber(displayValue);
     if (!isNaN(parsed)) {
       setExchangeRate(parsed);
+      setIsExchangeRateCalculated(false);
     }
   };
 
@@ -155,6 +160,74 @@ export const useEntryFormLogic = (
   };
 
   /**
+   * Calcula automaticamente a cotação baseada no valor investido e na quantidade de BTC
+   * Retorna true se o cálculo foi bem-sucedido, false caso contrário
+   */
+  const calculateExchangeRate = (): boolean => {
+    const parsedAmount = parseLocalNumber(amountInvested);
+    const parsedBtc = parseLocalNumber(btcAmount);
+    
+    // Verificações de segurança
+    if (isNaN(parsedAmount) || parsedAmount <= 0) return false;
+    
+    // Converte SATS para BTC se necessário
+    const btc = displayUnit === 'SATS' ? parsedBtc / 100000000 : parsedBtc;
+    
+    // Evita divisão por zero
+    if (isNaN(btc) || btc <= 0) return false;
+    
+    const calculatedRate = parsedAmount / btc;
+    
+    // Atualiza os estados
+    setExchangeRate(calculatedRate);
+    setExchangeRateDisplay(formatNumber(calculatedRate));
+    setIsExchangeRateCalculated(true);
+    
+    return true;
+  };
+
+  /**
+   * Valida o formulário, verificando se os campos obrigatórios estão preenchidos
+   * e se os valores são válidos
+   * @returns null se não houver erros, ou uma mensagem de erro
+   */
+  const validateForm = (): string | null => {
+    const parsedAmount = parseLocalNumber(amountInvested);
+    const parsedBtc = parseLocalNumber(btcAmount);
+    
+    // Campos obrigatórios
+    if (!amountInvested.trim()) {
+      return 'O valor investido é obrigatório';
+    }
+    
+    if (!btcAmount.trim()) {
+      return 'A quantidade de Bitcoin é obrigatória';
+    }
+    
+    // Validações numéricas
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      return 'O valor investido deve ser um número positivo';
+    }
+    
+    if (isNaN(parsedBtc) || parsedBtc <= 0) {
+      return 'A quantidade de Bitcoin deve ser um número positivo';
+    }
+    
+    // Se a cotação não foi fornecida, não valida
+    if (!exchangeRateDisplay.trim()) {
+      return null;
+    }
+    
+    // Se a cotação foi fornecida, valida
+    const parsedRate = parseLocalNumber(exchangeRateDisplay);
+    if (isNaN(parsedRate) || parsedRate <= 0) {
+      return 'A cotação deve ser um número positivo';
+    }
+    
+    return null;
+  };
+
+  /**
    * Restaura todos os campos para o estado inicial
    */
   const reset = useCallback(() => {
@@ -165,6 +238,7 @@ export const useEntryFormLogic = (
     setCurrency('BRL');
     setOrigin('corretora');
     setDate(new Date());
+    setIsExchangeRateCalculated(false);
   }, []);
 
   return {
@@ -185,6 +259,9 @@ export const useEntryFormLogic = (
     handleExchangeRateChange,
     calculateFromAmount,
     calculateFromBtc,
+    calculateExchangeRate,
+    validateForm,
+    isExchangeRateCalculated,
     handleOriginChange: setOrigin,
     reset
   };

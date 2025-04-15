@@ -15,6 +15,7 @@
  * - Melhorada a validação e conversão de datas para garantir persistência no Supabase
  * - Corrigido problema de timezone, forçando o horário local ao interpretar datas
  * - Atualizado para suportar novos tipos de origem (planilha) nos aportes
+ * - Adicionado suporte a cotação opcional com cálculo automático
  */
 
 import { BitcoinEntry, CurrentRate, Origin } from '@/types';
@@ -31,6 +32,19 @@ const parseLocalDate = (dateString: string): Date => {
   const localDate = new Date(`${dateString}T00:00:00`);
   console.log(`Convertendo data string ${dateString} para objeto Date: ${localDate}`);
   return localDate;
+};
+
+/**
+ * Calcula a cotação automaticamente baseada no valor investido e quantidade de BTC
+ * @param amountInvested Valor investido
+ * @param btcAmount Quantidade de BTC
+ * @returns Cotação calculada
+ */
+const calculateExchangeRate = (amountInvested: number, btcAmount: number): number => {
+  if (amountInvested <= 0 || btcAmount <= 0) {
+    throw new Error("Valores inválidos para cálculo da cotação");
+  }
+  return amountInvested / btcAmount;
 };
 
 /**
@@ -74,7 +88,7 @@ export const createBitcoinEntry = async (
   userId: string,
   amountInvested: number,
   btcAmount: number,
-  exchangeRate: number,
+  exchangeRate: number | undefined,
   currency: 'BRL' | 'USD',
   date: Date,
   origin: Origin
@@ -83,6 +97,13 @@ export const createBitcoinEntry = async (
   if (!(date instanceof Date) || isNaN(date.getTime())) {
     console.error('Data inválida para criação:', date);
     throw new Error('Data inválida fornecida para criação');
+  }
+  
+  // Se a cotação não foi fornecida, calcula automaticamente
+  let finalRate = exchangeRate;
+  if (finalRate === undefined || finalRate <= 0) {
+    finalRate = calculateExchangeRate(amountInvested, btcAmount);
+    console.log('Cotação calculada automaticamente para novo aporte:', finalRate);
   }
   
   // Formata a data para o formato ISO (YYYY-MM-DD)
@@ -99,7 +120,7 @@ export const createBitcoinEntry = async (
       cotacao_moeda: currency,
       valor_investido: amountInvested,
       bitcoin: btcAmount,
-      cotacao: exchangeRate,
+      cotacao: finalRate,
       origem_aporte: origin,
       origem_registro: 'manual', // Registros criados via formulário são 'manual'
       user_id: userId
@@ -114,7 +135,7 @@ export const createBitcoinEntry = async (
     date,
     amountInvested,
     btcAmount,
-    exchangeRate,
+    exchangeRate: finalRate,
     currency,
     origin,
     registrationSource: 'manual'
@@ -128,7 +149,7 @@ export const updateBitcoinEntry = async (
   entryId: string,
   amountInvested: number,
   btcAmount: number,
-  exchangeRate: number,
+  exchangeRate: number | undefined,
   currency: 'BRL' | 'USD',
   date: Date,
   origin: Origin
@@ -137,6 +158,13 @@ export const updateBitcoinEntry = async (
   if (!(date instanceof Date) || isNaN(date.getTime())) {
     console.error('Data inválida para atualização:', date);
     throw new Error('Data inválida fornecida para atualização');
+  }
+  
+  // Se a cotação não foi fornecida, calcula automaticamente
+  let finalRate = exchangeRate;
+  if (finalRate === undefined || finalRate <= 0) {
+    finalRate = calculateExchangeRate(amountInvested, btcAmount);
+    console.log('Cotação calculada automaticamente para atualização:', finalRate);
   }
   
   // Formata a data para o formato ISO (YYYY-MM-DD)
@@ -149,7 +177,7 @@ export const updateBitcoinEntry = async (
     cotacao_moeda: currency,
     valor_investido: amountInvested,
     bitcoin: btcAmount,
-    cotacao: exchangeRate,
+    cotacao: finalRate,
     origem_aporte: origin
     // Não atualizamos origem_registro para preservar a origem do registro
   };

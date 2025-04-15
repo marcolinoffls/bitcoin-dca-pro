@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -38,6 +39,20 @@ const parseLocalDate = (dateString: string): Date => {
   return localDate;
 };
 
+/**
+ * Hook para gerenciar aportes de Bitcoin
+ * 
+ * Funcionalidades:
+ * - Lista todos os aportes do usuário
+ * - Adiciona novos aportes
+ * - Atualiza aportes existentes
+ * - Remove aportes
+ * - Gerencia estado de edição
+ * 
+ * Atualização:
+ * - Adicionado suporte a cotação opcional, calculando automaticamente
+ *   quando o valor não é fornecido
+ */
 export const useBitcoinEntries = () => {
   const { user, session } = useAuth();
   const queryClient = useQueryClient();
@@ -92,6 +107,19 @@ export const useBitcoinEntries = () => {
   });
 
   /**
+   * Calcula a cotação automaticamente com base no valor investido e quantidade de BTC
+   * @param amountInvested Valor investido
+   * @param btcAmount Quantidade de BTC
+   * @returns Cotação calculada
+   */
+  const calculateExchangeRate = (amountInvested: number, btcAmount: number): number => {
+    if (amountInvested <= 0 || btcAmount <= 0) {
+      throw new Error("Valores inválidos para cálculo da cotação");
+    }
+    return amountInvested / btcAmount;
+  };
+
+  /**
    * Adiciona um novo aporte
    */
   const addEntry = async (entry: Partial<BitcoinEntry>) => {
@@ -100,7 +128,7 @@ export const useBitcoinEntries = () => {
     const { date, amountInvested, btcAmount, exchangeRate, currency, origin } = entry;
     
     if (!date || amountInvested === undefined || btcAmount === undefined || 
-        exchangeRate === undefined || !currency || !origin) {
+        !currency || !origin) {
       throw new Error("Dados incompletos para criar aporte");
     }
     
@@ -110,12 +138,19 @@ export const useBitcoinEntries = () => {
       throw new Error('Data inválida fornecida');
     }
     
+    // Se a cotação não foi fornecida, calcula automaticamente
+    let finalRate = exchangeRate;
+    if (finalRate === undefined || finalRate <= 0) {
+      finalRate = calculateExchangeRate(amountInvested, btcAmount);
+      console.log('Cotação calculada automaticamente:', finalRate);
+    }
+    
     const { error } = await supabase.from('aportes').insert([{
       user_id: user.id,
       data_aporte: date.toISOString().split('T')[0],
       valor_investido: amountInvested,
       bitcoin: btcAmount,
-      cotacao: exchangeRate,
+      cotacao: finalRate,
       moeda: currency,
       cotacao_moeda: currency,
       origem_aporte: origin
@@ -164,11 +199,22 @@ export const useBitcoinEntries = () => {
       dateToUpdate = originalEntry.date;
     }
     
+    // Valores atualizados ou originais
+    const finalAmountInvested = updatedFields.amountInvested ?? originalEntry.amountInvested;
+    const finalBtcAmount = updatedFields.btcAmount ?? originalEntry.btcAmount;
+    
+    // Se a cotação não foi fornecida, calcula automaticamente
+    let finalExchangeRate = updatedFields.exchangeRate ?? originalEntry.exchangeRate;
+    if (finalExchangeRate <= 0) {
+      finalExchangeRate = calculateExchangeRate(finalAmountInvested, finalBtcAmount);
+      console.log('Cotação calculada automaticamente durante atualização:', finalExchangeRate);
+    }
+    
     // Combinar campos originais com atualizados
     const finalEntry = {
-      amountInvested: updatedFields.amountInvested ?? originalEntry.amountInvested,
-      btcAmount: updatedFields.btcAmount ?? originalEntry.btcAmount,
-      exchangeRate: updatedFields.exchangeRate ?? originalEntry.exchangeRate,
+      amountInvested: finalAmountInvested,
+      btcAmount: finalBtcAmount,
+      exchangeRate: finalExchangeRate,
       currency: updatedFields.currency ?? originalEntry.currency,
       date: dateToUpdate,
       origin: updatedFields.origin ?? originalEntry.origin

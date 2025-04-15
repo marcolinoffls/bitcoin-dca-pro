@@ -1,3 +1,4 @@
+
 /**
  * Componente: EntryForm
  * 
@@ -12,11 +13,12 @@
  * Estilo:
  * - Preserva o layout original com sombra, borda, padding e ícone Bitcoin.
  * 
- * Correção aplicada:
+ * Atualização:
  * - Agora, ao cancelar a edição, o formulário principal é **resetado** e retorna ao modo original.
  * - Removido o botão "Usar cotação atual" para evitar inconsistências
  * - Campos de valor e quantidade de BTC são totalmente independentes
  * - Adicionado feedback visual e sonoro ao registrar um aporte com sucesso
+ * - Implementado suporte a cotação opcional com cálculo automático
  */
 
 import React, { useEffect, useState } from 'react';
@@ -35,6 +37,7 @@ import { Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatNumber } from '@/lib/utils';
 import SuccessToast from '@/components/ui/success-toast';
+import { FormError } from '@/components/auth/FormError';
 
 interface EntryFormProps {
   onAddEntry: (
@@ -69,6 +72,8 @@ const EntryForm: React.FC<EntryFormProps> = ({
   const isMobile = useIsMobile();
   const [isSatisfactionModalOpen, setIsSatisfactionModalOpen] = useState(false);
   const [successToastOpen, setSuccessToastOpen] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [rateInfoMessage, setRateInfoMessage] = useState<string | null>(null);
 
   const {
     amountInvested,
@@ -88,6 +93,9 @@ const EntryForm: React.FC<EntryFormProps> = ({
     handleOriginChange,
     calculateFromAmount,
     calculateFromBtc,
+    calculateExchangeRate,
+    validateForm,
+    isExchangeRateCalculated,
     reset
   } = useEntryFormLogic(editingEntry, currentRate, displayUnit);
 
@@ -99,6 +107,8 @@ const EntryForm: React.FC<EntryFormProps> = ({
 
   const resetForm = () => {
     reset();
+    setFormError(null);
+    setRateInfoMessage(null);
     if (onCancelEdit) {
       onCancelEdit();
     }
@@ -106,20 +116,52 @@ const EntryForm: React.FC<EntryFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
+    setRateInfoMessage(null);
+    
+    // Validações iniciais dos campos obrigatórios
+    const validationError = validateForm();
+    if (validationError) {
+      setFormError(validationError);
+      return;
+    }
     
     let parsedAmount = parseLocalNumber(amountInvested);
     let parsedBtc = parseLocalNumber(btcAmount);
+    let parsedRate = exchangeRate;
 
     if (displayUnit === 'SATS') {
       parsedBtc = parsedBtc / 100000000;
     }
 
-    const parsedRate = exchangeRate;
+    // Se a cotação não foi preenchida ou é zero, calcula automaticamente
+    if (!exchangeRateDisplay.trim() || parsedRate === 0) {
+      const success = calculateExchangeRate();
+      if (!success) {
+        setFormError("Não foi possível calcular a cotação. Verifique os valores informados.");
+        return;
+      }
+      parsedRate = exchangeRate; // Usa o valor calculado
+      setRateInfoMessage("Cotação calculada automaticamente com base no valor investido e quantidade de bitcoin.");
+    }
 
-    if (isNaN(parsedAmount) || isNaN(parsedBtc) || isNaN(parsedRate) || parsedRate === 0) {
+    // Verificações finais de segurança
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      setFormError("O valor investido é inválido");
       return;
     }
 
+    if (isNaN(parsedBtc) || parsedBtc <= 0) {
+      setFormError("A quantidade de bitcoin é inválida");
+      return;
+    }
+
+    if (isNaN(parsedRate) || parsedRate <= 0) {
+      setFormError("A cotação é inválida");
+      return;
+    }
+
+    // Se chegou até aqui, está tudo ok para registrar o aporte
     onAddEntry(parsedAmount, parsedBtc, parsedRate, currency, date, origin);
     
     if (!editingEntry) {
@@ -217,7 +259,19 @@ const EntryForm: React.FC<EntryFormProps> = ({
             exchangeRate={exchangeRate}
             displayValue={exchangeRateDisplay}
             onExchangeRateChange={handleExchangeRateChange} 
+            isOptional={true}
+            isCalculated={isExchangeRateCalculated}
           />
+
+          {/* Exibe mensagem de informação sobre cotação calculada */}
+          {rateInfoMessage && (
+            <FormError message={rateInfoMessage} variant="warning" />
+          )}
+
+          {/* Exibe mensagem de erro de validação */}
+          {formError && (
+            <FormError message={formError} variant="destructive" />
+          )}
 
           <OriginSelector
             origin={origin}
