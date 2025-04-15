@@ -1,15 +1,3 @@
-/**
- * Hook: useBitcoinEntries
- *
- * Gerencia toda a lógica de aportes:
- * - Busca aportes no Supabase
- * - Permite adicionar, editar e excluir aportes
- * - Importação de planilhas CSV/Excel com pré-visualização
- * - Integra com a cotação atual do Bitcoin
- *
- * Utiliza React Query para cache e atualização reativa
- */
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,10 +10,6 @@ import {
   deleteBitcoinEntry,
   deleteAllSpreadsheetEntries
 } from '@/services/bitcoinEntryService';
-import { 
-  importSpreadsheet, 
-  confirmImport 
-} from '@/services/importService';
 
 // Interface para mapear os dados do Supabase para os tipos da aplicação
 interface SupabaseAporte {
@@ -61,21 +45,6 @@ export const useBitcoinEntries = () => {
   // Estado local para armazenar o aporte sendo editado
   const [editingEntry, setEditingEntry] = useState<BitcoinEntry | null>(null);
   
-  // Estado para armazenar os dados de pré-visualização da importação
-  const [previewData, setPreviewData] = useState<BitcoinEntry[]>([]);
-  const [pendingImport, setPendingImport] = useState<any[]>([]);
-  
-  // Estado para controlar o progresso de importação
-  const [importProgress, setImportProgress] = useState<{
-    progress: number;
-    stage: string;
-    isImporting: boolean;
-  }>({
-    progress: 0,
-    stage: '',
-    isImporting: false
-  });
-
   // Efeito para limpar o cache quando o usuário muda
   useEffect(() => {
     // Quando o usuário muda (login, logout ou troca de conta)
@@ -261,160 +230,16 @@ export const useBitcoinEntries = () => {
   };
   
   /**
-   * Prepara a importação de aportes a partir de um arquivo de planilha
-   * Retorna os dados para pré-visualização, sem salvá-los ainda
-   */
-  const prepareImportFromSpreadsheet = async (file: File): Promise<BitcoinEntry[]> => {
-    console.log('[useBitcoinEntries] Iniciando prepareImportFromSpreadsheet:', file.name, file.size, file.type);
-    
-    if (!user) {
-      console.error('[useBitcoinEntries] Erro: Usuário não autenticado');
-      throw new Error('Usuário não autenticado');
-    }
-    
-    try {
-      setImportProgress({
-        progress: 0,
-        stage: 'Iniciando preparação...',
-        isImporting: true
-      });
-      
-      console.log('[useBitcoinEntries] Chamando importSpreadsheet...');
-      
-      // Chamar função de importação com callback de progresso
-      const result = await importSpreadsheet(
-        file, 
-        user.id,
-        (progress, stage) => {
-          console.log(`[useBitcoinEntries] Progresso de importação: ${progress}% - ${stage}`);
-          setImportProgress({
-            progress,
-            stage,
-            isImporting: true
-          });
-        }
-      );
-      
-      console.log('[useBitcoinEntries] Resultado da importação:', { 
-        count: result.count,
-        previewDataLength: result.previewData.length,
-        previewData: result.previewData
-      });
-      
-      // Armazenar dados para pré-visualização
-      setPreviewData(result.previewData);
-      setPendingImport(result.entries); // Array para Supabase
-      
-      // Finalizar o progresso de preparação
-      setImportProgress({
-        progress: 70,
-        stage: 'Dados preparados para importação',
-        isImporting: false
-      });
-      
-      console.log('[useBitcoinEntries] Preparação concluída, retornando dados para pré-visualização');
-      return result.previewData;
-    } catch (error) {
-      // Em caso de erro, resetar o progresso
-      console.error('[useBitcoinEntries] Erro na preparação da importação:', error);
-      
-      setImportProgress({
-        progress: 0,
-        stage: '',
-        isImporting: false
-      });
-      
-      throw error;
-    }
-  };
-
-  /**
-   * Confirma a importação após a pré-visualização
-   */
-  const confirmImportEntries = async () => {
-    console.log('[useBitcoinEntries] Iniciando confirmImportEntries, pendingImport:', pendingImport.length);
-    
-    if (!user || pendingImport.length === 0) {
-      console.error('[useBitcoinEntries] Erro: Nenhum dado pendente para importação ou usuário não autenticado');
-      throw new Error('Nenhum dado pendente para importação');
-    }
-    
-    try {
-      setImportProgress({
-        progress: 75,
-        stage: 'Enviando dados ao servidor...',
-        isImporting: true
-      });
-      
-      console.log('[useBitcoinEntries] Chamando confirmImport...');
-      
-      // Confirma a importação no Supabase
-      const result = await confirmImport(pendingImport);
-      
-      console.log('[useBitcoinEntries] Importação confirmada, resultado:', result);
-      
-      // Atualizar o cache de queries para exibir os novos dados
-      console.log('[useBitcoinEntries] Invalidando cache de queries...');
-      await queryClient.invalidateQueries({ queryKey: ['entries'] });
-      
-      // Limpar os dados de pré-visualização após importação
-      setPreviewData([]);
-      setPendingImport([]);
-      
-      // Finalizar o progresso
-      setImportProgress({
-        progress: 100,
-        stage: 'Importação concluída',
-        isImporting: false
-      });
-      
-      console.log('[useBitcoinEntries] Processo de importação finalizado com sucesso');
-      return result;
-    } catch (error) {
-      // Em caso de erro, resetar o progresso
-      console.error('[useBitcoinEntries] Erro na confirmação da importação:', error);
-      
-      setImportProgress({
-        progress: 0,
-        stage: '',
-        isImporting: false
-      });
-      
-      throw error;
-    }
-  };
-  
-  /**
-   * Cancela a importação e limpa os dados de pré-visualização
-   */
-  const cancelImport = () => {
-    console.log('[useBitcoinEntries] Cancelando importação');
-    setPreviewData([]);
-    setPendingImport([]);
-    setImportProgress({
-      progress: 0,
-      stage: '',
-      isImporting: false
-    });
-  };
-
-  /**
-   * Coloca um aporte em modo de edição
+   * Exclui funções de importação de planilhas
    */
   const editEntry = (entry: BitcoinEntry) => {
     setEditingEntry(entry);
   };
 
-  /**
-   * Cancela edição de aporte
-   */
   const cancelEdit = () => {
     setEditingEntry(null);
   };
 
-  /**
-   * Atualiza manualmente a cotação do Bitcoin
-   */
   const updateCurrentRate = () => {
     queryClient.invalidateQueries({ queryKey: ['currentRate'] });
   };
@@ -424,8 +249,6 @@ export const useBitcoinEntries = () => {
     isLoading,
     currentRate,
     editingEntry,
-    importProgress,
-    previewData,
     addEntry,
     updateEntry,
     deleteEntry,
@@ -433,9 +256,6 @@ export const useBitcoinEntries = () => {
     editEntry,
     cancelEdit,
     updateCurrentRate,
-    prepareImportFromSpreadsheet,
-    confirmImportEntries,
-    cancelImport,
     refetch,
   };
 };
