@@ -109,22 +109,27 @@ const Index = () => {
       <div className="container mx-auto py-6 px-4 max-w-5xl">
         <header className="mb-6">
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-8">
-                <img 
-                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/bitcoin%20logo%20oficial%20sem%20nome%20100px.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvYml0Y29pbiBsb2dvIG9maWNpYWwgc2VtIG5vbWUgMTAwcHgucG5nIiwiaWF0IjoxNzQ0NTU4MDQ2LCJleHAiOjE4MDc2MzAwNDZ9.jmzK3PG-1LJ1r-2cqJD7OiOJItfPWA4oD8n0autKJeo" 
-                  alt="Bitcoin Logo"
-                  className="h-full w-full object-contain"
-                />
-              </div>
+            {/* Bitcoin logo stays on the left */}
+            <div className="h-8 w-8">
+              <img 
+                src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/bitcoin%20logo%20oficial%20sem%20nome%20100px.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                alt="Bitcoin Logo"
+                className="h-full w-full object-contain"
+              />
+            </div>
+        
+            {/* Centered Bitcoin DCA Pro text logo */}
+            <div className="absolute left-1/2 transform -translate-x-1/2">
               <div className="h-5">
                 <img 
-                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/public/fontes//Bitcoin%20dca%20pro%20-%20caixa%20alta%20(1).png" 
+                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/public/fontes//Bitcoin%20dca%20pro%20-%20caixa%20alta%20(1).png"
                   alt="Bitcoin DCA Pro"
                   className="h-full object-contain"
                 />
               </div>
             </div>
+        
+            {/* Sign out button stays on the right */}
             <div className="flex items-center">
               <Button
                 variant="outline"
@@ -137,7 +142,9 @@ const Index = () => {
               </Button>
             </div>
           </div>
-          <div className="flex items-center justify-between">
+        
+          {/* Centered tagline */}
+          <div className="flex justify-center">
             <p className={`text-muted-foreground ${isMobile ? "text-xs" : ""}`}>
               Stay Humble and Stack Sats
             </p>
