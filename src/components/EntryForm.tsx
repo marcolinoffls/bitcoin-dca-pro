@@ -276,7 +276,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
                 <Button 
                   type="button"
                   variant="outline"
-                  className={`flex items-center justify-center gap-2 text-bitcoin border-bitcoin/50 hover:bg-bitcoin/10 rounded-lg
+                  className={`flex items-center justify-center gap-2 text-bitcoin border-bitcoin/50 hover:bg-bitcoin/10 rounded-xl
                     ${isMobile ? 'w-full' : 'w-[280px]'}`}
                   onClick={openSatisfactionModal}
                 >
