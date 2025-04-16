@@ -160,7 +160,7 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Card Total/Portfolio */}
             <div className="h-full">
-              <Card className="h-[220px] p-4"> {/* Altura fixa e padding padrão */}
+              <Card className="h-[300px] p-4"> {/* Altura fixa e padding padrão */}
                 <StatisticsCards
                   entries={entries}
                   currentRate={bitcoinRate}
@@ -173,7 +173,7 @@ const Index = () => {
             
             {/* Card Preço Médio */}
             <div className="h-full">
-              <Card className="h-[220px] p-4"> {/* Mesma altura fixa */}
+              <Card className="h-[300px] p-4"> {/* Mesma altura fixa */}
                 <AveragePriceCard 
                   entries={entries}
                   currentRate={bitcoinRate}
@@ -185,7 +185,7 @@ const Index = () => {
             
             {/* Card Cotação */}
             <div className="h-full">
-              <Card className="h-[220px] p-4"> {/* Mesma altura fixa */}
+              <Card className="h-[300px] p-4"> {/* Mesma altura fixa */}
                 <CurrentRateCard
                   currentRate={bitcoinRate}
                   priceVariation={priceVariation}
