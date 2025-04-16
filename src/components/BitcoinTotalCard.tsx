@@ -156,10 +156,10 @@ const BitcoinTotalCard: React.FC<BitcoinTotalCardProps> = ({
         
           <div className="text-right">
           <div className="relative">
-            <p className={`font-semibold transition-all duration-300 ease-in-out ${hiddenClass}`}>
+            <p className={`text-lg font-semibold transition-all duration-300 ease-in-out ${hiddenClass}`}>
               {formattedTotalBitcoin} {displayUnit}
             </p>
-            <p className={`font-semibold transition-all duration-300 ease-in-out ${dotsClass}`}>
+            <p className={`text-lg font-semibold transition-all duration-300 ease-in-out ${dotsClass}`}>
               ●●●●
             </p>
           </div>
