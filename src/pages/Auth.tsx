@@ -190,7 +190,7 @@ const Auth = () => {
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           required
-                          className="pl-10 rounded-lg"
+                          className="pl-10 rounded-lg placeholder:text-sm"
                         />
                       </div>
                     </div>
