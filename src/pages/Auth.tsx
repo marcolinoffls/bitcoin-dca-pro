@@ -220,11 +220,22 @@ const Auth = () => {
             </div>
           ) : (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Entrar</TabsTrigger>
-                <TabsTrigger value="register">Criar Conta</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 gap-2 p-1"> {/* Adicionado gap-2 e p-1 */}
+                <TabsTrigger 
+                  value="login"
+                  aria-label="Entrar na conta" // Melhoria de acessibilidade
+                  className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm" // Melhoria visual
+                >
+                  Entrar
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="register"
+                  aria-label="Criar nova conta" // Melhoria de acessibilidade
+                  className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm" // Melhoria visual
+                >
+                  Criar Conta
+                </TabsTrigger>
               </TabsList>
-              
               <TabsContent value="login" className="mt-4">
                 <form onSubmit={handleSignIn}>
                   <CardContent className="space-y-4 pt-4">
