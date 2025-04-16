@@ -106,32 +106,34 @@ const AveragePriceCard: React.FC<AveragePriceCardProps> = ({
               ? `${currencySymbol} ${formatNumber(currentAvgPrice)}` 
               : "Sem aportes"}
           </div>
-          
-          <ToggleGroup 
-            type="single" 
-            value={selectedPeriod} 
-            onValueChange={(value) => value && setSelectedPeriod(value as 'month' | 'year' | 'all')}
-            className="bg-gray-100 p-1 rounded-xl w-full"
-          >
-            <ToggleGroupItem 
-              value="month" 
-              className={`flex-1 text-xs py-1 rounded-xl transition-all data-[state=on]:bg-white data-[state=on]:text-bitcoin data-[state=on]:font-regular ${selectedPeriod !== 'month' && 'text-gray-500 hover:bg-white/50'}`}
+
+          <div className="mt-auto">
+            <ToggleGroup 
+              type="single" 
+              value={selectedPeriod} 
+              onValueChange={(value) => value && setSelectedPeriod(value as 'month' | 'year' | 'all')}
+              className="bg-gray-100 p-1 rounded-xl w-full"
             >
-              Mensal
-            </ToggleGroupItem>
-            <ToggleGroupItem 
-              value="year" 
-              className={`flex-1 text-xs py-1 rounded-xl transition-all data-[state=on]:bg-white data-[state=on]:text-bitcoin data-[state=on]:font-semibold ${selectedPeriod !== 'year' && 'text-gray-500 hover:bg-white/50'}`}
-            >
-              Anual
-            </ToggleGroupItem>
-            <ToggleGroupItem 
-              value="all" 
-              className={`flex-1 text-xs py-1 rounded-xl transition-all data-[state=on]:bg-white data-[state=on]:text-bitcoin data-[state=on]:font-semibold ${selectedPeriod !== 'all' && 'text-gray-500 hover:bg-white/50'}`}
-            >
-              Total
-            </ToggleGroupItem>
-          </ToggleGroup>
+              <ToggleGroupItem 
+                value="month" 
+                className={`flex-1 text-xs py-1 rounded-xl transition-all data-[state=on]:bg-white data-[state=on]:text-bitcoin data-[state=on]:font-regular ${selectedPeriod !== 'month' && 'text-gray-500 hover:bg-white/50'}`}
+              >
+                Mensal
+              </ToggleGroupItem>
+              <ToggleGroupItem 
+                value="year" 
+                className={`flex-1 text-xs py-1 rounded-xl transition-all data-[state=on]:bg-white data-[state=on]:text-bitcoin data-[state=on]:font-semibold ${selectedPeriod !== 'year' && 'text-gray-500 hover:bg-white/50'}`}
+              >
+                Anual
+              </ToggleGroupItem>
+              <ToggleGroupItem 
+                value="all" 
+                className={`flex-1 text-xs py-1 rounded-xl transition-all data-[state=on]:bg-white data-[state=on]:text-bitcoin data-[state=on]:font-semibold ${selectedPeriod !== 'all' && 'text-gray-500 hover:bg-white/50'}`}
+              >
+                Total
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>   
         </div>
       </CardContent>
     </Card>
