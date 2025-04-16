@@ -14,34 +14,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useBitcoinEntries } from '@/hooks/useBitcoinEntries';
 import { BitcoinEntry } from '@/types';
-
-/**
- * Componente AveragePriceCard
- * 
- * Responsável por exibir o card com preço médio de compra de Bitcoin
- * Este componente foi adicionado para corrigir o erro de referência
- */
-const AveragePriceCard = ({ 
-  entries, 
-  selectedCurrency, 
-  isLoading 
-}: { 
-  entries: BitcoinEntry[]; 
-  selectedCurrency: 'BRL' | 'USD'; 
-  isLoading?: boolean;
-}) => {
-  // Implementação simples para resolver o erro
-  return (
-    <div className="h-full bg-white dark:bg-gray-800 rounded-xl shadow p-4">
-      <h3 className="text-lg font-medium">Preço Médio</h3>
-      {isLoading ? (
-        <p>Carregando...</p>
-      ) : (
-        <p>Componente em desenvolvimento</p>
-      )}
-    </div>
-  );
-};
+import AveragePriceCard from '@/components/AveragePriceCard';
 
 /**
  * Página principal do aplicativo
@@ -199,6 +172,7 @@ const Index = () => {
             <div className="h-full">
               <AveragePriceCard 
                 entries={entries}
+                currentRate={bitcoinRate}
                 selectedCurrency={selectedCurrency}
                 isLoading={isEntriesLoading}
               />
