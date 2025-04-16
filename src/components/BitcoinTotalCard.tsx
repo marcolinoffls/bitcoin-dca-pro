@@ -129,27 +129,32 @@ const BitcoinTotalCard: React.FC<BitcoinTotalCardProps> = ({
         <div className="h-px w-full bg-gray-100 my-3"></div>
         
         <div className="flex justify-between items-end mt-4">
-        <div>
-          <p className="text-xs text-gray-400 mb-1">Portfólio</p>
-          <div className="relative">
-            <p className={`text-2xl font-bold transition-all duration-300 ease-in-out ${hiddenClass}`}>
-              {currencySymbol} {formatNumber(totalValueCurrent)}
-            </p>
-            <p className={`text-2xl font-bold transition-all duration-300 ease-in-out ${dotsClass}`}>
-              ●●●●
-            </p>
+          <div className="flex flex-col">
+            <p className="text-xs text-gray-400 mb-1">Portfólio</p>
+            <div className="relative">
+              <p className={`text-2xl font-bold transition-all duration-300 ease-in-out ${hiddenClass}`}>
+                {currencySymbol} {formatNumber(totalValueCurrent)}
+              </p>
+              <p className={`text-2xl font-bold transition-all duration-300 ease-in-out ${dotsClass}`}>
+                ●●●●
+              </p>
+            </div>
+            {/* Total investido em duas linhas */}
+            <div className="relative mt-1">
+              <div className={`flex flex-col transition-all duration-300 ease-in-out ${hiddenClass}`}>
+                <span className="text-xs text-gray-400">Total investido:</span>
+                <span className="text-xs text-gray-400">
+                  {currencySymbol} {formatNumber(totalInvested)}
+                </span>
+              </div>
+              <div className={`flex flex-col transition-all duration-300 ease-in-out ${dotsClass}`}>
+                <span className="text-xs text-gray-400">Total investido:</span>
+                <span className="text-xs text-gray-400">●●●●</span>
+              </div>
+            </div>
           </div>
-          <div className="relative">
-            <p className={`text-sm text-gray-400 mt-1 transition-all duration-300 ease-in-out ${hiddenClass}`}>
-              Total investido: {currencySymbol} {formatNumber(totalInvested)}
-            </p>
-            <p className={`text-sm text-gray-400 mt-1 transition-all duration-300 ease-in-out ${dotsClass}`}>
-              Total investido: ●●●●
-            </p>
-          </div>
-        </div>
         
-        <div className="text-right">
+          <div className="text-right">
           <div className="relative">
             <p className={`font-semibold transition-all duration-300 ease-in-out ${hiddenClass}`}>
               {formattedTotalBitcoin} {displayUnit}
