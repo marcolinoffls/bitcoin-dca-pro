@@ -1,3 +1,4 @@
+
 import { 
   validateCsvFile, 
   sanitizeCsvData, 
@@ -172,7 +173,7 @@ export const sendSecureCSVToWebhook = async (
     formData.append('userEmail', userEmail);
     formData.append('timestamp', timestamp);
     
-    // Dados para assinatura HMAC
+    // Dados para assinatura
     const payloadForSignature = {
       fileName: file.name,
       userId,
@@ -181,8 +182,8 @@ export const sendSecureCSVToWebhook = async (
       fileSize: file.size
     };
     
-    // Gerar assinatura
-    const signature = generateHmacSignature(payloadForSignature, timestamp);
+    // Gerar assinatura - Agora é assíncrona!
+    const signature = await generateHmacSignature(payloadForSignature, timestamp);
     
     // Configurar headers seguros
     const headers = prepareSecureHeaders(userId, timestamp, signature);

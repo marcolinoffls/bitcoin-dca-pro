@@ -1,9 +1,8 @@
+
 /**
  * Configurações de segurança para a aplicação
  * Contém constantes, funções e utilidades relacionadas à segurança
  */
-
-import { createHash, randomBytes } from 'crypto';
 
 // Configurações de tamanho e tipo para arquivos CSV
 export const CSV_MAX_SIZE_MB = 5;
@@ -21,14 +20,18 @@ export const API_KEY = 'testkey123'; // Em produção, usar secrets do Supabase
 export const REQUEST_TIMEOUT = 30000; // 30 segundos
 
 /**
- * Gera uma nova API key segura usando crypto
+ * Gera uma nova API key segura usando algoritmos de criptografia do navegador
  * @returns string contendo a API key em formato hexadecimal
  */
 export const generateSecureApiKey = (): string => {
-  // Gera 32 bytes de dados aleatórios
-  const randomKey = randomBytes(32);
+  // Gera bytes aleatórios usando a Web Crypto API
+  const array = new Uint8Array(32);
+  window.crypto.getRandomValues(array);
+  
   // Converte para hexadecimal
-  return randomKey.toString('hex');
+  return Array.from(array)
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
 };
 
 /**
@@ -40,25 +43,31 @@ export const generateTimestamp = (): string => {
 };
 
 /**
- * Gera uma assinatura HMAC para validação de integridade
- * Usa SHA-256 para maior segurança
+ * Gera uma assinatura para validação de integridade
+ * Usa SHA-256 através da Web Crypto API
  * @param payload dados a serem assinados
  * @param timestamp timestamp da requisição
- * @returns string com assinatura HMAC
+ * @returns Promise com a assinatura em hexadecimal
  */
-export const generateHmacSignature = (payload: any, timestamp: string): string => {
+export const generateHmacSignature = async (payload: any, timestamp: string): Promise<string> => {
   try {
     // Combina payload e timestamp
     const data = JSON.stringify(payload) + timestamp;
     
-    // Cria hash SHA-256 (em produção usar uma chave secreta do Supabase)
-    const hash = createHash('sha256')
-      .update(data)
-      .digest('hex');
+    // Converte para um formato que a Web Crypto API possa processar
+    const encoder = new TextEncoder();
+    const dataBuffer = encoder.encode(data);
     
-    return hash;
+    // Cria hash SHA-256 usando Web Crypto API
+    const hashBuffer = await window.crypto.subtle.digest('SHA-256', dataBuffer);
+    
+    // Converte para string hexadecimal
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    
+    return hashHex;
   } catch (error) {
-    console.error('Erro ao gerar assinatura HMAC:', error);
+    console.error('Erro ao gerar assinatura:', error);
     throw new Error('Falha ao gerar assinatura de segurança');
   }
 };
@@ -128,7 +137,7 @@ export const sanitizeCsvData = (data: any[]): any[] => {
  * Prepara headers seguros para requisição ao webhook
  * @param userId ID do usuário autenticado
  * @param timestamp Timestamp da requisição
- * @param signature Assinatura HMAC
+ * @param signature Assinatura
  * @returns objeto com headers seguros
  */
 export const prepareSecureHeaders = (

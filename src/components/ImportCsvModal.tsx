@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -83,7 +82,7 @@ const ImportCsvModal: React.FC<ImportCsvModalProps> = ({
           description: "Aportes importados com sucesso",
         });
       } else if (uploadMode === 'webhook' && user) {
-        // Envio seguro para webhook externo
+        // Envio seguro para webhook externo - Função agora trabalha com assinatura assíncrona
         await sendSecureCSVToWebhook(
           file, 
           user.id,
