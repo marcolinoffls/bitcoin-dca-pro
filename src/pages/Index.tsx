@@ -108,7 +108,21 @@ const Index = () => {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto py-6 px-4 max-w-5xl">
         <header className="mb-6">
-          <div className="flex items-center justify-between mb-3">
+          {/* Botão Sair alinhado à direita */}
+          <div className="flex justify-end mb-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={signOut}
+              className="flex items-center gap-1"
+            >
+              <LogOut size={16} />
+              <span className={isMobile ? "hidden" : "inline"}>Sair</span>
+            </Button>
+          </div>
+        
+          {/* Logo e texto centralizados */}
+          <div className="flex flex-col items-center gap-3">
             <div className="flex items-center gap-3">
               <div className="h-8 w-8">
                 <img 
@@ -125,19 +139,6 @@ const Index = () => {
                 />
               </div>
             </div>
-            <div className="flex items-center">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={signOut}
-                className="flex items-center gap-1"
-              >
-                <LogOut size={16} />
-                <span className={isMobile ? "hidden" : "inline"}>Sair</span>
-              </Button>
-            </div>
-          </div>
-          <div className="flex items-center justify-between">
             <p className={`text-muted-foreground ${isMobile ? "text-xs" : ""}`}>
               Stay Humble and Stack Sats
             </p>
