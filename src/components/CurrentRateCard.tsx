@@ -51,7 +51,7 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
     
     return (
       <div className={`flex flex-col items-center ${className}`}>
-        <span className="text-xs text-muted-foreground mb-0.5">{label}</span>
+        <span className="text-xs text-muted-foreground mb-0.1">{label}</span>
         <div className={`flex items-center ${isPositive ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
           {isPositive ? (
             <Triangle 
