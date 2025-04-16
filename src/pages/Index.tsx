@@ -108,7 +108,7 @@ const Index = () => {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto py-6 px-4 max-w-5xl">
         <header className="mb-6">
-          <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center justify-between mb-0">
             {/* Bitcoin logo stays on the left */}
             <div className="h-8 w-8">
               <img 
