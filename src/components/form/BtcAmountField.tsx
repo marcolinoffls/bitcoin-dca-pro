@@ -36,7 +36,7 @@ const BtcAmountField: React.FC<BtcAmountFieldProps> = ({
         </span>
         <Input
           id="btcAmount"
-          placeholder={displayUnit === 'SATS' ? "1000" : "0.001"}
+          placeholder={displayUnit === 'SATS' ? "1000" : "0,001"}
           value={btcAmount}
           onChange={(e) => onBtcAmountChange(e.target.value)}
           className="pl-12 rounded-xl focus-visible:ring-bitcoin focus-visible:border-bitcoin transition-all"
