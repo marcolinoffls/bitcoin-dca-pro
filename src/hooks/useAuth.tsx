@@ -1,4 +1,3 @@
-
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -94,68 +93,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = async (email: string, password: string) => {
     try {
-      console.log('Iniciando processo de signup para:', email);
-      
-      // Verifica se o email já está cadastrado indiretamente através do signInWithOtp
-      // Esta é uma forma segura de verificar existência sem precisar de permissões admin
-      const { data: emailCheckData, error: emailCheckError } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          shouldCreateUser: false, // Não cria novo usuário, apenas verifica
-        }
-      });
-
-      // Se não der erro específico de "Email não encontrado", provavelmente o email já existe
-      if (!emailCheckError?.message.includes("Email not found")) {
-        console.log('Email possivelmente já cadastrado:', email);
-        toast({
-          title: "Email já cadastrado",
-          description: "Este email já está sendo usado. Por favor, faça login ou use outro email.",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      const { data, error } = await supabase.auth.signUp({ 
-        email, 
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/login`
-        }
-      });
-      
-      if (error) {
-        console.error('Erro no signup:', error);
-        throw error;
-      }
-  
-      console.log('Resposta do signup:', data);
-      
-      // Verifica se o usuário foi criado mas precisa confirmar email
-      if (data?.user && !data.user.confirmed_at) {
-        toast({
-          title: "Cadastro realizado com sucesso",
-          description: "Verifique seu email para confirmar o cadastro. Lembre-se de verificar a pasta de spam.",
-          duration: 6000,
-        });
-      }
-    } catch (error: any) {
-      console.error('Erro detalhado:', error);
-      
-      let mensagemErro = '';
-      if (error.message.includes('Email rate limit exceeded')) {
-        mensagemErro = 'Muitas tentativas. Aguarde alguns minutos.';
-      } else if (error.message.includes('Invalid email')) {
-        mensagemErro = 'Email inválido. Verifique o endereço informado.';
-      } else if (error.message.includes('stronger password')) {
-        mensagemErro = 'A senha precisa ser mais forte. Use letras, números e caracteres especiais.';
-      } else {
-        mensagemErro = 'Erro ao criar conta. Por favor, tente novamente.';
-      }
-  
+      const { error } = await supabase.auth.signUp({ email, password });
+      if (error) throw error;
       toast({
-        title: "Erro no cadastro",
-        description: mensagemErro,
+        title: "Cadastro realizado com sucesso",
+        description: "Verifique seu email para confirmar o cadastro.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao criar conta",
+        description: error.message,
         variant: "destructive",
       });
       throw error;
@@ -177,51 +124,73 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const resetPassword = async (email: string) => {
     try {
-      console.log("Enviando solicitação de redefinição de senha para:", email);
+      console.log("=== Início do processo de recuperação de senha ===");
+      console.log("Email:", email);
       
+      // 1. Verificar se o email existe
+      const { data: user, error: userError } = await supabase.auth.admin.getUserByEmail(email);
+      
+      if (userError) {
+        console.error("Erro ao verificar email:", userError);
+        throw userError;
+      }
+  
+      if (!user) {
+        throw new Error("Email não encontrado");
+      }
+  
+      // 2. Configurar URL de redirecionamento
       const baseUrl = window.location.origin;
       const resetRedirectUrl = `${baseUrl}/reset-password`;
-      
-      console.log("URL de redirecionamento configurada:", resetRedirectUrl);
-      
+      console.log("URL de redirecionamento:", resetRedirectUrl);
+  
+      // 3. Tentar enviar email
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: resetRedirectUrl,
       });
-      
+  
       if (error) {
-        console.error("Erro na API do Supabase:", error);
+        console.error("Erro do Supabase:", error);
         throw error;
       }
+  
+      console.log("Solicitação de reset enviada com sucesso");
       
       toast({
         title: "Email enviado",
-        description: "Verifique sua caixa de entrada para redefinir sua senha. Lembre-se de verificar a pasta de spam caso não encontre o email.",
+        description: "Se este email estiver cadastrado, você receberá as instruções para redefinir sua senha. Verifique também sua pasta de spam.",
+        duration: 6000,
         variant: "success",
       });
+  
     } catch (error: any) {
-      console.error("Erro completo ao enviar email de redefinição:", error);
-      
+      console.error("=== Erro no processo de recuperação ===");
+      console.error("Tipo do erro:", typeof error);
+      console.error("Mensagem:", error.message);
+      console.error("Erro completo:", error);
+  
       let mensagemErro = '';
       
-      if (!error.message || error.message === '{}' || error.message === '!') {
-        mensagemErro = 'Ocorreu um erro ao enviar o email de redefinição. Por favor, verifique se o email está correto e tente novamente.';
+      if (error.message === "Email não encontrado") {
+        mensagemErro = "Se este email estiver cadastrado, você receberá as instruções para redefinir sua senha.";
       } else if (error.message.includes('rate limit')) {
-        mensagemErro = 'Muitas tentativas em pouco tempo. Por favor, aguarde alguns minutos antes de tentar novamente.';
-      } else if (error.message.includes('Unable to validate email address')) {
-        mensagemErro = 'Email inválido. Por favor, verifique se o endereço está correto.';
-      } else if (error.message.includes('not found')) {
-        mensagemErro = 'Email não encontrado. Verifique se digitou corretamente ou crie uma nova conta.';
-      } else if (error.message.includes('Authentication failed') || error.message.includes('Bad username / password')) {
-        mensagemErro = 'Problema com o servidor de email. Por favor, entre em contato com o suporte informando este erro: "Falha na configuração SMTP".';
+        mensagemErro = 'Muitas tentativas em pouco tempo. Aguarde alguns minutos.';
+      } else if (error.message.includes('Invalid email')) {
+        mensagemErro = 'Email inválido. Verifique o endereço informado.';
+      } else if (error.message.includes('SMTP')) {
+        mensagemErro = 'Erro no servidor de email. Por favor, tente novamente em alguns minutos.';
+        // Aqui você pode adicionar uma notificação para você mesmo sobre o erro SMTP
+        console.error("ERRO CRÍTICO: Falha no SMTP");
       } else {
-        mensagemErro = error.message;
+        mensagemErro = 'Ocorreu um erro inesperado. Tente novamente em alguns minutos.';
       }
-      
+  
       toast({
-        title: "Erro ao enviar email",
+        title: "Não foi possível enviar o email",
         description: mensagemErro,
         variant: "destructive",
       });
+      
       throw error;
     }
   };
