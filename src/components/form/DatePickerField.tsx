@@ -104,7 +104,7 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange })
                 locale={ptBR}
                 className="rounded-md border-0 shadow-none pointer-events-auto [&_.rdp-day:focus]:ring-0 [&_.rdp-day:focus]:outline-none"
               />
-              <div className="flex justify-end mt-1">
+              <div className="flex justify-end mt-[5px]">
                 <Button 
                   type="button" 
                   onClick={handleConfirm}
