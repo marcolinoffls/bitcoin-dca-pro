@@ -39,7 +39,7 @@ const OriginSelector: React.FC<OriginSelectorProps> = ({ origin, onOriginChange 
           type="button"
           onClick={() => onOriginChange('p2p')}
           className={cn(
-            'flex-1 text-xs font-normal gap-1',
+            'flex-1 text-xs font-normal gap-1 rounded-xl',
             origin === 'p2p' && 'bg-bitcoin text-white hover:bg-bitcoin/90'
           )}
         >
