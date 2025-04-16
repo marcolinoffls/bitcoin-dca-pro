@@ -111,23 +111,23 @@ const AveragePriceCard: React.FC<AveragePriceCardProps> = ({
             type="single" 
             value={selectedPeriod} 
             onValueChange={(value) => value && setSelectedPeriod(value as 'month' | 'year' | 'all')}
-            className="bg-gray-100 p-0.5 rounded-xl w-full"
+            className="bg-gray-100 p-0.5 rounded-lg w-full"
           >
             <ToggleGroupItem 
               value="month" 
-              className={`flex-1 text-xs py-1 rounded-xl transition-all ${selectedPeriod === 'month' ? 'bg-white text-bitcoin font-semibold shadow-sm' : 'text-gray-500'}`}
+              className={`flex-1 text-xs py-1 rounded-lg transition-all ${selectedPeriod === 'month' ? 'bg-white text-bitcoin font-semibold shadow-sm' : 'text-gray-500'}`}
             >
               Mensal
             </ToggleGroupItem>
             <ToggleGroupItem 
               value="year" 
-              className={`flex-1 text-xs py-1 rounded-xl transition-all ${selectedPeriod === 'year' ? 'bg-white text-bitcoin font-semibold shadow-sm' : 'text-gray-500'}`}
+              className={`flex-1 text-xs py-1 rounded-lg transition-all ${selectedPeriod === 'year' ? 'bg-white text-bitcoin font-semibold shadow-sm' : 'text-gray-500'}`}
             >
               Anual
             </ToggleGroupItem>
             <ToggleGroupItem 
               value="all" 
-              className={`flex-1 text-xs py-1 rounded-xl transition-all ${selectedPeriod === 'all' ? 'bg-white text-bitcoin font-semibold shadow-sm' : 'text-gray-500'}`}
+              className={`flex-1 text-xs py-1 rounded-lg transition-all ${selectedPeriod === 'all' ? 'bg-white text-bitcoin font-semibold shadow-sm' : 'text-gray-500'}`}
             >
               Total
             </ToggleGroupItem>
