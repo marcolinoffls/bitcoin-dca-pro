@@ -271,10 +271,11 @@ const Auth = () => {
                         <Input 
                           id="password" 
                           type={showPassword ? "text" : "password"}
+                          placeholder="digite sua senha..." 
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           required
-                          className="pl-10 pr-10 rounded-lg"
+                          className="pl-10 pr-10 rounded-lg placeholder:text-xs"
                         />
                         <Button
                           type="button"
