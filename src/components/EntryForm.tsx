@@ -156,11 +156,20 @@ const EntryForm: React.FC<EntryFormProps> = ({
       return;
     }
 
-    if (isNaN(parsedRate) || parsedRate <= 0) {
+    if (isNaN(parsedRate)) {
       setFormError("A cotação é inválida");
       return;
     }
-
+    
+    // Se a cotação é zero mas temos valores válidos, podemos calcular
+    if (parsedRate <= 0 && parsedAmount > 0 && parsedBtc > 0) {
+      parsedRate = parsedAmount / parsedBtc;
+      setRateInfoMessage("Cotação calculada automaticamente com base no valor investido e quantidade de bitcoin.");
+    } else if (parsedRate <= 0) {
+      setFormError("Não foi possível calcular a cotação. Verifique os valores informados.");
+      return;
+    }
+    
     // Se chegou até aqui, está tudo ok para registrar o aporte
     onAddEntry(parsedAmount, parsedBtc, parsedRate, currency, date, origin);
     
