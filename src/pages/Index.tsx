@@ -159,33 +159,39 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Card Total/Portfolio */}
             <div className="h-full">
-              <StatisticsCards
-                entries={entries}
-                currentRate={bitcoinRate}
-                selectedCurrency={selectedCurrency}
-                displayUnit={displayUnit}
-                isLoading={isEntriesLoading}
-              />
+              <Card className="h-[220px] p-4"> {/* Altura fixa e padding padrão */}
+                <StatisticsCards
+                  entries={entries}
+                  currentRate={bitcoinRate}
+                  selectedCurrency={selectedCurrency}
+                  displayUnit={displayUnit}
+                  isLoading={isEntriesLoading}
+                />
+              </Card>
             </div>
             
             {/* Card Preço Médio */}
             <div className="h-full">
-              <AveragePriceCard 
-                entries={entries}
-                currentRate={bitcoinRate}
-                selectedCurrency={selectedCurrency}
-                isLoading={isEntriesLoading}
-              />
+              <Card className="h-[220px] p-4"> {/* Mesma altura fixa */}
+                <AveragePriceCard 
+                  entries={entries}
+                  currentRate={bitcoinRate}
+                  selectedCurrency={selectedCurrency}
+                  isLoading={isEntriesLoading}
+                />
+              </Card>
             </div>
             
             {/* Card Cotação */}
             <div className="h-full">
-              <CurrentRateCard
-                currentRate={bitcoinRate}
-                priceVariation={priceVariation}
-                isLoading={isRateLoading}
-                onRefresh={fetchRateUpdate}
-              />
+              <Card className="h-[220px] p-4"> {/* Mesma altura fixa */}
+                <CurrentRateCard
+                  currentRate={bitcoinRate}
+                  priceVariation={priceVariation}
+                  isLoading={isRateLoading}
+                  onRefresh={fetchRateUpdate}
+                />
+              </Card>
             </div>
           </div>
         
