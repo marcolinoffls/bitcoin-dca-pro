@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useBitcoinEntries } from '@/hooks/useBitcoinEntries';
 import { BitcoinEntry } from '@/types';
 import AveragePriceCard from '@/components/AveragePriceCard';
+import { Card } from '@/components/ui/card';
 
 /**
  * Página principal do aplicativo
