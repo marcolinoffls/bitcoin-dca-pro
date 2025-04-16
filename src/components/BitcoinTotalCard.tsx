@@ -130,7 +130,7 @@ const BitcoinTotalCard: React.FC<BitcoinTotalCardProps> = ({
         
         <div className="flex justify-between items-end mt-4">
           <div className="flex flex-col">
-            <p className="text-xs text-gray-400 mb-1">Portfólio</p>
+            <p className="text-sm text-gray-400 mb-1">Portfólio</p>
             <div className="relative">
               <p className={`text-2xl font-bold transition-all duration-300 ease-in-out ${hiddenClass}`}>
                 {currencySymbol} {formatNumber(totalValueCurrent)}
