@@ -108,7 +108,7 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange })
                 <Button 
                   type="button" 
                   onClick={handleConfirm}
-                  className="rounded-lg bg-bitcoin hover:bg-bitcoin/90 text-white w-full"
+                  className="rounded-lg bg-bitcoin hover:bg-bitcoin/90 text-white w-fit px-4"
                 >
                   <Check className="h-4 w-4 mr-2" />
                   Confirmar
