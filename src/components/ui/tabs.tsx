@@ -22,10 +22,15 @@ const TabsList = React.forwardRef<
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      // Ocupar toda a largura, remover espaçamento interno e arredondar levemente
-      "w-full flex rounded-md border bg-muted p-0",
+      // Classes para responsividade e layout
+      "flex w-full min-w-[280px] max-w-full rounded-md border bg-muted p-0",
+      // Breakpoint para telas maiores
+      "sm:w-[400px]",
       className
     )}
+    // Atributos de acessibilidade
+    role="tablist"
+    aria-orientation="horizontal"
     {...props}
   />
 ))
@@ -44,13 +49,14 @@ const TabsTrigger = React.forwardRef<
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      // Ocupa metade do container (w-full dentro de flex), sem padding lateral exagerado
-      "w-full px-4 py-2 text-sm font-medium text-muted-foreground transition-all",
-      // Estilo quando a aba está ativa
+      // Classes base para layout e aparência
+      "flex-1 px-4 py-2 text-sm font-medium text-muted-foreground transition-all",
+      // Classes para acessibilidade
+      "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+      // Classes para estado ativo
       "data-[state=active]:bg-background data-[state=active]:text-foreground",
-      // Acessibilidade e responsividade
-      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-      "disabled:pointer-events-none disabled:opacity-50",
+      // Feedback visual
+      "hover:bg-background/50",
       className
     )}
     {...props}
