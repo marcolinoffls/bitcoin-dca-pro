@@ -89,25 +89,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       throw error;
     }
-  };
-
-  const signUp = async (email: string, password: string) => {
-    try {
-      const { error } = await supabase.auth.signUp({ email, password });
-      if (error) throw error;
-      toast({
-        title: "Cadastro realizado com sucesso",
-        description: "Verifique seu email para confirmar o cadastro.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Erro ao criar conta",
-        description: error.message,
-        variant: "destructive",
-      });
-      throw error;
-    }
-  };
+    
+    const signUp = async (email: string, password: string) => {
+      try {
+        console.log('Iniciando processo de signup para:', email);
+        
+        const { data, error } = await supabase.auth.signUp({ 
+          email, 
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/login`
+          }
+        });
+        
+        if (error) {
+          console.error('Erro no signup:', error);
+          throw error;
+        }
+    
+        console.log('Resposta do signup:', data);
+        
+        // Verifica se o usuário foi criado mas precisa confirmar email
+        if (data?.user && !data.user.confirmed_at) {
+          toast({
+            title: "Cadastro realizado com sucesso",
+            description: "Verifique seu email para confirmar o cadastro. Pode levar alguns minutos e não esqueça de verificar sua caixa de spam.",
+            duration: 6000,
+          });
+        }
+      } catch (error: any) {
+        console.error('Erro detalhado:', error);
+        
+        let mensagemErro = 'Erro ao criar conta. ';
+        if (error.message.includes('Email rate limit exceeded')) {
+          mensagemErro += 'Muitas tentativas. Aguarde alguns minutos.';
+        } else if (error.message.includes('User already registered')) {
+          mensagemErro += 'Este email já está cadastrado.';
+        } else if (error.message.includes('Authentication failed')) {
+          mensagemErro += 'Falha no servidor de email. Contate o suporte.';
+        } else {
+          mensagemErro += error.message;
+        }
+    
+        toast({
+          title: "Erro no cadastro",
+          description: mensagemErro,
+          variant: "destructive",
+        });
+        throw error;
+      }
+    };
 
   const signOut = async () => {
     try {
