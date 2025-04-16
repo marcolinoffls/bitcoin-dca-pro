@@ -67,8 +67,12 @@ const BitcoinTotalCard: React.FC<BitcoinTotalCardProps> = ({
   const isPositiveChange = percentChange >= 0;
   
   // Classes para transição suave
-  const hiddenClass = isVisible ? '' : 'opacity-0 absolute';
-  const dotsClass = isVisible ? 'opacity-0 absolute' : 'opacity-100 relative';
+  const hiddenClass = isVisible 
+    ? 'opacity-100 translate-y-0' 
+    : 'opacity-0 translate-y-2 absolute';
+  const dotsClass = isVisible 
+    ? 'opacity-0 -translate-y-2 absolute' 
+    : 'opacity-100 translate-y-0 relative';
 
   return (
     <Card className="overflow-hidden rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-800 h-[220px]"> {/* Adicionado h-[250px] */}
@@ -125,37 +129,37 @@ const BitcoinTotalCard: React.FC<BitcoinTotalCardProps> = ({
         <div className="h-px w-full bg-gray-100 my-3"></div>
         
         <div className="flex justify-between items-end mt-4">
-          <div>
-            <p className="text-xs text-gray-400 mb-1">Portfólio</p>
-            <div className="relative">
-              <p className={`text-2xl font-bold transition-all duration-300 ${hiddenClass}`}>
-                {currencySymbol} {formatNumber(totalValueCurrent)}
-              </p>
-              <p className={`text-2xl font-bold transition-all duration-300 ${dotsClass}`}>
-                ●●●●
-              </p>
-            </div>
-            <div className="relative">
-              <p className={`text-xs text-gray-400 mt-1 transition-all duration-300 ${hiddenClass}`}>
-                Total investido: {currencySymbol} {formatNumber(totalInvested)}
-              </p>
-              <p className={`text-xs text-gray-400 mt-1 transition-all duration-300 ${dotsClass}`}>
-                Total investido: ●●●●
-              </p>
-            </div>
+        <div>
+          <p className="text-xs text-gray-400 mb-1">Portfólio</p>
+          <div className="relative">
+            <p className={`text-2xl font-bold transition-all duration-300 ease-in-out ${hiddenClass}`}>
+              {currencySymbol} {formatNumber(totalValueCurrent)}
+            </p>
+            <p className={`text-2xl font-bold transition-all duration-300 ease-in-out ${dotsClass}`}>
+              ●●●●
+            </p>
           </div>
-          
-          <div className="text-right">
-            <div className="relative">
-              <p className={`font-semibold transition-all duration-300 ${hiddenClass}`}>
-                {formattedTotalBitcoin} {displayUnit}
-              </p>
-              <p className={`font-semibold transition-all duration-300 ${dotsClass}`}>
-                ●●●●
-              </p>
-            </div>
+          <div className="relative">
+            <p className={`text-xs text-gray-400 mt-1 transition-all duration-300 ease-in-out ${hiddenClass}`}>
+              Total investido: {currencySymbol} {formatNumber(totalInvested)}
+            </p>
+            <p className={`text-xs text-gray-400 mt-1 transition-all duration-300 ease-in-out ${dotsClass}`}>
+              Total investido: ●●●●
+            </p>
           </div>
         </div>
+        
+        <div className="text-right">
+          <div className="relative">
+            <p className={`font-semibold transition-all duration-300 ease-in-out ${hiddenClass}`}>
+              {formattedTotalBitcoin} {displayUnit}
+            </p>
+            <p className={`font-semibold transition-all duration-300 ease-in-out ${dotsClass}`}>
+              ●●●●
+            </p>
+          </div>
+        </div>
+      </div>
       </CardContent>
     </Card>
   );
