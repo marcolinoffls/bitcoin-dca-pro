@@ -37,7 +37,7 @@ const AmountField: React.FC<AmountFieldProps> = ({ currency, amount, onAmountCha
           placeholder="0,00"
           value={amount}
           onChange={(e) => handleInputChange(e.target.value)}
-          className="pl-8 rounded-xl"
+          className="pl-9 rounded-xl"
           type="text"
           inputMode="decimal"
           required
