@@ -53,7 +53,7 @@ const ExchangeRateField: React.FC<ExchangeRateFieldProps> = ({
         </span>
         <Input
           id="exchangeRate"
-          placeholder={isOptional ? "Deixe vazio para cálculo automático" : "0,00"}
+          placeholder={isOptional ? "0,00"}
           value={displayValue}
           onChange={(e) => handleInputChange(e.target.value)}
           className={`pl-8 rounded-xl focus-visible:ring-bitcoin focus-visible:border-bitcoin transition-all
