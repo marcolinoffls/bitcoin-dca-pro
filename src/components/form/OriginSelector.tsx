@@ -19,7 +19,7 @@ const OriginSelector: React.FC<OriginSelectorProps> = ({ origin, onOriginChange 
   return (
     <div className="flex flex-col space-y-3 mt-6">
       <Label htmlFor="origin">Origem do aporte</Label>
-      <div className="flex space-x-1 rounded-md bg-muted p-1">
+      <div className="flex space-x-1 rounded-xl bg-muted p-1">
         <Button
           variant="ghost"
           size="sm"
