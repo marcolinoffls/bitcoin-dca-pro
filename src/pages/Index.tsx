@@ -160,39 +160,33 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Card Total/Portfolio */}
             <div className="h-full">
-              <Card className="h-[300px] p-4"> {/* Altura fixa e padding padrão */}
-                <StatisticsCards
+              <StatisticsCards
                   entries={entries}
                   currentRate={bitcoinRate}
                   selectedCurrency={selectedCurrency}
                   displayUnit={displayUnit}
                   isLoading={isEntriesLoading}
-                />
-              </Card>
+              />
             </div>
             
             {/* Card Preço Médio */}
             <div className="h-full">
-              <Card className="h-[300px] p-4"> {/* Mesma altura fixa */}
-                <AveragePriceCard 
+              <AveragePriceCard 
                   entries={entries}
                   currentRate={bitcoinRate}
                   selectedCurrency={selectedCurrency}
                   isLoading={isEntriesLoading}
-                />
-              </Card>
+              />
             </div>
             
             {/* Card Cotação */}
             <div className="h-full">
-              <Card className="h-[300px] p-4"> {/* Mesma altura fixa */}
-                <CurrentRateCard
+              <CurrentRateCard
                   currentRate={bitcoinRate}
                   priceVariation={priceVariation}
                   isLoading={isRateLoading}
                   onRefresh={fetchRateUpdate}
-                />
-              </Card>
+              />
             </div>
           </div>
         
