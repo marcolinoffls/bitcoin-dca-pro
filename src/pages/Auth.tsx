@@ -223,14 +223,14 @@ const Auth = () => {
               <TabsList className="grid w-full grid-cols-2 gap-2 p-1"> {/* Adicionado gap-2 e p-1 */}
                 <TabsTrigger 
                   value="login"
-                  aria-label="Entrar na conta" // Melhoria de acessibilidade
+                  aria-label="Entrar" // Melhoria de acessibilidade
                   className="rounded data-[state=active]:bg-background data-[state=active]:shadow-sm" // Melhoria visual
                 >
                   Entrar
                 </TabsTrigger>
                 <TabsTrigger 
                   value="register"
-                  aria-label="Criar nova conta" // Melhoria de acessibilidade
+                  aria-label="Criar" // Melhoria de acessibilidade
                   className="rounded data-[state=active]:bg-background data-[state=active]:shadow-sm" // Melhoria visual
                 >
                   Criar Conta
