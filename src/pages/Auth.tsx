@@ -224,7 +224,7 @@ const Auth = () => {
                 <TabsTrigger 
                   value="login"
                   aria-label="Entrar na conta" // Melhoria de acessibilidade
-                  className="rounded-mg data-[state=active]:bg-background data-[state=active]:shadow-sm" // Melhoria visual
+                  className="rounded data-[state=active]:bg-background data-[state=active]:shadow-sm" // Melhoria visual
                 >
                   Entrar
                 </TabsTrigger>
