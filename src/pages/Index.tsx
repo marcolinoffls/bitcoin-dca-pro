@@ -154,9 +154,9 @@ const Index = () => {
         </div>
 
         <div className="flex flex-col gap-6">
-          {/* Seção dos três cards principais com grid responsivo */}
+          {/* Grid dos 3 cards principais */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Card de Portfolio */}
+            {/* Card Total/Portfolio */}
             <div className="h-full">
               <StatisticsCards
                 entries={entries}
@@ -167,11 +167,16 @@ const Index = () => {
               />
             </div>
             
-            {/* Card de Preço Médio (espaço reservado que já estava no código original) */}
-            <div className="hidden md:block h-full">
+            {/* Card Preço Médio */}
+            <div className="h-full">
+              <AveragePriceCard 
+                entries={entries}
+                selectedCurrency={selectedCurrency}
+                isLoading={isEntriesLoading}
+              />
             </div>
             
-            {/* Card de Cotação Atual */}
+            {/* Card Cotação */}
             <div className="h-full">
               <CurrentRateCard
                 currentRate={bitcoinRate}
@@ -181,9 +186,9 @@ const Index = () => {
               />
             </div>
           </div>
-
-          {/* Card de Formulário de Entrada */}
-          <div>
+        
+          {/* Card Registrar Novo Aporte - Largura total */}
+          <div className="w-full">
             <EntryForm
               onAddEntry={handleAddEntry}
               currentRate={bitcoinRate}
@@ -192,9 +197,9 @@ const Index = () => {
               editingEntry={editingEntry}
             />
           </div>
-
-          {/* Card de Lista de Aportes */}
-          <div>
+        
+          {/* Card Aportes Registrados - Largura total */}
+          <div className="w-full">
             <EntriesList
               entries={entries}
               currentRate={bitcoinRate}
@@ -206,8 +211,6 @@ const Index = () => {
             />
           </div>
         </div>
-      </div>
-    </div>
   );
 };
 
