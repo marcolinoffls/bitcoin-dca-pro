@@ -23,7 +23,7 @@ const TabsList = React.forwardRef<
     ref={ref}
     className={cn(
       // Classes para responsividade e layout
-      "flex w-full min-w-[280px] max-w-full rounded-md border bg-muted p-0",
+      "flex mx-auto min-w-[280px] w-[320px] max-w-[400px] rounded-md border bg-muted p-0",
       // Breakpoint para telas maiores
       "sm:w-[400px]",
       className
