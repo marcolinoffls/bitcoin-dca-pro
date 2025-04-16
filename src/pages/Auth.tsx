@@ -348,7 +348,7 @@ const Auth = () => {
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           required
-                          className="pl-10 rounded-lg"
+                          className="pl-10 rounded-lg placeholder:text-xs"
                         />
                       </div>
                     </div>
@@ -359,10 +359,11 @@ const Auth = () => {
                         <Input 
                           id="register-password" 
                           type={showPassword ? "text" : "password"}
+                          placeholder="digite sua nova senha..."
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           required
-                          className="pl-10 pr-10 rounded-lg"
+                          className="pl-10 pr-10 rounded-lg placeholder:text-xs"
                         />
                         <Button
                           type="button"
@@ -385,10 +386,11 @@ const Auth = () => {
                         <Input 
                           id="confirm-password" 
                           type={showPassword ? "text" : "password"}
+                          placeholder="repita sua nova senha..."
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
                           required
-                          className="pl-10 pr-10 rounded-lg"
+                          className="pl-10 pr-10 rounded-lg placeholder:text-xs"
                         />
                         <Button
                           type="button"
