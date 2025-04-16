@@ -86,7 +86,7 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange })
               className={cn(
                 "flex-1 justify-start text-left font-normal rounded-xl border-input hover:border-bitcoin hover:bg-transparent",
                 !date && "text-muted-foreground",
-                isMobile && "text-sm"
+                isMobile && "text-sm h-9"
               )}
               type="button"
             >
