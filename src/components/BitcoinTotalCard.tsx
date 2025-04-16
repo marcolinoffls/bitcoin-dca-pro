@@ -71,7 +71,7 @@ const BitcoinTotalCard: React.FC<BitcoinTotalCardProps> = ({
   const dotsClass = isVisible ? 'opacity-0 absolute' : 'opacity-100 relative';
 
   return (
-    <Card className="overflow-hidden rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-400 h-[220px]"> {/* Adicionado h-[250px] */}
+    <Card className="overflow-hidden rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-800 h-[220px]"> {/* Adicionado h-[250px] */}
       <CardContent className="p-5">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
