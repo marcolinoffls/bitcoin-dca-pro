@@ -124,7 +124,7 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange })
           className="shrink-0 rounded-xl hover:border-bitcoin hover:text-bitcoin hover:bg-transparent transition-colors"
           size={isMobile ? "sm" : "default"}
         >
-          <CalendarCheck className="h-4 w-4 mr-1" />
+          <CalendarCheck className="h-3 w-3 mr-1" />
           Hoje
         </Button>
       </div>
