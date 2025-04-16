@@ -219,8 +219,8 @@ const Auth = () => {
               )}
             </div>
           ) : (
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 gap-2 p-1"> {/* Adicionado gap-2 e p-1 */}
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full px-4"> {/* Adicionado px-4 */}">
+              <TabsList className="grid w-[320px] mx-auto grid-cols-2 gap-2"> {/* Alterado w-full para w-[320px] e mx-auto */}
                 <TabsTrigger 
                   value="login"
                   aria-label="Entrar na conta" // Melhoria de acessibilidade
