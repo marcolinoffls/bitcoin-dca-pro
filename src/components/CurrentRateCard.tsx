@@ -51,17 +51,17 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
     
     return (
       <div className={`flex flex-col items-center ${className}`}>
-        <span className="text-xs text-muted-foreground mb-1">{label}</span>
+        <span className="text-xs text-muted-foreground mb-0.5">{label}</span>
         <div className={`flex items-center ${isPositive ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
           {isPositive ? (
             <Triangle 
-              className="h-2 w-2 mr-1 fill-current" 
+              className="h-2 w-2 mr-0.5 fill-current" 
               strokeWidth={0} 
               fill="currentColor" 
             />
           ) : (
             <Triangle 
-              className="h-2 w-2 mr-1 fill-current rotate-180" 
+              className="h-2 w-2 mr-0.5 fill-current rotate-180" 
               strokeWidth={0} 
               fill="currentColor" 
             />
@@ -110,7 +110,7 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
         
         {/* Bloco de variação de preços com novo estilo */}
         {priceVariation && (
-          <div className="mt-3 mb-2">
+          <div className="mt-2 mb-1">
             <div className="bg-gray-100 p-2 rounded-lg flex flex-wrap justify-between gap-2">
               <PriceVariationItem label="24 horas" value={priceVariation.day} />
               <PriceVariationItem label="7 dias" value={priceVariation.week} />
