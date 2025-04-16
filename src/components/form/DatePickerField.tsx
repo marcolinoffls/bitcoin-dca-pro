@@ -106,7 +106,8 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange })
                 classNames={{
                   day_selected: "bg-bitcoin text-primary-foreground hover:bg-bitcoin hover:text-primary-foreground focus:bg-bitcoin focus:text-primary-foreground",
                   day_today: "bg-accent text-accent-foreground",
-                  day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
+                  day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 focus:bg-transparent hover:bg-transparent",
+                  cell: "relative p-0 focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-transparent"
                 }}
               />
               <div className="flex justify-center p-2 mt-2">
