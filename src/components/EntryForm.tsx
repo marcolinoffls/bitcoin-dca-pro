@@ -113,6 +113,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
       onCancelEdit();
     }
   };
+// ...existing code...
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,36 +130,27 @@ const EntryForm: React.FC<EntryFormProps> = ({
     let parsedAmount = parseLocalNumber(amountInvested);
     let parsedBtc = parseLocalNumber(btcAmount);
     let parsedRate = exchangeRate;
-
+  
     if (displayUnit === 'SATS') {
       parsedBtc = parsedBtc / 100000000;
     }
-
+  
     // Verificações finais de segurança
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
       setFormError("O valor investido é inválido");
       return;
     }
-
+  
     if (isNaN(parsedBtc) || parsedBtc <= 0) {
       setFormError("A quantidade de bitcoin é inválida");
       return;
     }
-
-    // Nova lógica de validação da cotação
+  
+    // Nova lógica simplificada para cotação
     if (!exchangeRateDisplay.trim() || parsedRate === 0) {
       // Calcula automaticamente se não preenchido
-      if (parsedAmount > 0 && parsedBtc > 0) {
-        parsedRate = parsedAmount / parsedBtc;
-        setRateInfoMessage("Cotação calculada automaticamente com base no valor investido e quantidade de bitcoin.");
-      } else {
-        setFormError("Não foi possível calcular a cotação. Verifique os valores informados.");
-        return;
-      }
-    } else if (isNaN(parsedRate)) {
-      // Só valida se foi preenchido manualmente
-      setFormError("A cotação é inválida");
-      return;
+      parsedRate = parsedAmount / parsedBtc;
+      setRateInfoMessage("Cotação calculada automaticamente com base no valor investido e quantidade de bitcoin.");
     }
     
     // Se chegou até aqui, está tudo ok para registrar o aporte
@@ -167,7 +159,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
     if (!editingEntry) {
       setSuccessToastOpen(true);
     }
-
+  
     resetForm();
   };
 
