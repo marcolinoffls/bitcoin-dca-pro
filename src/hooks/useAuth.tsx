@@ -1,3 +1,4 @@
+
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -95,6 +96,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       console.log('Iniciando processo de signup para:', email);
       
+      // Verifica se o email já está cadastrado indiretamente através do signInWithOtp
+      // Esta é uma forma segura de verificar existência sem precisar de permissões admin
+      const { data: emailCheckData, error: emailCheckError } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: false, // Não cria novo usuário, apenas verifica
+        }
+      });
+
+      // Se não der erro específico de "Email não encontrado", provavelmente o email já existe
+      if (!emailCheckError?.message.includes("Email not found")) {
+        console.log('Email possivelmente já cadastrado:', email);
+        toast({
+          title: "Email já cadastrado",
+          description: "Este email já está sendo usado. Por favor, faça login ou use outro email.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       const { data, error } = await supabase.auth.signUp({ 
         email, 
         password,
@@ -114,22 +135,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (data?.user && !data.user.confirmed_at) {
         toast({
           title: "Cadastro realizado com sucesso",
-          description: "Verifique seu email para confirmar o cadastro. Pode levar alguns minutos e não esqueça de verificar sua caixa de spam.",
+          description: "Verifique seu email para confirmar o cadastro. Lembre-se de verificar a pasta de spam.",
           duration: 6000,
         });
       }
     } catch (error: any) {
       console.error('Erro detalhado:', error);
       
-      let mensagemErro = 'Erro ao criar conta. ';
+      let mensagemErro = '';
       if (error.message.includes('Email rate limit exceeded')) {
-        mensagemErro += 'Muitas tentativas. Aguarde alguns minutos.';
-      } else if (error.message.includes('User already registered')) {
-        mensagemErro += 'Este email já está cadastrado.';
-      } else if (error.message.includes('Authentication failed')) {
-        mensagemErro += 'Falha no servidor de email. Contate o suporte.';
+        mensagemErro = 'Muitas tentativas. Aguarde alguns minutos.';
+      } else if (error.message.includes('Invalid email')) {
+        mensagemErro = 'Email inválido. Verifique o endereço informado.';
+      } else if (error.message.includes('stronger password')) {
+        mensagemErro = 'A senha precisa ser mais forte. Use letras, números e caracteres especiais.';
       } else {
-        mensagemErro += error.message;
+        mensagemErro = 'Erro ao criar conta. Por favor, tente novamente.';
       }
   
       toast({
