@@ -120,7 +120,7 @@ const Index = () => {
         
             {/* Centered Bitcoin DCA Pro text logo */}
             <div className="absolute left-1/2 transform -translate-x-1/2">
-              <div className="h-5">
+              <div className="h-8">
                 <img 
                   src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/public/fontes//Bitcoin%20dca%20pro%20-%20caixa%20alta%20(1).png"
                   alt="Bitcoin DCA Pro"
