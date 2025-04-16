@@ -113,7 +113,7 @@ const AveragePriceCard: React.FC<AveragePriceCardProps> = ({
               value={selectedPeriod} 
               onValueChange={(value) => value && setSelectedPeriod(value as 'month' | 'year' | 'all')}
               className="bg-gray-100 p-1 rounded-xl w-full"
-            >
+              >
               <ToggleGroupItem 
                 value="month" 
                 className={`flex-1 text-xs py-1 rounded-xl transition-all data-[state=on]:bg-white data-[state=on]:text-bitcoin data-[state=on]:font-regular ${selectedPeriod !== 'month' && 'text-gray-500 hover:bg-white/50'}`}
