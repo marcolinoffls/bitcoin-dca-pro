@@ -36,14 +36,13 @@ const BtcAmountField: React.FC<BtcAmountFieldProps> = ({
         </span>
         <Input
           id="btcAmount"
-          placeholder={displayUnit === 'BTC' ? '0,00000000' : '0'}
+          placeholder={displayUnit === 'SATS' ? "1000" : "0.001"}
           value={btcAmount}
-          onChange={handleInputChange}
-          className="pl-12 rounded-xl"
+          onChange={(e) => onBtcAmountChange(e.target.value)}
+          className="pl-12 rounded-xl focus-visible:ring-bitcoin focus-visible:border-bitcoin transition-all"
           type="text"
-          inputMode="decimal"  // Adicionado para teclado numérico
-          pattern="[0-9]*,[0-9]*"  // Padrão para números decimais com vírgula
-          required
+          inputMode="decimal"
+          // Removido o pattern para aceitar números sem vírgula
         />
       </div>
     </div>

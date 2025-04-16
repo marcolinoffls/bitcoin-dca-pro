@@ -64,9 +64,18 @@ export const useEntryFormLogic = (
    */
   const parseLocalNumber = (value: string): number => {
     if (!value) return 0;
-    return parseFloat(value.replace(/\./g, '').replace(',', '.'));
+    
+    // Remove espaços e caracteres não numéricos, exceto ponto e vírgula
+    const cleanValue = value.trim().replace(/[^\d.,]/g, '');
+    
+    // Se não tem vírgula nem ponto, é um número inteiro
+    if (!cleanValue.includes(',') && !cleanValue.includes('.')) {
+      return parseInt(cleanValue, 10);
+    }
+    
+    // Converte para o formato com ponto decimal
+    return parseFloat(cleanValue.replace(/\./g, '').replace(',', '.'));
   };
-
   /**
    * Formata número em string de moeda com separadores locais
    */
