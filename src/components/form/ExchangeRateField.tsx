@@ -56,7 +56,7 @@ const ExchangeRateField: React.FC<ExchangeRateFieldProps> = ({
           placeholder="0,00"
           value={displayValue}
           onChange={(e) => handleInputChange(e.target.value)}
-          className={`pl-8 rounded-xl focus-visible:ring-bitcoin focus-visible:border-bitcoin transition-all
+          className={`pl-9 rounded-xl focus-visible:ring-bitcoin focus-visible:border-bitcoin transition-all
             ${isCalculated ? 'bg-amber-50 dark:bg-amber-950/20' : ''}`}
           type="text"
           inputMode="decimal"
