@@ -23,6 +23,8 @@ const TabsList = React.forwardRef<
     ref={ref}
     className={cn(
       // Classes para responsividade e layout
+      // Removemos o "w-full" e adicionamos "mx-auto" para centralizar,
+      // definindo "w-[320px]" para o tamanho base e max-w de 400px.
       "flex mx-auto min-w-[280px] w-[320px] max-w-[400px] rounded-md border bg-muted p-0",
       // Breakpoint para telas maiores
       "sm:w-[400px]",
