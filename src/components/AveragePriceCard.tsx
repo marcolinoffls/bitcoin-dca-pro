@@ -115,7 +115,7 @@ const AveragePriceCard: React.FC<AveragePriceCardProps> = ({
           >
             <ToggleGroupItem 
               value="month" 
-              className={`flex-1 text-xs py-1 rounded-xl transition-all data-[state=on]:bg-white data-[state=on]:text-bitcoin data-[state=on]:font-semibold ${selectedPeriod !== 'month' && 'text-gray-500 hover:bg-white/50'}`}
+              className={`flex-1 text-xs py-1 rounded-xl transition-all data-[state=on]:bg-white data-[state=on]:text-bitcoin data-[state=on]:font-regular ${selectedPeriod !== 'month' && 'text-gray-500 hover:bg-white/50'}`}
             >
               Mensal
             </ToggleGroupItem>
