@@ -26,7 +26,7 @@ const OriginSelector: React.FC<OriginSelectorProps> = ({ origin, onOriginChange 
           type="button"
           onClick={() => onOriginChange('corretora')}
           className={cn(
-            'flex-1 text-xs font-normal gap-1',
+            'flex-1 text-xs font-normal gap-1 rounded-xl',
             origin === 'corretora' && 'bg-bitcoin text-white hover:bg-bitcoin/90'
           )}
         >
