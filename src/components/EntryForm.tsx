@@ -134,17 +134,6 @@ const EntryForm: React.FC<EntryFormProps> = ({
       parsedBtc = parsedBtc / 100000000;
     }
 
-    // Se a cotação não foi preenchida ou é zero, calcula automaticamente
-    if (!exchangeRateDisplay.trim() || parsedRate === 0) {
-      const success = calculateExchangeRate();
-      if (!success) {
-        setFormError("Não foi possível calcular a cotação. Verifique os valores informados.");
-        return;
-      }
-      parsedRate = exchangeRate; // Usa o valor calculado
-      setRateInfoMessage("Cotação calculada automaticamente com base no valor investido e quantidade de bitcoin.");
-    }
-
     // Verificações finais de segurança
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
       setFormError("O valor investido é inválido");
@@ -156,17 +145,19 @@ const EntryForm: React.FC<EntryFormProps> = ({
       return;
     }
 
-    if (isNaN(parsedRate)) {
+    // Nova lógica de validação da cotação
+    if (!exchangeRateDisplay.trim() || parsedRate === 0) {
+      // Calcula automaticamente se não preenchido
+      if (parsedAmount > 0 && parsedBtc > 0) {
+        parsedRate = parsedAmount / parsedBtc;
+        setRateInfoMessage("Cotação calculada automaticamente com base no valor investido e quantidade de bitcoin.");
+      } else {
+        setFormError("Não foi possível calcular a cotação. Verifique os valores informados.");
+        return;
+      }
+    } else if (isNaN(parsedRate)) {
+      // Só valida se foi preenchido manualmente
       setFormError("A cotação é inválida");
-      return;
-    }
-    
-    // Se a cotação é zero mas temos valores válidos, podemos calcular
-    if (parsedRate <= 0 && parsedAmount > 0 && parsedBtc > 0) {
-      parsedRate = parsedAmount / parsedBtc;
-      setRateInfoMessage("Cotação calculada automaticamente com base no valor investido e quantidade de bitcoin.");
-    } else if (parsedRate <= 0) {
-      setFormError("Não foi possível calcular a cotação. Verifique os valores informados.");
       return;
     }
     
