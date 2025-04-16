@@ -224,14 +224,14 @@ const Auth = () => {
                 <TabsTrigger 
                   value="login"
                   aria-label="Entrar na conta" // Melhoria de acessibilidade
-                  className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm" // Melhoria visual
+                  className="rounded-mg data-[state=active]:bg-background data-[state=active]:shadow-sm" // Melhoria visual
                 >
                   Entrar
                 </TabsTrigger>
                 <TabsTrigger 
                   value="register"
                   aria-label="Criar nova conta" // Melhoria de acessibilidade
-                  className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm" // Melhoria visual
+                  className="rounded data-[state=active]:bg-background data-[state=active]:shadow-sm" // Melhoria visual
                 >
                   Criar Conta
                 </TabsTrigger>
