@@ -102,7 +102,12 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange })
                 onSelect={handleDateSelect}
                 initialFocus
                 locale={ptBR}
-                className="rounded-md border-0 shadow-none pointer-events-auto"
+                className="rounded-md border-0 shadow-none pointer-events-auto [&_.rdp-day_focus]:bg-transparent"
+                classNames={{
+                  day_selected: "bg-bitcoin text-primary-foreground hover:bg-bitcoin hover:text-primary-foreground focus:bg-bitcoin focus:text-primary-foreground",
+                  day_today: "bg-accent text-accent-foreground",
+                  day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
+                }}
               />
               <div className="flex justify-center p-2 mt-2">
                 <Button 
