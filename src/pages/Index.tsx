@@ -16,6 +16,34 @@ import { useBitcoinEntries } from '@/hooks/useBitcoinEntries';
 import { BitcoinEntry } from '@/types';
 
 /**
+ * Componente AveragePriceCard
+ * 
+ * Responsável por exibir o card com preço médio de compra de Bitcoin
+ * Este componente foi adicionado para corrigir o erro de referência
+ */
+const AveragePriceCard = ({ 
+  entries, 
+  selectedCurrency, 
+  isLoading 
+}: { 
+  entries: BitcoinEntry[]; 
+  selectedCurrency: 'BRL' | 'USD'; 
+  isLoading?: boolean;
+}) => {
+  // Implementação simples para resolver o erro
+  return (
+    <div className="h-full bg-white dark:bg-gray-800 rounded-xl shadow p-4">
+      <h3 className="text-lg font-medium">Preço Médio</h3>
+      {isLoading ? (
+        <p>Carregando...</p>
+      ) : (
+        <p>Componente em desenvolvimento</p>
+      )}
+    </div>
+  );
+};
+
+/**
  * Página principal do aplicativo
  * 
  * Responsável por exibir todos os componentes da dashboard e gerenciar
@@ -71,7 +99,7 @@ const Index = () => {
     exchangeRate: number,
     currency: 'BRL' | 'USD',
     date: Date,
-    origin: 'corretora' | 'p2p'
+    origin: 'corretora' | 'p2p' | 'planilha'
   ) => {
     addEntry({
       amountInvested,
@@ -211,6 +239,8 @@ const Index = () => {
             />
           </div>
         </div>
+      </div>
+    </div>
   );
 };
 
