@@ -16,6 +16,7 @@ import { Lock, Eye, EyeOff } from 'lucide-react';
  * - onTogglePassword: função para alternar visibilidade
  * - disabled: desabilita o campo
  * - hint: texto de dica opcional
+ * - error: mensagem de erro específica para o campo
  */
 interface PasswordFieldProps {
   id: string;
@@ -26,6 +27,7 @@ interface PasswordFieldProps {
   onTogglePassword: () => void;
   disabled?: boolean;
   hint?: string;
+  error?: string;
 }
 
 export const PasswordField = ({
@@ -36,7 +38,8 @@ export const PasswordField = ({
   showPassword,
   onTogglePassword,
   disabled,
-  hint
+  hint,
+  error
 }: PasswordFieldProps) => {
   return (
     <div className="space-y-2">
@@ -49,7 +52,7 @@ export const PasswordField = ({
           value={value}
           onChange={onChange}
           required
-          className="pl-10 pr-10 rounded-lg"
+          className={`pl-10 pr-10 rounded-lg ${error ? 'border-red-500 focus-visible:ring-red-500 focus-visible:border-red-500' : ''}`}
           disabled={disabled}
           minLength={6}
         />
@@ -66,6 +69,9 @@ export const PasswordField = ({
       </div>
       {hint && (
         <p className="text-xs text-muted-foreground">{hint}</p>
+      )}
+      {error && (
+        <p className="text-xs text-red-500 mt-1">{error}</p>
       )}
     </div>
   );

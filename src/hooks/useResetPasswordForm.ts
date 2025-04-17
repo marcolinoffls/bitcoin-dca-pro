@@ -18,47 +18,8 @@ export const useResetPasswordForm = (accessToken: string | null) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [passwordError, setPasswordError] = useState('');
-  const [isTokenValid, setIsTokenValid] = useState<boolean | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  // Verificar se o token parece válido ao montar o componente
-  useEffect(() => {
-    if (!accessToken) {
-      setIsTokenValid(false);
-      return;
-    }
-
-    // Verificação básica do formato do token
-    const checkToken = async () => {
-      // Tokens JWT normalmente têm formato específico (3 partes separadas por pontos)
-      const partes = accessToken.split('.');
-      
-      if (partes.length !== 3) {
-        console.log("Token não tem 3 partes separadas por pontos");
-        setIsTokenValid(false);
-        setPasswordError('Link inválido ou expirado. Por favor, solicite uma nova redefinição de senha.');
-        return;
-      }
-      
-      // Verificação básica de formato
-      const formatoBase64Regex = /^[A-Za-z0-9_-]+$/;
-      const todasPartesValidam = partes.every(parte => 
-        formatoBase64Regex.test(parte) && parte.length > 10
-      );
-      
-      if (!todasPartesValidam) {
-        console.log("Formato do token inválido");
-        setIsTokenValid(false);
-        setPasswordError('Link inválido ou expirado. Por favor, solicite uma nova redefinição de senha.');
-        return;
-      }
-      
-      setIsTokenValid(true);
-    };
-
-    checkToken();
-  }, [accessToken]);
 
   /**
    * Valida o formato e requisitos da senha
@@ -66,12 +27,6 @@ export const useResetPasswordForm = (accessToken: string | null) => {
    */
   const validatePassword = () => {
     setPasswordError('');
-
-    // Verificar se o token é válido
-    if (!accessToken || !isTokenValid) {
-      setPasswordError('Link inválido ou expirado. Por favor, solicite uma nova redefinição de senha.');
-      return false;
-    }
     
     // Verificar comprimento mínimo
     if (password.length < 6) {
@@ -94,39 +49,26 @@ export const useResetPasswordForm = (accessToken: string | null) => {
     
     // Verificação básica da senha antes de prosseguir
     if (!validatePassword()) return;
+    
+    // Verificar se temos o token de acesso
+    if (!accessToken) {
+      setPasswordError('Token de redefinição ausente ou inválido. Por favor, solicite uma nova redefinição de senha.');
+      return;
+    }
 
     setIsSubmitting(true);
     
     try {
-      console.log("Tentando definir a sessão com o token");
+      console.log("Iniciando processo de redefinição de senha");
       
-      // Definir a sessão com o token
-      const { error: sessionError } = await supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: '',
-      });
-
-      if (sessionError) {
-        console.error("Erro ao definir a sessão:", sessionError);
-        
-        if (sessionError.message?.includes('JWT') || 
-            sessionError.message?.includes('token') || 
-            sessionError.message?.includes('invalid') || 
-            sessionError.message?.includes('expired')) {
-          throw new Error('Link expirado ou inválido. Por favor, solicite uma nova redefinição de senha.');
-        }
-        throw sessionError;
-      }
-
-      console.log("Sessão definida com sucesso, atualizando senha");
-      
-      // Atualizar a senha
-      const { error } = await supabase.auth.updateUser({ 
-        password: password 
-      });
+      // Atualizar a senha usando o accessToken
+      const { error } = await supabase.auth.updateUser(
+        { password: password },
+        { accessToken: accessToken }
+      );
       
       if (error) {
-        console.error("Erro ao atualizar a senha:", error);
+        console.error("Erro ao atualizar senha:", error.message);
         throw error;
       }
       
@@ -142,7 +84,9 @@ export const useResetPasswordForm = (accessToken: string | null) => {
       await supabase.auth.signOut();
       
       // Redirecionar para a página de login
-      navigate('/auth');
+      setTimeout(() => {
+        navigate('/auth');
+      }, 1500);
     } catch (error: any) {
       console.error('Erro ao redefinir a senha:', error);
       
@@ -179,7 +123,6 @@ export const useResetPasswordForm = (accessToken: string | null) => {
     setShowPassword,
     isSubmitting,
     passwordError,
-    handleResetPassword,
-    isTokenValid
+    handleResetPassword
   };
 };
