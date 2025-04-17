@@ -17,6 +17,7 @@ import PasswordResetForm from '@/components/auth/PasswordResetForm';
 const ResetPassword = () => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isTokenLoading, setIsTokenLoading] = useState(true);
+  const [tokenError, setTokenError] = useState<string | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -24,8 +25,6 @@ const ResetPassword = () => {
   useEffect(() => {
     const extractToken = () => {
       console.log("Extraindo token da URL...");
-      console.log("URL hash:", location.hash);
-      console.log("URL search:", location.search);
       
       // Verifica se há um hash e extrai o access_token
       if (location.hash) {
@@ -40,10 +39,11 @@ const ResetPassword = () => {
           }
         } catch (error) {
           console.error("Erro ao extrair token do hash:", error);
+          setTokenError("Não foi possível processar o link de recuperação. Tente copiar e colar o link completo do email.");
         }
       }
       
-      // Tenta extrair de query params como fallback
+      // Verifica parâmetros na URL (para suporte a diferentes formatos de URL)
       try {
         const queryParams = new URLSearchParams(location.search);
         const queryToken = queryParams.get('token') || queryParams.get('access_token');
@@ -56,6 +56,8 @@ const ResetPassword = () => {
         console.error("Erro ao extrair token dos query params:", error);
       }
       
+      // Se chegou aqui, não encontrou token válido
+      setTokenError("Link de recuperação inválido ou expirado. Por favor, solicite uma nova redefinição de senha.");
       return null;
     };
 
@@ -76,21 +78,37 @@ const ResetPassword = () => {
         </CardHeader>
 
         <CardContent>
-          <PasswordResetForm 
-            accessToken={accessToken}
-            isTokenLoading={isTokenLoading}
-          />
+          {tokenError && !accessToken ? (
+            <div className="space-y-4">
+              <div className="bg-destructive/15 text-destructive rounded-lg p-4 text-sm">
+                {tokenError}
+              </div>
+              <Button 
+                onClick={() => navigate('/auth')}
+                className="w-full bg-bitcoin hover:bg-bitcoin/90 rounded-lg py-3"
+              >
+                Voltar para a página de login
+              </Button>
+            </div>
+          ) : (
+            <PasswordResetForm 
+              accessToken={accessToken}
+              isTokenLoading={isTokenLoading}
+            />
+          )}
         </CardContent>
 
-        <CardFooter className="flex justify-center">
-          <Button 
-            variant="link" 
-            onClick={() => navigate('/auth')}
-            className="text-sm text-muted-foreground"
-          >
-            Voltar para a página de login
-          </Button>
-        </CardFooter>
+        {!tokenError && (
+          <CardFooter className="flex justify-center">
+            <Button 
+              variant="link" 
+              onClick={() => navigate('/auth')}
+              className="text-sm text-muted-foreground"
+            >
+              Voltar para a página de login
+            </Button>
+          </CardFooter>
+        )}
       </Card>
     </div>
   );

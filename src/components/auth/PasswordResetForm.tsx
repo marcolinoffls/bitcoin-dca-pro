@@ -65,7 +65,7 @@ const PasswordResetForm = ({ accessToken, isTokenLoading }: PasswordResetFormPro
   }
 
   return (
-    <form onSubmit={handleResetPassword}>
+    <form onSubmit={handleResetPassword} className="space-y-6">
       <div className="space-y-4">
         <PasswordField
           id="new-password"
@@ -88,17 +88,17 @@ const PasswordResetForm = ({ accessToken, isTokenLoading }: PasswordResetFormPro
           disabled={!accessToken || isSubmitting}
         />
         
-        <FormError message={passwordError} />
+        {passwordError && <FormError message={passwordError} />}
 
         <Button 
           type="submit" 
-          className="w-full bg-bitcoin hover:bg-bitcoin/90 rounded-lg py-3 mt-4"
+          className="w-full bg-bitcoin hover:bg-bitcoin/90 rounded-lg py-3 mt-6"
           disabled={!accessToken || isSubmitting || !password || !confirmPassword || password.length < 6}
         >
           {isSubmitting ? (
-            <span className="flex items-center">
+            <span className="flex items-center justify-center">
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              Atualizando...
+              Atualizando senha...
             </span>
           ) : 'Redefinir Senha'}
         </Button>

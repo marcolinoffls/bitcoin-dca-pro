@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,8 +18,47 @@ export const useResetPasswordForm = (accessToken: string | null) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [passwordError, setPasswordError] = useState('');
+  const [isTokenValid, setIsTokenValid] = useState<boolean | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Verificar se o token parece válido ao montar o componente
+  useEffect(() => {
+    if (!accessToken) {
+      setIsTokenValid(false);
+      return;
+    }
+
+    // Verificação básica do formato do token
+    const checkToken = async () => {
+      // Tokens JWT normalmente têm formato específico (3 partes separadas por pontos)
+      const partes = accessToken.split('.');
+      
+      if (partes.length !== 3) {
+        console.log("Token não tem 3 partes separadas por pontos");
+        setIsTokenValid(false);
+        setPasswordError('Link inválido ou expirado. Por favor, solicite uma nova redefinição de senha.');
+        return;
+      }
+      
+      // Verificação básica de formato
+      const formatoBase64Regex = /^[A-Za-z0-9_-]+$/;
+      const todasPartesValidam = partes.every(parte => 
+        formatoBase64Regex.test(parte) && parte.length > 10
+      );
+      
+      if (!todasPartesValidam) {
+        console.log("Formato do token inválido");
+        setIsTokenValid(false);
+        setPasswordError('Link inválido ou expirado. Por favor, solicite uma nova redefinição de senha.');
+        return;
+      }
+      
+      setIsTokenValid(true);
+    };
+
+    checkToken();
+  }, [accessToken]);
 
   /**
    * Valida o formato e requisitos da senha
@@ -29,7 +68,7 @@ export const useResetPasswordForm = (accessToken: string | null) => {
     setPasswordError('');
 
     // Verificar se o token é válido
-    if (!accessToken) {
+    if (!accessToken || !isTokenValid) {
       setPasswordError('Link inválido ou expirado. Por favor, solicite uma nova redefinição de senha.');
       return false;
     }
@@ -50,47 +89,16 @@ export const useResetPasswordForm = (accessToken: string | null) => {
     return true;
   };
 
-  /**
-   * Verifica se um token parece ser válido por sua estrutura
-   * Não garante que o token seja aceito pelo Supabase, apenas checa o formato
-   */
-  const tokenPareceTerFormatoValido = (token: string): boolean => {
-    // Tokens JWT normalmente têm formato específico (3 partes separadas por pontos)
-    const partes = token.split('.');
-    
-    // Verifica se tem 3 partes e se cada parte parece base64
-    if (partes.length !== 3) {
-      console.log("Token não tem 3 partes separadas por pontos");
-      return false;
-    }
-    
-    // Verificação básica de formato
-    const formatoBase64Regex = /^[A-Za-z0-9_-]+$/;
-    const todasPartesValidam = partes.every(parte => 
-      formatoBase64Regex.test(parte) && parte.length > 10
-    );
-    
-    console.log("Validação de formato de token:", todasPartesValidam);
-    return todasPartesValidam;
-  };
-
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Verificação básica da senha antes de prosseguir
     if (!validatePassword()) return;
-    
-    // Verificação de formato do token
-    if (!accessToken || !tokenPareceTerFormatoValido(accessToken)) {
-      setPasswordError('Link inválido ou expirado. Por favor, solicite uma nova redefinição de senha.');
-      return;
-    }
 
     setIsSubmitting(true);
     
     try {
       console.log("Tentando definir a sessão com o token");
-      console.log("Token de acesso recebido:", accessToken ? "Presente (primeiro 10 caracteres: " + accessToken.substring(0, 10) + "...)" : "Ausente");
       
       // Definir a sessão com o token
       const { error: sessionError } = await supabase.auth.setSession({
@@ -101,8 +109,11 @@ export const useResetPasswordForm = (accessToken: string | null) => {
       if (sessionError) {
         console.error("Erro ao definir a sessão:", sessionError);
         
-        if (sessionError.message?.includes('JWT')) {
-          throw new Error('Link expirado. Por favor, solicite uma nova redefinição de senha.');
+        if (sessionError.message?.includes('JWT') || 
+            sessionError.message?.includes('token') || 
+            sessionError.message?.includes('invalid') || 
+            sessionError.message?.includes('expired')) {
+          throw new Error('Link expirado ou inválido. Por favor, solicite uma nova redefinição de senha.');
         }
         throw sessionError;
       }
@@ -138,7 +149,10 @@ export const useResetPasswordForm = (accessToken: string | null) => {
       // Tratamento de erros específicos
       let errorMessage = 'Ocorreu um erro ao redefinir a senha. Por favor, tente novamente.';
       
-      if (error.message?.includes('JWT') || error.message?.includes('token') || error.message?.includes('expired')) {
+      if (error.message?.includes('JWT') || 
+          error.message?.includes('token') || 
+          error.message?.includes('expired') || 
+          error.message?.includes('invalid')) {
         errorMessage = 'Link expirado ou inválido. Por favor, solicite uma nova redefinição de senha.';
       } else if (error.message?.includes('rate limit')) {
         errorMessage = 'Muitas tentativas. Por favor, aguarde alguns minutos antes de tentar novamente.';
@@ -165,6 +179,7 @@ export const useResetPasswordForm = (accessToken: string | null) => {
     setShowPassword,
     isSubmitting,
     passwordError,
-    handleResetPassword
+    handleResetPassword,
+    isTokenValid
   };
 };
