@@ -127,24 +127,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log("=== Início do processo de recuperação de senha ===");
       console.log("Email:", email);
       
-      // 1. Verificar se o email existe
-      const { data: user, error: userError } = await supabase.auth.admin.getUserByEmail(email);
-      
-      if (userError) {
-        console.error("Erro ao verificar email:", userError);
-        throw userError;
-      }
-  
-      if (!user) {
-        throw new Error("Email não encontrado");
-      }
-  
-      // 2. Configurar URL de redirecionamento
+      // Configurar URL de redirecionamento
       const baseUrl = window.location.origin;
       const resetRedirectUrl = `${baseUrl}/reset-password`;
       console.log("URL de redirecionamento:", resetRedirectUrl);
   
-      // 3. Tentar enviar email
+      // Enviar email de recuperação diretamente, sem verificação prévia por segurança
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: resetRedirectUrl,
       });
@@ -156,6 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
       console.log("Solicitação de reset enviada com sucesso");
       
+      // Mensagem genérica por segurança, não confirmamos se o email existe
       toast({
         title: "Email enviado",
         description: "Se este email estiver cadastrado, você receberá as instruções para redefinir sua senha. Verifique também sua pasta de spam.",
@@ -171,15 +160,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
       let mensagemErro = '';
       
-      if (error.message === "Email não encontrado") {
-        mensagemErro = "Se este email estiver cadastrado, você receberá as instruções para redefinir sua senha.";
-      } else if (error.message.includes('rate limit')) {
+      // Tratamento de erro melhorado, sem revelar se o email existe
+      if (error.message?.includes('rate limit')) {
         mensagemErro = 'Muitas tentativas em pouco tempo. Aguarde alguns minutos.';
-      } else if (error.message.includes('Invalid email')) {
+      } else if (error.message?.includes('Invalid email')) {
         mensagemErro = 'Email inválido. Verifique o endereço informado.';
-      } else if (error.message.includes('SMTP')) {
+      } else if (error.message?.includes('SMTP')) {
         mensagemErro = 'Erro no servidor de email. Por favor, tente novamente em alguns minutos.';
-        // Aqui você pode adicionar uma notificação para você mesmo sobre o erro SMTP
         console.error("ERRO CRÍTICO: Falha no SMTP");
       } else {
         mensagemErro = 'Ocorreu um erro inesperado. Tente novamente em alguns minutos.';
