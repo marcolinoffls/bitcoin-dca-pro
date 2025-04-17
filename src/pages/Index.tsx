@@ -15,7 +15,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useBitcoinEntries } from '@/hooks/useBitcoinEntries';
 import { BitcoinEntry } from '@/types';
 import AveragePriceCard from '@/components/AveragePriceCard';
-import { Card } from '@/components/ui/card';
+import ConfigButton from '@/components/config/ConfigButton';
+import SidebarConfig from '@/components/config/SidebarConfig';
 
 /**
  * Página principal do aplicativo
@@ -24,14 +25,8 @@ import { Card } from '@/components/ui/card';
  * o estado global da aplicação (aportes, cotação atual, moeda selecionada, etc.)
  */
 const Index = () => {
-  const {
-    currentRate: bitcoinRate,
-    priceVariation,
-    isLoading: isRateLoading,
-    updateCurrentRate: fetchRateUpdate
-  } = useBitcoinRate();
-
-  const { user } = useAuth();
+  // Abre/fecha a barra lateral de configurações
+  const [configOpen, setConfigOpen] = useState(false);
   
   const {
     entries,
@@ -106,16 +101,22 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Sidebar de configurações */}
+      <SidebarConfig open={configOpen} onOpenChange={setConfigOpen} />
+      
       <div className="container mx-auto py-6 px-4 max-w-5xl">
         <header className="mb-6">
           <div className="flex items-center justify-between mb-0">
-            {/* Bitcoin logo stays on the left */}
-            <div className="h-8 w-8">
-              <img 
-                src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/bitcoin%20logo%20oficial%20sem%20nome%20100px.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvYml0Y29pbiBsb2dvIG9maWNpYWwgc2VtIG5vbWUgMTAwcHgucG5nIiwiaWF0IjoxNzQ0NTU4MDQ2LCJleHAiOjE4MDc2MzAwNDZ9.jmzK3PG-1LJ1r-2cqJD7OiOJItfPWA4oD8n0autKJeo"
-                alt="Bitcoin Logo"
-                className="h-full w-full object-contain"
-              />
+            {/* Botão de configurações no lado esquerdo */}
+            <div className="flex items-center gap-2">
+              <ConfigButton onClick={() => setConfigOpen(true)} />
+              <div className="h-8 w-8">
+                <img 
+                  src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/bitcoin%20logo%20oficial%20sem%20nome%20100px.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvYml0Y29pbiBsb2dvIG9maWNpYWwgc2VtIG5vbWUgMTAwcHgucG5nIiwiaWF0IjoxNzQ0NTU4MDQ2LCJleHAiOjE4MDc2MzAwNDZ9.jmzK3PG-1LJ1r-2cqJD7OiOJItfPWA4oD8n0autKJeo"
+                  alt="Bitcoin Logo"
+                  className="h-full w-full object-contain"
+                />
+              </div>
             </div>
         
             {/* Centered Bitcoin DCA Pro text logo */}
