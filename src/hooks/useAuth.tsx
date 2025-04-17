@@ -126,59 +126,76 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       console.log("=== Início do processo de recuperação de senha ===");
       console.log("Email:", email);
+      console.log("Ambiente:", process.env.NODE_ENV);
       
-      // Configurar URL de redirecionamento
+      // Validar email antes de tentar enviar
+      if (!email || !email.includes('@')) {
+        console.error("Email inválido fornecido:", email);
+        throw new Error('Email inválido');
+      }
+  
+      // Configurar URL de redirecionamento com log detalhado
       const baseUrl = window.location.origin;
       const resetRedirectUrl = `${baseUrl}/reset-password`;
-      console.log("URL de redirecionamento:", resetRedirectUrl);
+      console.log("URL de redirecionamento completa:", resetRedirectUrl);
   
-      // Enviar email de recuperação diretamente, sem verificação prévia por segurança
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      // Adicionar timeout para evitar espera infinita
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          console.error("Timeout atingido ao tentar enviar email");
+          reject(new Error('Timeout ao enviar email'));
+        }, 10000);
+      });
+  
+      console.log("Iniciando tentativa de envio com timeout de 10s");
+      
+      const resetPromise = supabase.auth.resetPasswordForEmail(email, {
         redirectTo: resetRedirectUrl,
       });
   
+      const { error } = await Promise.race([resetPromise, timeoutPromise]);
+  
       if (error) {
-        console.error("Erro do Supabase:", error);
+        console.error("=== Detalhes do erro do Supabase ===");
+        console.error("Código:", error.status);
+        console.error("Mensagem:", error.message);
+        console.error("Detalhes:", error.details);
         throw error;
       }
   
-      console.log("Solicitação de reset enviada com sucesso");
+      console.log("=== Solicitação de reset concluída com sucesso ===");
       
-      // Mensagem genérica por segurança, não confirmamos se o email existe
       toast({
-        title: "Email enviado",
-        description: "Se este email estiver cadastrado, você receberá as instruções para redefinir sua senha. Verifique também sua pasta de spam.",
-        duration: 6000,
-        variant: "success",
+        title: "Solicitação recebida",
+        description: "Se este email estiver cadastrado, você receberá as instruções em breve. Verifique sua caixa de spam.",
+        duration: 8000,
       });
   
     } catch (error: any) {
-      console.error("=== Erro no processo de recuperação ===");
-      console.error("Tipo do erro:", typeof error);
+      console.error("=== Erro detalhado do processo ===");
+      console.error("Tipo:", typeof error);
+      console.error("Nome:", error.name);
       console.error("Mensagem:", error.message);
-      console.error("Erro completo:", error);
+      console.error("Stack:", error.stack);
   
       let mensagemErro = '';
-      
-      // Tratamento de erro melhorado, sem revelar se o email existe
-      if (error.message?.includes('rate limit')) {
-        mensagemErro = 'Muitas tentativas em pouco tempo. Aguarde alguns minutos.';
-      } else if (error.message?.includes('Invalid email')) {
-        mensagemErro = 'Email inválido. Verifique o endereço informado.';
+      if (error.message === 'Timeout ao enviar email') {
+        mensagemErro = 'O servidor está demorando para responder. Tente novamente.';
       } else if (error.message?.includes('SMTP')) {
-        mensagemErro = 'Erro no servidor de email. Por favor, tente novamente em alguns minutos.';
-        console.error("ERRO CRÍTICO: Falha no SMTP");
+        mensagemErro = 'Erro no servidor de email. Nossa equipe foi notificada.';
+        console.error("ERRO CRÍTICO SMTP:", error);
+      } else if (error.message === 'Email inválido') {
+        mensagemErro = 'Por favor, forneça um email válido.';
       } else {
         mensagemErro = 'Ocorreu um erro inesperado. Tente novamente em alguns minutos.';
       }
   
       toast({
-        title: "Não foi possível enviar o email",
+        title: "Erro no envio",
         description: mensagemErro,
         variant: "destructive",
+        duration: 8000,
       });
-      
-      throw error;
     }
   };
 
