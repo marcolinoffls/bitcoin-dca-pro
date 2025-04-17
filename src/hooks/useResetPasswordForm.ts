@@ -127,6 +127,9 @@ export const useResetPasswordForm = (accessToken: string | null) => {
         variant: "success",
       });
       
+      // Encerrar a sessão atual para garantir que o usuário faça login com a nova senha
+      await supabase.auth.signOut();
+      
       // Redirecionar para a página de login
       navigate('/auth');
     } catch (error: any) {

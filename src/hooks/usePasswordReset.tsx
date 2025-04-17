@@ -52,8 +52,11 @@ export function usePasswordReset() {
 
       // 2. Cria a URL de redirecionamento após resetar a senha
       // Essa URL deve estar cadastrada no painel do Supabase como "Redirect URL"
+      // Importante: Precisa ser a URL completa, com protocolo https:// ou http://
       const baseUrl = window.location.origin;
       const resetRedirectUrl = `${baseUrl}/reset-password`;
+      
+      console.log("URL de redirecionamento para reset:", resetRedirectUrl);
 
       // 3. Usa a utilitária de timeout para não travar indefinidamente
       const { error } = await withTimeout(
@@ -98,9 +101,7 @@ export function usePasswordReset() {
       });
 
       // Se quiser debugar só em DEV, pode usar:
-      // if (process.env.NODE_ENV === 'development') {
-      //   console.error(error);
-      // }
+      console.error("Erro na recuperação de senha:", error);
     }
   };
 

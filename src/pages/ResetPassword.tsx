@@ -23,6 +23,10 @@ const ResetPassword = () => {
   // Extrai o token de acesso da URL ao montar o componente
   useEffect(() => {
     const extractToken = () => {
+      console.log("Extraindo token da URL...");
+      console.log("URL hash:", location.hash);
+      console.log("URL search:", location.search);
+      
       // Verifica se há um hash e extrai o access_token
       if (location.hash) {
         try {
