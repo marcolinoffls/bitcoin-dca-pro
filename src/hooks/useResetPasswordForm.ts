@@ -85,7 +85,7 @@ export const useResetPasswordForm = (accessToken: string | null) => {
     try {
       console.log("Iniciando processo de redefinição de senha");
       
-      // Atualiza a senha do usuário usando o método updateUser
+      // Correção: Usando updateUser com a configuração correta (sem token como parâmetro, apenas em options)
       const { error } = await supabase.auth.updateUser(
         { password: password },
         { 
