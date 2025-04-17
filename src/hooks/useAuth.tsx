@@ -1,4 +1,3 @@
-
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -165,22 +164,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
       console.log("Iniciando tentativa de envio com timeout de 10s");
       
-      // Opções melhoradas para o reset de senha
+      // Corrigindo: Remover a propriedade 'options' não suportada
       const resetPromise = supabase.auth.resetPasswordForEmail(email, {
         redirectTo: resetRedirectUrl,
-        options: {
-          data: {
-            email_subject: 'Recuperação de Senha - Bitcoin DCA Pro',
-            email_template: 'reset-password'
-          }
-        }
       });
   
-      const { data, error } = await Promise.race([resetPromise, timeoutPromise]);
+      // Corrigindo: Extrair corretamente a propriedade 'error' do resultado
+      const result = await Promise.race([resetPromise, timeoutPromise]) as any;
+      const error = result?.error;
   
       // Log da resposta completa
       console.log("Resposta completa do Supabase:", {
-        data: data ? "Dados presentes" : "Sem dados",
+        data: result?.data ? "Dados presentes" : "Sem dados",
         error: error ? {
           message: error.message,
           status: error.status,
