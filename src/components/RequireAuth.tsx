@@ -3,6 +3,14 @@ import { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
+/**
+ * Componente que protege rotas, exigindo autenticação
+ * 
+ * Responsabilidades:
+ * 1. Verificar se o usuário está autenticado
+ * 2. Redirecionar para a página de login se necessário
+ * 3. Permitir acesso à página de redefinição de senha sem autenticação
+ */
 interface RequireAuthProps {
   children: ReactNode;
 }
