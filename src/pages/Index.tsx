@@ -28,6 +28,10 @@ const Index = () => {
   // Abre/fecha a barra lateral de configurações
   const [configOpen, setConfigOpen] = useState(false);
   
+  // Obter a taxa de Bitcoin e estado do usuário
+  const { currentRate, priceVariation, isLoading: isRateLoading, updateCurrentRate: fetchRateUpdate } = useBitcoinRate();
+  const { user } = useAuth();
+
   const {
     entries,
     isLoading: isEntriesLoading,
@@ -170,7 +174,7 @@ const Index = () => {
             <div className="h-full">
               <StatisticsCards
                   entries={entries}
-                  currentRate={bitcoinRate}
+                  currentRate={currentRate}
                   selectedCurrency={selectedCurrency}
                   displayUnit={displayUnit}
                   isLoading={isEntriesLoading}
@@ -181,7 +185,7 @@ const Index = () => {
             <div className="h-full">
               <AveragePriceCard 
                   entries={entries}
-                  currentRate={bitcoinRate}
+                  currentRate={currentRate}
                   selectedCurrency={selectedCurrency}
                   isLoading={isEntriesLoading}
               />
@@ -190,7 +194,7 @@ const Index = () => {
             {/* Card Cotação */}
             <div className="h-full">
               <CurrentRateCard
-                  currentRate={bitcoinRate}
+                  currentRate={currentRate}
                   priceVariation={priceVariation}
                   isLoading={isRateLoading}
                   onRefresh={fetchRateUpdate}
@@ -202,7 +206,7 @@ const Index = () => {
           <div className="w-full">
             <EntryForm
               onAddEntry={handleAddEntry}
-              currentRate={bitcoinRate}
+              currentRate={currentRate}
               onCancelEdit={cancelEdit}
               displayUnit={displayUnit}
               editingEntry={editingEntry}
@@ -213,7 +217,7 @@ const Index = () => {
           <div className="w-full">
             <EntriesList
               entries={entries}
-              currentRate={bitcoinRate}
+              currentRate={currentRate}
               onDelete={handleDeleteEntry}
               onEdit={handleEditEntry}
               selectedCurrency={selectedCurrency}
