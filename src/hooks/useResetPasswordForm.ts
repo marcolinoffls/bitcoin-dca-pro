@@ -61,10 +61,12 @@ export const useResetPasswordForm = (accessToken: string | null) => {
     try {
       console.log("Iniciando processo de redefinição de senha");
       
-      // Atualizar a senha usando o accessToken - removendo a prop accessToken do objeto de options
+      // Atualizar a senha usando o accessToken
+      // Correção: usando a propriedade 'token' para o Supabase v2+
       const { error } = await supabase.auth.updateUser(
         { password: password },
-        { token: accessToken } // Aqui usamos 'token' em vez de 'accessToken'
+        // Passamos as opções com a propriedade correta para accessToken
+        { token: accessToken }
       );
       
       if (error) {

@@ -17,25 +17,72 @@
  * - Sistema de Toast para feedback
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle, Info } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const EmailResetForm = () => {
   const [email, setEmail] = useState('');
   const [confirmEmail, setConfirmEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const [currentEmail, setCurrentEmail] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Validação simples de formato de email
+  // Obter o email atual do usuário
+  useEffect(() => {
+    const getCurrentUserEmail = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setCurrentEmail(user.email);
+      }
+    };
+    
+    getCurrentUserEmail();
+  }, []);
+
+  // Validação em tempo real de formato de email
   const isValidEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
+
+  // Validação em tempo real de emails iguais
+  const emailsMatch = () => {
+    return email === confirmEmail;
+  };
+
+  // Validar os emails sempre que mudar um dos campos
+  useEffect(() => {
+    // Limpar erros anteriores
+    setValidationError(null);
+    
+    // Ignorar validação se um dos campos estiver vazio
+    if (!email || !confirmEmail) return;
+    
+    // Verificar formato do email
+    if (!isValidEmail(email)) {
+      setValidationError('Por favor, forneça um email válido.');
+      return;
+    }
+    
+    // Verificar se os emails coincidem
+    if (!emailsMatch()) {
+      setValidationError('Os emails não coincidem.');
+      return;
+    }
+    
+    // Verificar se é igual ao email atual
+    if (email === currentEmail) {
+      setValidationError('O novo email deve ser diferente do atual.');
+      return;
+    }
+  }, [email, confirmEmail, currentEmail]);
 
   // Função para atualizar o email
   const handleSubmit = async (e: React.FormEvent) => {
@@ -53,20 +100,18 @@ const EmailResetForm = () => {
       return;
     }
 
-    if (email !== confirmEmail) {
+    if (!emailsMatch()) {
       setError('Os emails não coincidem.');
+      return;
+    }
+    
+    if (email === currentEmail) {
+      setError('O novo email deve ser diferente do atual.');
       return;
     }
 
     try {
       setIsSubmitting(true);
-
-      // Obter o usuário atual
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error('Usuário não autenticado');
-      }
 
       // Atualiza o email usando a API do Supabase
       const { error } = await supabase.auth.updateUser({ email });
@@ -78,8 +123,9 @@ const EmailResetForm = () => {
       // Feedback positivo para o usuário
       toast({
         title: "Solicitação enviada",
-        description: "Verifique seu email para confirmar a alteração. Você receberá um link de confirmação.",
-        duration: 6000,
+        description: "Confira seu novo email para confirmar a alteração. Só será possível fazer login com o novo email após confirmação.",
+        duration: 8000,
+        variant: "success",
       });
 
       // Limpar o formulário
@@ -89,10 +135,23 @@ const EmailResetForm = () => {
     } catch (error: any) {
       console.error('Erro ao atualizar email:', error);
       
-      // Mensagem de erro amigável para o usuário
+      // Tratar mensagens específicas de erro
+      let errorMessage = "Não foi possível atualizar seu email. Verifique se já existe uma conta com esse email ou tente novamente.";
+      
+      if (error.message?.includes('already exists')) {
+        errorMessage = "Este email já está sendo usado por outra conta.";
+      } else if (error.message?.includes('rate limit')) {
+        errorMessage = "Muitas tentativas em pouco tempo. Aguarde alguns minutos e tente novamente.";
+      } else if (error.message?.includes('invalid')) {
+        errorMessage = "O formato do email fornecido é inválido.";
+      }
+      
+      setError(errorMessage);
+      
+      // Toast para erros
       toast({
         title: "Erro ao atualizar email",
-        description: error.message || "Não foi possível atualizar seu email. Tente novamente mais tarde.",
+        description: errorMessage,
         variant: "destructive",
         duration: 6000,
       });
@@ -103,6 +162,14 @@ const EmailResetForm = () => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Email atual */}
+      {currentEmail && (
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground">Email atual</Label>
+          <div className="text-sm font-medium">{currentEmail}</div>
+        </div>
+      )}
+      
       <div className="space-y-2">
         <Label htmlFor="new-email">Novo Email</Label>
         <Input
@@ -112,6 +179,7 @@ const EmailResetForm = () => {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={isSubmitting}
+          className={validationError && email ? "border-red-300" : ""}
         />
       </div>
       
@@ -124,20 +192,39 @@ const EmailResetForm = () => {
           value={confirmEmail}
           onChange={(e) => setConfirmEmail(e.target.value)}
           disabled={isSubmitting}
+          className={validationError && confirmEmail ? "border-red-300" : ""}
         />
       </div>
 
-      {error && (
+      {/* Exibir erros de validação em tempo real */}
+      {validationError && (
         <div className="flex items-center gap-2 text-sm text-red-500">
           <AlertCircle className="h-4 w-4" />
-          <span>{error}</span>
+          <span>{validationError}</span>
         </div>
       )}
+
+      {/* Exibir erros de submissão */}
+      {error && (
+        <Alert variant="destructive" className="py-2">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      
+      {/* Informações sobre o processo */}
+      <Alert variant="warning" className="py-2 bg-amber-50">
+        <Info className="h-4 w-4" />
+        <AlertDescription className="text-xs">
+          Após submeter, você receberá um email de confirmação no novo endereço. 
+          Você só poderá usar o novo email para login após clicar no link de confirmação.
+        </AlertDescription>
+      </Alert>
       
       <Button 
         type="submit" 
         className="w-full bg-bitcoin hover:bg-bitcoin/90"
-        disabled={isSubmitting}
+        disabled={isSubmitting || !!validationError || !email || !confirmEmail}
       >
         {isSubmitting ? (
           <span className="flex items-center">
