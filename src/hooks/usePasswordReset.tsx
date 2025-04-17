@@ -1,85 +1,86 @@
 /**
- * usePasswordReset - Hook para recuperação de senha de usuário
+ * usePasswordReset - Hook para fluxo de recuperação de senha.
+ *
+ * O que ele faz:
+ * - Valida se o email informado é válido
+ * - Chama o Supabase para enviar email de redefinição de senha
+ * - Usa timeout para evitar espera infinita em caso de falha do servidor
+ * - Mostra mensagens de feedback via Toast (sem expor se o email existe ou não)
+ * - Trata possíveis erros de SMTP ou problemas de rede
  * 
- * Responsabilidades:
- * - Validar o formato do email
- * - Enviar o email de solicitação de redefinição de senha via Supabase
- * - Exibir feedback amigável ao usuário
- * - Tratar e categorizar erros comuns (timeout, SMTP, email inválido etc)
- * 
- * Boas práticas:
- * - Sem logging sensível em produção (proteção à privacidade)
- * - Mensagem genérica para não revelar se o email existe na base
- * - Código modular, fácil de ler e estender
+ * Boas práticas implementadas:
+ * - Comentários didáticos em cada etapa
+ * - Sem logs sensíveis em produção
+ * - Código limpo e fácil de entender/reutilizar
  */
 
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 export function usePasswordReset() {
-  // Hook de toast para exibir mensagens amigáveis ao usuário
+  // Hook do sistema de notificações/Toast do seu projeto
   const { toast } = useToast();
 
   /**
-   * resetPassword
-   * Função principal para acionar o fluxo de recuperação de senha.
-   * 
-   * @param email - Email do usuário que será enviado o link de recuperação
+   * Função utilitária para aplicar timeout em promises.
+   * Se a promise não resolver em X milissegundos, rejeita.
+   *
+   * @param promise - Promise que você quer monitorar com timeout
+   * @param ms - Quantidade de milissegundos antes de dar timeout (padrão 10 segundos)
+   */
+  function withTimeout<T>(promise: Promise<T>, ms = 10000): Promise<T> {
+    return Promise.race([
+      promise,
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Timeout ao enviar email")), ms)
+      ),
+    ]);
+  }
+
+  /**
+   * Função principal que executa o fluxo de recuperação de senha.
+   *
+   * @param email - Email para o qual deve ser enviado o link de redefinição
    */
   const resetPassword = async (email: string) => {
     try {
-      // 1. Validação simples do campo de email
-      // (pode ser expandida após para validação mais robusta com regex)
+      // 1. Validação simples do formato do email
       if (!email || !email.includes('@')) {
         throw new Error('Email inválido');
       }
 
-      // 2. Construção da URL de redirecionamento após o reset
-      // Esta será usada pelo Supabase para redirecionar o usuário depois de redefinir a senha
-      const baseUrl = window.location.origin; // Ex: https://bitcoindcapro.com
-      const resetRedirectUrl = `${baseUrl}/reset-password`; // Deve ser mesmo domínio permitido no painel Supabase
+      // 2. Cria a URL de redirecionamento após resetar a senha
+      // Essa URL deve estar cadastrada no painel do Supabase como "Redirect URL"
+      const baseUrl = window.location.origin;
+      const resetRedirectUrl = `${baseUrl}/reset-password`;
 
-      // 3. Função utilitária para adicionar timeout nas promessas
-      // Evita que o usuário fique esperando indefinidamente caso o servidor não responda
-      const withTimeout = <T>(promise: Promise<T>, ms = 10000) =>
-        Promise.race([
-          promise,
-          new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error("Timeout ao enviar email")), ms)
-          ),
-        ]);
-
-      // 4. Chama o método do Supabase para recuperação de senha, aplicando timeout
-      // A resposta não revela se o email existe ou não, por segurança!
+      // 3. Usa a utilitária de timeout para não travar indefinidamente
       const { error } = await withTimeout(
         supabase.auth.resetPasswordForEmail(email, {
           redirectTo: resetRedirectUrl,
         }),
-        10000      // Timeout em milissegundos (10 segundos)
+        10000 // 10 segundos de timeout
       );
 
-      // 5. Tratamento de possíveis erros no envio de email
-      // SMTP: erro de servidor de e-mail
+      // 4. Tratamento detalhado de erros específicos
       if (error) {
+        // Caso seja erro de SMTP/servidor de email (mensagem contém 'smtp', 'email' ou 'mail')
         if (error.message?.match(/smtp|email|mail/i)) {
           throw new Error('Erro no servidor de email. Nossa equipe foi notificada.');
         }
+        // Outros erros do Supabase
         throw error;
       }
 
-      // 6. Exibe uma mensagem positiva para o usuário, SEM nunca revelar se o email existe no sistema :)
+      // 5. Feedback sempre neutro para o usuário (não revela se o email existe)
       toast({
         title: "Solicitação recebida",
         description: "Se este email estiver cadastrado, você receberá as instruções em breve. Verifique sua caixa de spam.",
         duration: 8000,
       });
-
     } catch (error: any) {
-      // 7. Mensagem padrão do erro para o usuário
-      // Nunca revela informações sensíveis
+      // 6. Tratamento amigável dos erros para o usuário final
       let mensagemErro = 'Ocorreu um erro inesperado. Tente novamente em alguns minutos.';
-
-      // Categoriza tipo de erro para resposta mais amigável
       if (error.message === 'Timeout ao enviar email') {
         mensagemErro = 'O servidor está demorando para responder. Tente novamente.';
       } else if (error.message === 'Erro no servidor de email. Nossa equipe foi notificada.') {
@@ -87,23 +88,21 @@ export function usePasswordReset() {
       } else if (error.message === 'Email inválido') {
         mensagemErro = 'Por favor, forneça um email válido.';
       }
-      // Outros casos (genérico)
 
       toast({
         title: "Informação",
         description: mensagemErro,
-        variant: "destructive", // Exibe com destaque para erros/críticos
+        variant: "destructive", // Usa destaque de erro, se disponível no seu sistema de toasts
         duration: 8000,
       });
 
-      // Em produção: não loga erros sensíveis no console!
-      // Se quiser log em dev: condicione pelo NODE_ENV
+      // Se quiser debugar só em DEV, pode usar:
       // if (process.env.NODE_ENV === 'development') {
       //   console.error(error);
       // }
     }
   };
 
-  // 8. Expõe a função resetPassword para ser usada nos componentes
+  // Expõe apenas a função de reset para ser usada nos componentes do app
   return { resetPassword };
 }
