@@ -78,7 +78,7 @@ const PasswordResetForm = ({ accessToken, isTokenLoading }: PasswordResetFormPro
 
   // Verificar se as senhas são iguais
   const passwordsMatch = password === confirmPassword;
-  const passwordMinLength = password.length >= 6;
+  const passwordMinLength = password.length >= 8;
   const confirmError = confirmPassword && !passwordsMatch ? 'As senhas não coincidem' : '';
 
   // Exibir loading enquanto o token está sendo carregado ou validado
@@ -123,7 +123,7 @@ const PasswordResetForm = ({ accessToken, isTokenLoading }: PasswordResetFormPro
           showPassword={showPassword}
           onTogglePassword={() => setShowPassword(!showPassword)}
           disabled={isSubmitting}
-          hint="A senha deve ter pelo menos 6 caracteres"
+          hint="A senha deve ter pelo menos 8 caracteres, incluir maiúsculas, minúsculas, número e símbolo"
         />
 
         <PasswordField

@@ -28,9 +28,33 @@ export const useResetPasswordForm = (accessToken: string | null) => {
   const validatePassword = () => {
     setPasswordError('');
     
+    // Verificar preenchimento
+    if (!password || !confirmPassword) {
+      setPasswordError('Por favor, preencha todos os campos');
+      return false;
+    }
+    
     // Verificar comprimento mínimo
-    if (password.length < 6) {
-      setPasswordError('A senha deve ter pelo menos 6 caracteres');
+    if (password.length < 8) {
+      setPasswordError('A senha deve ter pelo menos 8 caracteres');
+      return false;
+    }
+    
+    // Verificar letras maiúsculas e minúsculas
+    if (!/[A-Z]/.test(password) || !/[a-z]/.test(password)) {
+      setPasswordError('A senha deve conter letras maiúsculas e minúsculas');
+      return false;
+    }
+    
+    // Verificar números
+    if (!/\d/.test(password)) {
+      setPasswordError('A senha deve conter pelo menos um número');
+      return false;
+    }
+    
+    // Verificar caracteres especiais
+    if (!/[^A-Za-z0-9]/.test(password)) {
+      setPasswordError('A senha deve conter pelo menos um caractere especial');
       return false;
     }
     
@@ -47,7 +71,7 @@ export const useResetPasswordForm = (accessToken: string | null) => {
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Verificação básica da senha antes de prosseguir
+    // Verificação completa da senha antes de prosseguir
     if (!validatePassword()) return;
     
     // Verificar se temos o token de acesso
@@ -61,11 +85,12 @@ export const useResetPasswordForm = (accessToken: string | null) => {
     try {
       console.log("Iniciando processo de redefinição de senha");
       
-      // Correção: passar o token corretamente para updateUser
+      // Atualiza a senha do usuário usando o método updateUser
       const { error } = await supabase.auth.updateUser(
         { password: password },
-        // Usando emailRedirectTo corretamente
-        { emailRedirectTo: `${window.location.origin}/auth` }
+        { 
+          emailRedirectTo: `${window.location.origin}/auth` 
+        }
       );
       
       if (error) {
@@ -78,7 +103,7 @@ export const useResetPasswordForm = (accessToken: string | null) => {
       toast({
         title: "Senha atualizada com sucesso",
         description: "Sua senha foi redefinida. Agora você pode fazer login com sua nova senha.",
-        variant: "default",
+        variant: "success",
       });
       
       // Encerrar a sessão atual para garantir que o usuário faça login com a nova senha

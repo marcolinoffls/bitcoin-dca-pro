@@ -1,5 +1,5 @@
 
-import { Card, CardTitle, CardDescription } from "@/components/ui/card";
+import { CardTitle, CardDescription } from "@/components/ui/card";
 
 /**
  * Componente de cabeçalho para a página de redefinição de senha

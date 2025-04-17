@@ -54,7 +54,7 @@ export const PasswordField = ({
           required
           className={`pl-10 pr-10 rounded-lg ${error ? 'border-red-500 focus-visible:ring-red-500 focus-visible:border-red-500' : ''}`}
           disabled={disabled}
-          minLength={6}
+          minLength={8}
         />
         <Button
           type="button"

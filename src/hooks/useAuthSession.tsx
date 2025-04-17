@@ -45,8 +45,8 @@ export function useAuthSession() {
         
         // Para eventos de recuperação de senha ou mudança de email, não atualizamos a sessão
         // para evitar conflitos com o fluxo de redefinição
-        if (event === 'PASSWORD_RECOVERY' || event === 'EMAIL_CHANGE') {
-          console.log("Evento de recuperação de senha ou mudança de email detectado");
+        if (event === 'PASSWORD_RECOVERY') {
+          console.log("Evento de recuperação de senha detectado");
           setLoading(false);
           return;
         }
@@ -65,12 +65,6 @@ export function useAuthSession() {
           toast({
             title: "Perfil atualizado",
             description: "Suas informações foram atualizadas com sucesso.",
-          });
-        } else if (event === 'EMAIL_CHANGE') {
-          toast({
-            title: "Email alterado",
-            description: "Seu email foi alterado com sucesso.",
-            variant: "default",
           });
         }
         
