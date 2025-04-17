@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -61,12 +60,11 @@ export const useResetPasswordForm = (accessToken: string | null) => {
     try {
       console.log("Iniciando processo de redefinição de senha");
       
-      // Atualizar a senha usando o accessToken
-      // Correção: usando a propriedade 'token' para o Supabase v2+
+      // Correção: passar o token corretamente para updateUser
       const { error } = await supabase.auth.updateUser(
         { password: password },
-        // Passamos as opções com a propriedade correta para accessToken
-        { token: accessToken }
+        // Remove o objeto de opções com token
+        { redirectTo: `${window.location.origin}/auth` }
       );
       
       if (error) {
@@ -79,7 +77,7 @@ export const useResetPasswordForm = (accessToken: string | null) => {
       toast({
         title: "Senha atualizada com sucesso",
         description: "Sua senha foi redefinida. Agora você pode fazer login com sua nova senha.",
-        variant: "success",
+        variant: "default",
       });
       
       // Encerrar a sessão atual para garantir que o usuário faça login com a nova senha
