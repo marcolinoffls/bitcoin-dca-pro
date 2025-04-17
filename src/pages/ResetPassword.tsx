@@ -14,7 +14,7 @@ import PasswordResetForm from '@/components/auth/PasswordResetForm';
  * 
  * Este componente:
  * 1. Extrai o token da URL
- * 2. Verifica a validade do token
+ * 2. Verifica a validade do token usando verifyOtp
  * 3. Exibe o formulário de redefinição ou mensagem de erro
  */
 export default function ResetPassword() {
@@ -24,61 +24,54 @@ export default function ResetPassword() {
   const [isTokenLoading, setIsTokenLoading] = useState(true);
   const [isTokenValid, setIsTokenValid] = useState<boolean | null>(null);
 
-  // Extrair o token da URL ao carregar a página
-  useEffect(() => {
-    const extractTokenFromUrl = () => {
-      setIsTokenLoading(true);
-      const fragment = location.hash;
-      const query = location.search;
-      let token = null;
-
-      // Verificar no fragmento da URL (após #)
-      if (fragment) {
-        const fragmentParams = new URLSearchParams(fragment.substring(1));
-        token = fragmentParams.get('access_token');
-      }
-
-      // Se não encontrado no fragmento, procurar na query string (após ?)
-      if (!token && query) {
-        const queryParams = new URLSearchParams(query);
-        token = queryParams.get('token') || queryParams.get('access_token');
-      }
-
-      console.log("Token extraído da URL:", token ? "Encontrado" : "Não encontrado");
-      setAccessToken(token);
-      setIsTokenLoading(false);
-      
-      // Validar token no Supabase
-      if (token) {
-        validateTokenWithSupabase(token);
-      } else {
-        setIsTokenValid(false);
-      }
-    };
-
-    extractTokenFromUrl();
-  }, [location]);
-
-  // Validar token no Supabase
-  const validateTokenWithSupabase = async (token: string) => {
+  // Extrair e validar o token PKCE da URL
+  const extractTokenFromUrl = async () => {
+    setIsTokenLoading(true);
     try {
-      setIsTokenLoading(true);
+      // Pegar parâmetros da URL
+      const queryParams = new URLSearchParams(location.search);
+      const token = queryParams.get('token'); // Token PKCE de recuperação
+      const type = queryParams.get('type'); // Deve ser 'recovery'
       
-      // Tenta obter informações do usuário usando o token
-      const { data, error } = await supabase.auth.getUser(token);
-      
-      setIsTokenValid(!!data?.user && !error);
-      
-      if (error) {
-        console.error("Erro ao validar token:", error.message);
+      console.log("Parâmetros da URL:", {
+        token: token ? "Presente" : "Ausente",
+        type,
+        redirectTo: queryParams.get('redirect_to')
+      });
+
+      if (!token || type !== 'recovery') {
+        setIsTokenValid(false);
+        return;
       }
+
+      // Tentar validar o token
+      const { data, error } = await supabase.auth.verifyOtp({
+        token,
+        type: 'recovery'
+      });
+
+      console.log("Resposta da validação:", {
+        success: !!data?.user,
+        error: error?.message
+      });
+
+      if (error) throw error;
+      
+      setAccessToken(token);
+      setIsTokenValid(true);
+
     } catch (error) {
-      console.error("Erro ao validar token:", error);
+      console.error("Erro na validação:", error);
       setIsTokenValid(false);
     } finally {
       setIsTokenLoading(false);
     }
   };
+
+  // Executar a extração e validação do token quando a página carregar
+  useEffect(() => {
+    extractTokenFromUrl();
+  }, [location]);
 
   // Renderizar mensagem de erro quando o token é inválido
   const renderErrorState = () => {

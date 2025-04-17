@@ -6,15 +6,13 @@ import { useNavigate } from 'react-router-dom';
 import { useResetPasswordForm } from '@/hooks/useResetPasswordForm';
 import { PasswordField } from './PasswordField';
 import { FormError } from './FormError';
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Formulário de redefinição de senha
  * 
  * Este componente é responsável por:
- * 1. Validar o token recebido com o Supabase
- * 2. Exibir campos para nova senha somente se o token for válido
+ * 1. Receber o token validado de ResetPassword.tsx
+ * 2. Exibir campos para nova senha
  * 3. Validar e processar a alteração de senha
  * 4. Mostrar feedback visual do processo
  */
@@ -25,8 +23,6 @@ interface PasswordResetFormProps {
 
 const PasswordResetForm = ({ accessToken, isTokenLoading }: PasswordResetFormProps) => {
   const navigate = useNavigate();
-  const [isTokenValid, setIsTokenValid] = useState<boolean | null>(null);
-  const [isValidating, setIsValidating] = useState<boolean>(true);
   
   const {
     password,
@@ -40,49 +36,13 @@ const PasswordResetForm = ({ accessToken, isTokenLoading }: PasswordResetFormPro
     handleResetPassword
   } = useResetPasswordForm(accessToken);
 
-  // Validar o token no Supabase antes de mostrar o formulário
-  useEffect(() => {
-    const validateTokenWithSupabase = async () => {
-      if (!accessToken) {
-        setIsTokenValid(false);
-        setIsValidating(false);
-        return;
-      }
-
-      try {
-        console.log("Validando token com Supabase...");
-        const { data, error } = await supabase.auth.getUser(accessToken);
-        
-        if (error || !data.user) {
-          console.error("Erro ao validar token:", error?.message);
-          setIsTokenValid(false);
-        } else {
-          console.log("Token validado com sucesso!");
-          setIsTokenValid(true);
-        }
-      } catch (error) {
-        console.error("Exceção ao validar token:", error);
-        setIsTokenValid(false);
-      } finally {
-        setIsValidating(false);
-      }
-    };
-
-    if (accessToken) {
-      validateTokenWithSupabase();
-    } else {
-      setIsTokenValid(false);
-      setIsValidating(false);
-    }
-  }, [accessToken]);
-
   // Verificar se as senhas são iguais
   const passwordsMatch = password === confirmPassword;
   const passwordMinLength = password.length >= 8;
   const confirmError = confirmPassword && !passwordsMatch ? 'As senhas não coincidem' : '';
 
-  // Exibir loading enquanto o token está sendo carregado ou validado
-  if (isTokenLoading || isValidating) {
+  // Exibir loading enquanto o token está sendo carregado
+  if (isTokenLoading) {
     return (
       <div className="flex justify-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-bitcoin"></div>
@@ -91,7 +51,7 @@ const PasswordResetForm = ({ accessToken, isTokenLoading }: PasswordResetFormPro
   }
 
   // Se o token não for válido, exibir mensagem de erro
-  if (!accessToken || !isTokenValid) {
+  if (!accessToken) {
     return (
       <div className="space-y-4">
         <Alert variant="destructive">
@@ -111,7 +71,7 @@ const PasswordResetForm = ({ accessToken, isTokenLoading }: PasswordResetFormPro
     );
   }
 
-  // Exibir formulário de redefinição de senha apenas se o token for válido
+  // Exibir formulário de redefinição de senha
   return (
     <form onSubmit={handleResetPassword} className="space-y-6">
       <div className="space-y-4">

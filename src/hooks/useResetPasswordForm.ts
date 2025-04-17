@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -83,15 +83,12 @@ export const useResetPasswordForm = (accessToken: string | null) => {
     setIsSubmitting(true);
     
     try {
-      console.log("Iniciando processo de redefinição de senha");
+      console.log("Iniciando processo de redefinição de senha com token PKCE");
       
-      // Correção: Usando updateUser com a configuração correta (sem token como parâmetro, apenas em options)
-      const { error } = await supabase.auth.updateUser(
-        { password: password },
-        { 
-          emailRedirectTo: `${window.location.origin}/auth` 
-        }
-      );
+      // Atualizar a senha usando o token PKCE e updateUserPassword
+      const { error } = await supabase.auth.updateUser({
+        password: password
+      });
       
       if (error) {
         console.error("Erro ao atualizar senha:", error.message);
