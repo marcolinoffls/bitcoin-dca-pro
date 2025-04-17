@@ -1,135 +1,109 @@
-
 /**
- * Hook para recuperação de senha
+ * usePasswordReset - Hook para recuperação de senha de usuário
  * 
- * Este hook é responsável por:
- * 1. Enviar emails de recuperação de senha
- * 2. Validar formato de email
- * 3. Tratar erros do processo de recuperação
+ * Responsabilidades:
+ * - Validar o formato do email
+ * - Enviar o email de solicitação de redefinição de senha via Supabase
+ * - Exibir feedback amigável ao usuário
+ * - Tratar e categorizar erros comuns (timeout, SMTP, email inválido etc)
+ * 
+ * Boas práticas:
+ * - Sem logging sensível em produção (proteção à privacidade)
+ * - Mensagem genérica para não revelar se o email existe na base
+ * - Código modular, fácil de ler e estender
  */
 
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 export function usePasswordReset() {
+  // Hook de toast para exibir mensagens amigáveis ao usuário
   const { toast } = useToast();
 
+  /**
+   * resetPassword
+   * Função principal para acionar o fluxo de recuperação de senha.
+   * 
+   * @param email - Email do usuário que será enviado o link de recuperação
+   */
   const resetPassword = async (email: string) => {
     try {
-      console.log("=== Início do processo de recuperação de senha ===");
-      console.log("Email:", email);
-      console.log("Ambiente:", process.env.NODE_ENV);
-      
-      // Validar email antes de tentar enviar
+      // 1. Validação simples do campo de email
+      // (pode ser expandida após para validação mais robusta com regex)
       if (!email || !email.includes('@')) {
-        console.error("Email inválido fornecido:", email);
         throw new Error('Email inválido');
       }
-  
-      // Verificar se o email existe na base antes de tentar resetar
-      console.log("Verificando se o email existe na base de dados...");
-      const { data: signInCheck, error: signInError } = await supabase.auth.signInWithOtp({
-        email,
-        options: { shouldCreateUser: false }
-      });
-      
-      console.log("Resultado da verificação de email:", 
-        signInError ? `Erro: ${signInError.message}` : "Email verificado");
-      
-      // Configurar URL de redirecionamento com log detalhado
-      const baseUrl = window.location.origin;
-      const resetRedirectUrl = `${baseUrl}/reset-password`;
-      console.log("URL de redirecionamento completa:", resetRedirectUrl);
-      
-      // Log das configurações de email (para debug)
-      console.log("Configurações do processo de reset:");
-      console.log("- URL de redirecionamento:", resetRedirectUrl);
-      console.log("- Provedor SMTP configurado:", Boolean(process.env.SUPABASE_SMTP));
-      
-      // Adicionar timeout para evitar espera infinita
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => {
-          console.error("Timeout atingido ao tentar enviar email");
-          reject(new Error('Timeout ao enviar email'));
-        }, 10000);
-      });
-  
-      console.log("Iniciando tentativa de envio com timeout de 10s");
-      
-      // Corrigindo: Remover a propriedade 'options' não suportada
-      const resetPromise = supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: resetRedirectUrl,
-      });
-  
-      // Corrigindo: Extrair corretamente a propriedade 'error' do resultado
-      const result = await Promise.race([resetPromise, timeoutPromise]) as any;
-      const error = result?.error;
-  
-      // Log da resposta completa
-      console.log("Resposta completa do Supabase:", {
-        data: result?.data ? "Dados presentes" : "Sem dados",
-        error: error ? {
-          message: error.message,
-          status: error.status,
-          name: error.name
-        } : "Sem erros"
-      });
-      
+
+      // 2. Construção da URL de redirecionamento após o reset
+      // Esta será usada pelo Supabase para redirecionar o usuário depois de redefinir a senha
+      const baseUrl = window.location.origin; // Ex: https://bitcoindcapro.com
+      const resetRedirectUrl = `${baseUrl}/reset-password`; // Deve ser mesmo domínio permitido no painel Supabase
+
+      // 3. Função utilitária para adicionar timeout nas promessas
+      // Evita que o usuário fique esperando indefinidamente caso o servidor não responda
+      const withTimeout = <T>(promise: Promise<T>, ms = 10000) =>
+        Promise.race([
+          promise,
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error("Timeout ao enviar email")), ms)
+          ),
+        ]);
+
+      // 4. Chama o método do Supabase para recuperação de senha, aplicando timeout
+      // A resposta não revela se o email existe ou não, por segurança!
+      const { error } = await withTimeout(
+        supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: resetRedirectUrl,
+        }),
+        10000      // Timeout em milissegundos (10 segundos)
+      );
+
+      // 5. Tratamento de possíveis erros no envio de email
+      // SMTP: erro de servidor de e-mail
       if (error) {
-        console.error("=== Detalhes do erro do Supabase ===");
-        console.error("Código:", error.status);
-        console.error("Mensagem:", error.message);
-        console.error("Detalhes:", error.details);
-        
-        // Verificar se é erro de SMTP
-        if (error.message?.includes('SMTP') || error.message?.includes('email') || error.message?.includes('mail')) {
-          console.error("ERRO DETECTADO NO SISTEMA DE EMAIL");
+        if (error.message?.match(/smtp|email|mail/i)) {
           throw new Error('Erro no servidor de email. Nossa equipe foi notificada.');
         }
-        
         throw error;
       }
-  
-      console.log("=== Solicitação de reset concluída com sucesso ===");
-      
+
+      // 6. Exibe uma mensagem positiva para o usuário, SEM nunca revelar se o email existe no sistema :)
       toast({
         title: "Solicitação recebida",
         description: "Se este email estiver cadastrado, você receberá as instruções em breve. Verifique sua caixa de spam.",
         duration: 8000,
       });
-  
+
     } catch (error: any) {
-      console.error("=== Erro detalhado do processo ===");
-      console.error("Tipo:", typeof error);
-      console.error("Nome:", error.name);
-      console.error("Mensagem:", error.message);
-      console.error("Stack:", error.stack);
-  
-      let mensagemErro = '';
+      // 7. Mensagem padrão do erro para o usuário
+      // Nunca revela informações sensíveis
+      let mensagemErro = 'Ocorreu um erro inesperado. Tente novamente em alguns minutos.';
+
+      // Categoriza tipo de erro para resposta mais amigável
       if (error.message === 'Timeout ao enviar email') {
         mensagemErro = 'O servidor está demorando para responder. Tente novamente.';
-      } else if (error.message?.includes('SMTP') || error.message === 'Erro no servidor de email. Nossa equipe foi notificada.') {
-        mensagemErro = 'Erro no servidor de email. Nossa equipe foi notificada.';
-        console.error("ERRO CRÍTICO SMTP:", error);
+      } else if (error.message === 'Erro no servidor de email. Nossa equipe foi notificada.') {
+        mensagemErro = error.message;
       } else if (error.message === 'Email inválido') {
         mensagemErro = 'Por favor, forneça um email válido.';
-      } else if (error.message?.includes('not found') || error.message?.includes('não encontrado')) {
-        // Por segurança, não revelamos se o email existe ou não
-        mensagemErro = 'Se este email estiver cadastrado, você receberá as instruções em breve.';
-      } else if (error.message?.includes('rate limit') || error.message?.includes('too many requests')) {
-        mensagemErro = 'Muitas tentativas. Por favor, aguarde alguns minutos antes de tentar novamente.';
-      } else {
-        mensagemErro = 'Ocorreu um erro inesperado. Tente novamente em alguns minutos.';
       }
-  
+      // Outros casos (genérico)
+
       toast({
         title: "Informação",
         description: mensagemErro,
-        variant: "destructive",
+        variant: "destructive", // Exibe com destaque para erros/críticos
         duration: 8000,
       });
+
+      // Em produção: não loga erros sensíveis no console!
+      // Se quiser log em dev: condicione pelo NODE_ENV
+      // if (process.env.NODE_ENV === 'development') {
+      //   console.error(error);
+      // }
     }
   };
 
+  // 8. Expõe a função resetPassword para ser usada nos componentes
   return { resetPassword };
 }
