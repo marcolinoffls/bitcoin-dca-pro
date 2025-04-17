@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -63,8 +64,8 @@ export const useResetPasswordForm = (accessToken: string | null) => {
       // Correção: passar o token corretamente para updateUser
       const { error } = await supabase.auth.updateUser(
         { password: password },
-        // Remove o objeto de opções com token
-        { redirectTo: `${window.location.origin}/auth` }
+        // Usando emailRedirectTo corretamente
+        { emailRedirectTo: `${window.location.origin}/auth` }
       );
       
       if (error) {

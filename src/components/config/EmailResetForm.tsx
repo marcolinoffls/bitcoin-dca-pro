@@ -113,8 +113,13 @@ const EmailResetForm = () => {
     try {
       setIsSubmitting(true);
 
-      // Atualiza o email usando a API do Supabase
-      const { error } = await supabase.auth.updateUser({ email });
+      // Atualiza o email usando a API do Supabase com o redirecionamento configurado
+      const { error } = await supabase.auth.updateUser({
+        email: email
+      }, {
+        // Configurando o redirecionamento corretamente - importante para finalizar o fluxo
+        emailRedirectTo: `${window.location.origin}/auth`
+      });
       
       if (error) {
         throw error;
@@ -125,7 +130,7 @@ const EmailResetForm = () => {
         title: "Solicitação enviada",
         description: "Confira seu novo email para confirmar a alteração. Só será possível fazer login com o novo email após confirmação.",
         duration: 8000,
-        variant: "success",
+        variant: "default",
       });
 
       // Limpar o formulário

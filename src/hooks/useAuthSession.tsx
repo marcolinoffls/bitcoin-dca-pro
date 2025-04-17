@@ -22,16 +22,19 @@ export function useAuthSession() {
   useEffect(() => {
     console.log('Inicializando sessão de autenticação');
     
-    // Detectar se estamos na página de redefinição de senha
-    const isResetPasswordPage = window.location.pathname.includes('reset-password');
-    const hasAccessToken = window.location.hash.includes('access_token') || 
-                           window.location.search.includes('access_token') || 
-                           window.location.search.includes('token');
+    // Detectar se estamos na página de redefinição de senha ou confirmação de email
+    const isConfirmationPage = window.location.pathname.includes('reset-password') || 
+                              window.location.hash.includes('type=recovery') ||
+                              window.location.hash.includes('type=email_change');
     
-    // Se estamos na página de redefinição e tem token na URL, não carregamos a sessão 
-    // para não interferir no fluxo de redefinição
-    if (isResetPasswordPage && hasAccessToken) {
-      console.log('Página de redefinição de senha com token detectada. Não carregando sessão automática.');
+    const hasToken = window.location.hash.includes('access_token') || 
+                    window.location.search.includes('access_token') || 
+                    window.location.search.includes('token');
+    
+    // Se estamos na página de redefinição/confirmação e tem token na URL, não carregamos a sessão 
+    // para não interferir no fluxo de redefinição/confirmação
+    if (isConfirmationPage && hasToken) {
+      console.log('Página de confirmação com token detectada. Não carregando sessão automática.');
       setLoading(false);
       return;
     }
@@ -40,10 +43,10 @@ export function useAuthSession() {
       (event, newSession) => {
         console.log("Evento de autenticação detectado:", event);
         
-        // Para eventos de recuperação de senha, não atualizamos a sessão
+        // Para eventos de recuperação de senha ou mudança de email, não atualizamos a sessão
         // para evitar conflitos com o fluxo de redefinição
-        if (event === 'PASSWORD_RECOVERY') {
-          console.log("Evento de recuperação de senha detectado");
+        if (event === 'PASSWORD_RECOVERY' || event === 'EMAIL_CHANGE') {
+          console.log("Evento de recuperação de senha ou mudança de email detectado");
           setLoading(false);
           return;
         }
@@ -63,14 +66,20 @@ export function useAuthSession() {
             title: "Perfil atualizado",
             description: "Suas informações foram atualizadas com sucesso.",
           });
+        } else if (event === 'EMAIL_CHANGE') {
+          toast({
+            title: "Email alterado",
+            description: "Seu email foi alterado com sucesso.",
+            variant: "default",
+          });
         }
         
         setLoading(false);
       }
     );
 
-    // Apenas carregar a sessão se não estivermos na página de redefinição com token
-    if (!isResetPasswordPage || !hasAccessToken) {
+    // Apenas carregar a sessão se não estivermos na página de redefinição/confirmação com token
+    if (!isConfirmationPage || !hasToken) {
       supabase.auth.getSession().then(({ data: { session: newSession } }) => {
         console.log('Sessão recuperada na inicialização:', newSession ? 'Sim' : 'Não');
         setSession(newSession);
