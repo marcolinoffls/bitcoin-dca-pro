@@ -5,7 +5,7 @@ import { ptBR } from 'date-fns/locale';
 import { calculatePercentageChange } from '@/services/bitcoinService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileUp, Filter } from 'lucide-react';
+import { FileUp, Filter, SlidersHorizontal } from 'lucide-react';
 import { AlertCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -20,6 +20,8 @@ import { EntriesTable } from './entries/EntriesTable';
 import { EntryFilters } from './entries/EntryFilters';
 import { ROWS_PER_PAGE_OPTIONS } from './entries/constants';
 import { useQueryClient } from '@tanstack/react-query';
+import { ColumnConfig, SortState, DEFAULT_COLUMNS } from '@/types/table';
+import ColumnVisibilityControl from './entries/ColumnVisibilityControl';
 
 interface EntriesListProps {
   entries: BitcoinEntry[];
@@ -61,6 +63,15 @@ const EntriesList: React.FC<EntriesListProps> = ({
   const [rowsToShow, setRowsToShow] = useState<number>(10);
   const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+
+  // Estado para controle de ordenação
+  const [sortState, setSortState] = useState<SortState>({
+    column: null,
+    direction: 'desc'
+  });
+
+  // Estado para controle de colunas visíveis
+  const [visibleColumns, setVisibleColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
 
   const handleEditClick = (id: string) => {
     setSelectedEntryId(id);
@@ -116,6 +127,34 @@ const EntriesList: React.FC<EntriesListProps> = ({
     setIsFilterActive(false);
   };
 
+  // Função para lidar com a ordenação
+  const handleSort = (column: string) => {
+    setSortState(prevState => {
+      if (prevState.column === column) {
+        // Se já estiver ordenando por esta coluna, inverte a direção
+        return {
+          column: column,
+          direction: prevState.direction === 'asc' ? 'desc' : 'asc'
+        };
+      } else {
+        // Se for uma nova coluna, começa com ordenação descendente
+        return {
+          column: column,
+          direction: 'desc'
+        };
+      }
+    });
+  };
+
+  // Função para controlar visibilidade das colunas
+  const handleColumnToggle = (columnId: string) => {
+    setVisibleColumns(prevColumns => 
+      prevColumns.map(col => 
+        col.id === columnId ? { ...col, visible: !col.visible } : col
+      )
+    );
+  };
+
   const filteredEntries = useMemo(() => {
     if (!entries) return [];
     
@@ -139,11 +178,66 @@ const EntriesList: React.FC<EntriesListProps> = ({
     });
   }, [entries, monthFilter, originFilter, registrationSourceFilter]);
   
+  // Aplicando ordenação às entradas filtradas
   const sortedEntries = useMemo(() => {
-    return [...filteredEntries].sort(
-      (a, b) => b.date.getTime() - a.date.getTime()
-    ).slice(0, rowsToShow);
-  }, [filteredEntries, rowsToShow]);
+    let result = [...filteredEntries];
+    
+    // Aplica a ordenação se houver coluna selecionada
+    if (sortState.column) {
+      result.sort((a, b) => {
+        // Extrair valores com base na coluna selecionada
+        let valueA: any;
+        let valueB: any;
+        
+        switch (sortState.column) {
+          case 'date':
+            valueA = a.date.getTime();
+            valueB = b.date.getTime();
+            break;
+          case 'amountInvested':
+            valueA = a.amountInvested;
+            valueB = b.amountInvested;
+            break;
+          case 'btcAmount':
+            valueA = a.btcAmount;
+            valueB = b.btcAmount;
+            break;
+          case 'exchangeRate':
+            valueA = a.exchangeRate;
+            valueB = b.exchangeRate;
+            break;
+          case 'percentChange':
+            // Calcular a variação percentual para cada entrada
+            const currentRateValue = viewCurrency === 'USD' ? currentRate.usd : currentRate.brl;
+            valueA = ((currentRateValue - a.exchangeRate) / a.exchangeRate) * 100;
+            valueB = ((currentRateValue - b.exchangeRate) / b.exchangeRate) * 100;
+            break;
+          case 'currentValue':
+            // Calcular o valor atual para cada entrada
+            const rateValue = viewCurrency === 'USD' ? currentRate.usd : currentRate.brl;
+            valueA = a.btcAmount * rateValue;
+            valueB = b.btcAmount * rateValue;
+            break;
+          default:
+            valueA = a.date.getTime();
+            valueB = b.date.getTime();
+        }
+        
+        // Aplicar ordenação ascendente ou descendente
+        if (sortState.direction === 'asc') {
+          return valueA - valueB;
+        } else {
+          return valueB - valueA;
+        }
+      });
+    } else {
+      // Ordenação padrão por data (mais recente primeiro)
+      result.sort((a, b) => b.date.getTime() - a.date.getTime());
+    }
+    
+    // Limitar a quantidade de entradas conforme rowsToShow
+    return result.slice(0, rowsToShow);
+  }, [filteredEntries, rowsToShow, sortState, viewCurrency, currentRate]);
 
   const availableMonths = useMemo(() => {
     const months: {[key: string]: string} = {};
@@ -289,6 +383,13 @@ const EntriesList: React.FC<EntriesListProps> = ({
                 <FileUp size={16} />
                 {!isMobile && <span>Importar CSV</span>}
               </Button>
+              
+              {/* Controle de visibilidade de colunas */}
+              <ColumnVisibilityControl 
+                columns={visibleColumns}
+                onColumnToggle={handleColumnToggle}
+              />
+              
               <Popover open={isFilterPopoverOpen} onOpenChange={handleFilterPopoverOpenChange}>
                 <PopoverTrigger asChild>
                   <Button 
@@ -337,6 +438,9 @@ const EntriesList: React.FC<EntriesListProps> = ({
                   handleEditClick={handleEditClick}
                   handleDeleteClick={handleDeleteClick}
                   totals={calculateTotals('BRL')}
+                  sortState={sortState}
+                  onSort={handleSort}
+                  visibleColumns={visibleColumns}
                 />
                 <div className="flex justify-end mt-4">
                   <div className="flex items-center">
@@ -366,6 +470,9 @@ const EntriesList: React.FC<EntriesListProps> = ({
                   handleEditClick={handleEditClick}
                   handleDeleteClick={handleDeleteClick}
                   totals={calculateTotals('USD')}
+                  sortState={sortState}
+                  onSort={handleSort}
+                  visibleColumns={visibleColumns}
                 />
                 <div className="flex justify-end mt-4">
                   <div className="flex items-center">

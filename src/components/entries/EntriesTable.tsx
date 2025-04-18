@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -25,7 +26,7 @@ interface EntriesTableProps {
   };
   sortState: SortState;
   onSort: (column: string) => void;
-  visibleColumns: ColumnConfig[];
+  visibleColumns?: ColumnConfig[];
 }
 
 export const EntriesTable: React.FC<EntriesTableProps> = ({
@@ -39,7 +40,7 @@ export const EntriesTable: React.FC<EntriesTableProps> = ({
   totals,
   sortState,
   onSort,
-  visibleColumns,
+  visibleColumns = [],
 }) => {
   // Função para formatar valores em Bitcoin/Satoshis
   const formatBitcoinAmount = (amount: number) => {
@@ -62,7 +63,14 @@ export const EntriesTable: React.FC<EntriesTableProps> = ({
   };
 
   // Função para verificar visibilidade da coluna
+  // Agora com tratamento para caso visibleColumns esteja undefined ou vazio
   const isColumnVisible = (columnId: string) => {
+    // Se visibleColumns estiver vazio ou não definido, todas as colunas são visíveis
+    if (!visibleColumns || visibleColumns.length === 0) {
+      return true;
+    }
+    
+    // Caso contrário, verificamos se a coluna está marcada como visível
     return visibleColumns.find(col => col.id === columnId)?.visible ?? true;
   };
 
