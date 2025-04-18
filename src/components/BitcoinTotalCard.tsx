@@ -131,20 +131,20 @@ const BitcoinTotalCard: React.FC<BitcoinTotalCardProps> = ({
         <div className="flex justify-between items-end mt-4">
           <div className="flex flex-col">
             <p className="text-sm text-gray-400 mb-1">Portfólio</p>
-            <div className="relative">
-              <p className={`text-2xl font-bold transition-all duration-300 ease-in-out ${hiddenClass}`}>
-                {currencySymbol} {formatNumber(totalValueCurrent)}
-              </p>
-              <p className={`text-2xl font-bold transition-all duration-300 ease-in-out ${dotsClass}`}>
-                ●●●●
-              </p>
-            </div>
+                <div className="relative">
+                  <p className={`text-2xl font-bold transition-all duration-300 ease-in-out ${hiddenClass}`}>
+                    <span className="text-base align-top mr-0.5">{currencySymbol}</span> {formatNumber(totalValueCurrent)}
+                  </p>
+                  <p className={`text-2xl font-bold transition-all duration-300 ease-in-out ${dotsClass}`}>
+                    ●●●●
+                  </p>
+                </div>
             {/* Total investido em duas linhas */}
             <div className="relative mt-1">
               <div className={`flex flex-col transition-all duration-300 ease-in-out ${hiddenClass}`}>
                 <span className="text-sm text-gray-400">Total investido:</span>
                 <span className="text-sm text-gray-400">
-                  {currencySymbol} {formatNumber(totalInvested)}
+                  <span className="text-xs align-top mr-0.5">{currencySymbol}</span> {formatNumber(totalInvested)}
                 </span>
               </div>
               <div className={`flex flex-col transition-all duration-300 ease-in-out ${dotsClass}`}>
