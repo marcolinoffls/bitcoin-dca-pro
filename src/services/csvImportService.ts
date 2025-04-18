@@ -233,8 +233,9 @@ export const saveImportedEntries = async (entries: Partial<BitcoinEntry>[]) => {
     createdAt: new Date().toISOString()
   }));
   
+  // Corrigido o nome da tabela de 'bitcoin_entries' para 'aportes'
   const { error } = await supabase
-    .from('bitcoin_entries')
+    .from('aportes')  // NOME CORRETO DA TABELA
     .insert(preparedEntries);
   
   if (error) {
