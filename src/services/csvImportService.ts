@@ -234,8 +234,7 @@ export const saveImportedEntries = async (entries: Partial<BitcoinEntry>[]) => {
     }
     
     const userId = user.user.id;
-    // Mascarar ID do usuário no log
-    console.log(`Usuário autenticado: ${userId.substring(0, 5)}...`);
+    console.log(`Usuário autenticado: ${userId}`);
     
     // Mapear para todos os campos necessários da tabela
     const preparedEntries = entries.map(entry => {
@@ -254,47 +253,51 @@ export const saveImportedEntries = async (entries: Partial<BitcoinEntry>[]) => {
       
       return {
         data_aporte: formattedDate,
-        moeda: 'BRL',
+        moeda: 'BRL',                               // Campo obrigatório adicionado
         valor_investido: Number(entry.amount) || 0,
         bitcoin: Number(entry.btc) || 0,
-        cotacao: priceValue,
-        cotacao_moeda: 'BRL',
-        origem_aporte: entry.origin === 'p2p' ? 'p2p' : 'corretora',
+        cotacao: priceValue,                        // Uso da cotação calculada
+        cotacao_moeda: 'BRL',                       // Campo obrigatório adicionado
+        origem_aporte: entry.origin === 'p2p' ? 'p2p' : 'corretora', // Corrigido para 'corretora'
         origem_registro: 'planilha',
         user_id: userId,
         created_at: new Date().toISOString()
       };
     });
     
-    // Log mais seguro, sem expor dados sensíveis
-    console.log('Enviando dados para o Supabase:', {
-      qtdRegistros: preparedEntries.length,
-      periodoInicial: preparedEntries[0]?.data_aporte || 'N/A',
-      periodoFinal: preparedEntries[preparedEntries.length-1]?.data_aporte || 'N/A'
-    });
+    console.log('Enviando dados para o Supabase:', JSON.stringify(preparedEntries[0], null, 2));
     
     const { error } = await supabase
       .from('aportes')
       .insert(preparedEntries);
     
     if (error) {
-      console.error('Erro ao salvar aportes');
+      console.error('Erro ao salvar aportes:', error);
       
-      // Log interno mais seguro
+      // Código para análise detalhada do erro
       if ('message' in error) {
-        console.error('Tipo de erro:', error.code || 'Desconhecido');
+        console.error('Mensagem de erro detalhada:', error.message);
+        
+        if ('details' in error) {
+          console.error('Detalhes do erro:', error.details);
+        }
+        
+        if ('hint' in error) {
+          console.error('Dica do erro:', error.hint);
+        }
       }
       
-      throw new Error(`Erro ao salvar aportes. Por favor, tente novamente.`);
+      throw new Error(`Erro ao salvar aportes: ${error.message}`);
     }
     
-    console.log('Aportes salvos com sucesso:', preparedEntries.length);
+    console.log('Aportes salvos com sucesso');
     return { success: true, count: preparedEntries.length };
   } catch (error) {
-    console.error('Erro ao salvar aportes');
+    console.error('Erro completo ao salvar aportes:', error);
     throw error;
   }
 };
+
 /**
  * Função principal que realiza todo o processo de importação do CSV
  * Esta função foi refatorada para resolver o erro de exportação.
