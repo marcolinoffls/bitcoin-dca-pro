@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,9 +34,6 @@ export default function ResetPassword() {
       const params = new URLSearchParams(search);
       const code = params.get('code');
 
-      console.log('URL atual ➜', window.location.href);
-      console.log('params ➜', [...params.entries()]);
-
       if (!code) {               // ✅  nova condição
         setIsValid(false);
         setIsLoading(false);
@@ -44,17 +42,25 @@ export default function ResetPassword() {
 
       const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
-      if (error || !data.session) {
-        console.error('Erro ao trocar code pelo session:', error);
-        setIsValid(false);
+      if (error) {
+        // Token pode ter sido consumido no preview do e‑mail.
+        const sess = (await supabase.auth.getSession()).data.session;
+        if (sess) {
+          navigate('/set-password', { replace: true });
+          return;                 // encerra a função aqui
+        }
+        setIsValid(false);        // não há sessão -> mostra alerta
       } else {
-        setIsValid(true);   // sessão criada com sucesso
+        // Sessão criada agora -> segue para definir senha
+        navigate('/set-password', { replace: true });
+        return;                   // encerra para não rodar setIsLoading depois
       }
-      setIsLoading(false);
+      
+      setIsLoading(false);  // executa apenas se não houve redirect acima
     };
 
     run();
-  }, [search]);
+  }, [search, navigate]);
 
   /** UI para link inválido / expirado */
   const ErrorState = () => (

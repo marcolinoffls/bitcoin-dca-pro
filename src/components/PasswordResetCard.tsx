@@ -17,7 +17,7 @@ import { useAuth } from '@/hooks/useAuth';
  * -----------------
  * • Exibe um card na área logada para que o usuário solicite um link
  *   de redefinição de senha.
- * • Usa o hook usePasswordReset para disparar o e-mail via Supabase.
+ * • Usa o hook usePasswordReset para disparar o e‑mail via Supabase.
  * • Segue o padrão visual do projeto (shadcn/ui e tailwind).
  */
 export default function PasswordResetCard() {
@@ -34,8 +34,6 @@ export default function PasswordResetCard() {
     try {
       setIsSubmitting(true);
       await resetPassword(user.email);
-      await supabase.auth.signOut();   // limpa tokens desta aba
-
     } finally {
       setIsSubmitting(false);
       setShowForm(false); // fecha o mini-form após enviar
