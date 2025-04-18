@@ -33,6 +33,9 @@ export default function ResetPassword() {
       const params = new URLSearchParams(search);
       const code = params.get('code');
 
+      console.log('URL atual ➜', window.location.href);
+      console.log('params ➜', [...params.entries()]);
+
       if (!code) {               // ✅  nova condição
         setIsValid(false);
         setIsLoading(false);
