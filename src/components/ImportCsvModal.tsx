@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -76,21 +77,21 @@ const ImportCsvModal: React.FC<ImportCsvModalProps> = ({
 
       if (uploadMode === 'local') {
         // Importação local para o Supabase
-        await importCSV(file);
+        const result = await importCSV(file);
         toast({
           title: "Sucesso!",
-          description: "Aportes importados com sucesso",
+          description: result.message || "Aportes importados com sucesso",
         });
       } else if (uploadMode === 'webhook' && user) {
-        // Envio seguro para webhook externo - Função agora trabalha com assinatura assíncrona
-        await sendSecureCSVToWebhook(
+        // Envio seguro para webhook externo
+        const result = await sendSecureCSVToWebhook(
           file, 
           user.id,
           user.email || 'email-nao-disponivel'
         );
         toast({
           title: "Envio seguro concluído!",
-          description: "Seu arquivo foi enviado de forma segura para processamento externo.",
+          description: result.message || "Seu arquivo foi enviado de forma segura para processamento externo.",
         });
       }
       

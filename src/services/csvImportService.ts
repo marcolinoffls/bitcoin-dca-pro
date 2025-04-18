@@ -1,3 +1,4 @@
+
 import {
   validateCsvFile,
   sanitizeCsvData,
@@ -12,6 +13,14 @@ import { BitcoinEntry, Origin } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import Papa from 'papaparse';
 
+/**
+ * Interface para mapear os dados do CSV para o formato interno
+ * @property date Data do aporte no formato string
+ * @property amount Valor investido em moeda local
+ * @property btc Quantidade de Bitcoin adquirido
+ * @property rate Cotação calculada ou fornecida
+ * @property origin Origem do aporte (exchange ou p2p)
+ */
 interface CsvAporte {
   date: string;
   amount: number;
@@ -291,10 +300,11 @@ export const saveImportedEntries = async (entries: Partial<BitcoinEntry>[]) => {
 
 /**
  * Função principal que realiza todo o processo de importação do CSV
+ * Esta função foi refatorada para resolver o erro de exportação.
  * @param file Arquivo CSV a ser importado
  * @returns Objeto com status de sucesso e mensagem
  */
-export const importCSV = async (file: File) => {
+export const importCSV = async (file: File): Promise<{ success: boolean; message: string }> => {
   try {
     // Validar arquivo CSV usando as funções de segurança importadas
     validateCsvFile(file);
