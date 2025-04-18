@@ -1,118 +1,90 @@
-
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { AlertCircle } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 import ResetPasswordHeader from '@/components/auth/ResetPasswordHeader';
 import PasswordResetForm from '@/components/auth/PasswordResetForm';
 
 /**
- * Página de redefinição de senha
- * 
- * Este componente:
- * 1. Extrai o token da URL
- * 2. Verifica a validade do token usando verifyOtp
- * 3. Exibe o formulário de redefinição ou mensagem de erro
+ * Página que o usuário acessa ao clicar no link de redefinição de senha.
+ * O link enviado pelo Supabase (PKCE) tem a forma:
+ *   /reset-password?code=<AUTH_CODE>&type=recovery
+ *
+ * Passos:
+ * 1.  Lê o parâmetro ?code.
+ * 2.  Usa supabase.auth.exchangeCodeForSession(code) → cria sessão automaticamente.
+ * 3.  Se deu certo, exibe o formulário para o usuário definir uma nova senha.
  */
 export default function ResetPassword() {
-  const location = useLocation();
+  const { search } = useLocation();
   const navigate = useNavigate();
-  const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [isTokenLoading, setIsTokenLoading] = useState(true);
-  const [isTokenValid, setIsTokenValid] = useState<boolean | null>(null);
 
-  // Extrair e validar o token PKCE da URL
-  const extractTokenFromUrl = async () => {
-    setIsTokenLoading(true);
-    try {
-      // Pegar parâmetros da URL
-      const queryParams = new URLSearchParams(location.search);
-      const token = queryParams.get('token'); // Token PKCE de recuperação
-      const type = queryParams.get('type'); // Deve ser 'recovery'
-      
-      console.log("Parâmetros da URL:", {
-        token: token ? "Presente" : "Ausente",
-        type,
-        redirectTo: queryParams.get('redirect_to')
-      });
+  const [isLoading, setIsLoading] = useState(true);   // Spinner enquanto valida link
+  const [isValid, setIsValid] = useState<boolean>();  // true/false após validação
 
-      if (!token || type !== 'recovery') {
-        setIsTokenValid(false);
+  /** Efetua a troca do código PKCE pela sessão */
+  useEffect(() => {
+    const run = async () => {
+      setIsLoading(true);
+
+      const params = new URLSearchParams(search);
+      const code = params.get('code');
+      const type = params.get('type');        // deve vir "recovery"
+
+      if (!code || type !== 'recovery') {
+        setIsValid(false);
+        setIsLoading(false);
         return;
       }
 
-      // Tentar validar o token
-      const { data, error } = await supabase.auth.verifyOtp({
-        token,
-        type: 'recovery'
-      });
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
-      console.log("Resposta da validação:", {
-        success: !!data?.user,
-        error: error?.message
-      });
+      if (error || !data.session) {
+        console.error('Erro ao trocar code pelo session:', error);
+        setIsValid(false);
+      } else {
+        setIsValid(true);   // sessão criada com sucesso
+      }
+      setIsLoading(false);
+    };
 
-      if (error) throw error;
-      
-      setAccessToken(token);
-      setIsTokenValid(true);
+    run();
+  }, [search]);
 
-    } catch (error) {
-      console.error("Erro na validação:", error);
-      setIsTokenValid(false);
-    } finally {
-      setIsTokenLoading(false);
-    }
-  };
+  /** UI para link inválido / expirado */
+  const ErrorState = () => (
+    <div className="space-y-4">
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Link expirado ou inválido. Solicite uma nova redefinição.
+        </AlertDescription>
+      </Alert>
 
-  // Executar a extração e validação do token quando a página carregar
-  useEffect(() => {
-    extractTokenFromUrl();
-  }, [location]);
-
-  // Renderizar mensagem de erro quando o token é inválido
-  const renderErrorState = () => {
-    return (
-      <div className="space-y-4">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Link expirado ou inválido. Por favor, solicite uma nova redefinição de senha.
-          </AlertDescription>
-        </Alert>
-        
-        <Button 
-          onClick={() => navigate('/auth')} 
-          className="w-full"
-          variant="outline"
-        >
-          Voltar para Login
-        </Button>
-      </div>
-    );
-  };
+      <Button onClick={() => navigate('/auth')} className="w-full" variant="outline">
+        Voltar para login
+      </Button>
+    </div>
+  );
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
       <Card className="w-full max-w-md shadow-lg">
         <CardContent className="pt-6">
           <ResetPasswordHeader />
-          
+
           <div className="mt-6">
-            {isTokenLoading ? (
+            {isLoading ? (
               <div className="flex justify-center py-4">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-500"></div>
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-500" />
               </div>
-            ) : isTokenValid === false ? (
-              renderErrorState()
+            ) : isValid ? (
+              <PasswordResetForm isTokenLoading={isLoading} />
             ) : (
-              <PasswordResetForm 
-                accessToken={accessToken} 
-                isTokenLoading={isTokenLoading} 
-              />
+              <ErrorState />
             )}
           </div>
         </CardContent>

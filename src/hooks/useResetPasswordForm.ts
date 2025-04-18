@@ -1,137 +1,78 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 /**
- * Hook personalizado para gerenciar o formulário de redefinição de senha
- * 
- * Este hook contém:
- * 1. Estados do formulário (senha, confirmação, erros)
- * 2. Lógica de validação
- * 3. Lógica de submissão e atualização da senha
+ * Hook que gerencia o formulário de definição da nova senha.
+ * • Valida requisitos de força da senha
+ * • Chama supabase.auth.updateUser({ password })
+ * • Mostra toasts e faz logout + redirect ao final
  */
-export const useResetPasswordForm = (accessToken: string | null) => {
+export const useResetPasswordForm = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [passwordError, setPasswordError] = useState('');
+
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  /**
-   * Valida o formato e requisitos da senha
-   * Retorna true se a senha for válida, false caso contrário
-   */
-  const validatePassword = () => {
+  /** Regras de validação locais — retorna true se passou */
+  const validatePassword = (): boolean => {
     setPasswordError('');
-    
-    // Verificar preenchimento
-    if (!password || !confirmPassword) {
-      setPasswordError('Por favor, preencha todos os campos');
-      return false;
-    }
-    
-    // Verificar comprimento mínimo
-    if (password.length < 8) {
-      setPasswordError('A senha deve ter pelo menos 8 caracteres');
-      return false;
-    }
-    
-    // Verificar letras maiúsculas e minúsculas
-    if (!/[A-Z]/.test(password) || !/[a-z]/.test(password)) {
-      setPasswordError('A senha deve conter letras maiúsculas e minúsculas');
-      return false;
-    }
-    
-    // Verificar números
-    if (!/\d/.test(password)) {
-      setPasswordError('A senha deve conter pelo menos um número');
-      return false;
-    }
-    
-    // Verificar caracteres especiais
-    if (!/[^A-Za-z0-9]/.test(password)) {
-      setPasswordError('A senha deve conter pelo menos um caractere especial');
-      return false;
-    }
-    
-    // Verificar correspondência entre senha e confirmação
-    if (password !== confirmPassword) {
-      setPasswordError('As senhas não coincidem');
-      return false;
-    }
-    
-    // Senha válida
+
+    if (!password || !confirmPassword)
+      return setError('Por favor, preencha todos os campos');
+
+    if (password.length < 8)
+      return setError('A senha deve ter pelo menos 8 caracteres');
+
+    if (!/[A-Z]/.test(password) || !/[a-z]/.test(password))
+      return setError('Use letras maiúsculas e minúsculas');
+
+    if (!/\d/.test(password))
+      return setError('Inclua ao menos um número');
+
+    if (!/[^A-Za-z0-9]/.test(password))
+      return setError('Inclua um caractere especial');
+
+    if (password !== confirmPassword)
+      return setError('As senhas não coincidem');
+
     return true;
   };
 
+  /** Helper para reduzir repetição */
+  const setError = (msg: string) => {
+    setPasswordError(msg);
+    return false;
+  };
+
+  /** Handler de submit do formulário */
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Verificação completa da senha antes de prosseguir
     if (!validatePassword()) return;
-    
-    // Verificar se temos o token de acesso
-    if (!accessToken) {
-      setPasswordError('Token de redefinição ausente ou inválido. Por favor, solicite uma nova redefinição de senha.');
-      return;
-    }
 
     setIsSubmitting(true);
-    
     try {
-      console.log("Iniciando processo de redefinição de senha com token PKCE");
-      
-      // Atualizar a senha usando o token PKCE e updateUserPassword
-      const { error } = await supabase.auth.updateUser({
-        password: password
-      });
-      
-      if (error) {
-        console.error("Erro ao atualizar senha:", error.message);
-        throw error;
-      }
-      
-      // Senha atualizada com sucesso
-      console.log("Senha atualizada com sucesso");
+      // Supabase já tem a sessão ativa (troca PKCE); basta atualizar o user
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+
       toast({
-        title: "Senha atualizada com sucesso",
-        description: "Sua senha foi redefinida. Agora você pode fazer login com sua nova senha.",
-        variant: "success",
+        title: 'Senha atualizada!',
+        description: 'Faça login novamente com sua nova credencial.',
+        variant: 'success',
       });
-      
-      // Encerrar a sessão atual para garantir que o usuário faça login com a nova senha
+
+      // Logout para evitar sessão antiga
       await supabase.auth.signOut();
-      
-      // Redirecionar para a página de login
-      setTimeout(() => {
-        navigate('/auth');
-      }, 1500);
-    } catch (error: any) {
-      console.error('Erro ao redefinir a senha:', error);
-      
-      // Tratamento de erros específicos
-      let errorMessage = 'Ocorreu um erro ao redefinir a senha. Por favor, tente novamente.';
-      
-      if (error.message?.includes('JWT') || 
-          error.message?.includes('token') || 
-          error.message?.includes('expired') || 
-          error.message?.includes('invalid')) {
-        errorMessage = 'Link expirado ou inválido. Por favor, solicite uma nova redefinição de senha.';
-      } else if (error.message?.includes('rate limit')) {
-        errorMessage = 'Muitas tentativas. Por favor, aguarde alguns minutos antes de tentar novamente.';
-      } else if (error.message?.includes('User not found') || error.message?.includes('Invalid user')) {
-        errorMessage = 'Usuário não encontrado. O link pode ter expirado.';
-      } else if (error.message?.includes('stronger password') || error.message?.includes('Password should')) {
-        errorMessage = 'A senha não atende aos requisitos de segurança. Use uma combinação de letras, números e caracteres especiais.';
-      } else if (error.message && error.message !== '{}' && error.message !== '!') {
-        errorMessage = error.message;
-      }
-      
-      setPasswordError(errorMessage);
+      navigate('/auth');
+    } catch (err: any) {
+      console.error('Erro ao redefinir senha:', err);
+      setPasswordError(err.message || 'Erro inesperado ao redefinir senha.');
     } finally {
       setIsSubmitting(false);
     }
@@ -146,6 +87,6 @@ export const useResetPasswordForm = (accessToken: string | null) => {
     setShowPassword,
     isSubmitting,
     passwordError,
-    handleResetPassword
+    handleResetPassword,
   };
 };
