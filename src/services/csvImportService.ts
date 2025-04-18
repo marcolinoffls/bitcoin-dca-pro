@@ -306,10 +306,19 @@ export const saveImportedEntries = async (entries: Partial<BitcoinEntry>[]) => {
  */
 export const importCSV = async (file: File): Promise<{ success: boolean; message: string }> => {
   try {
+    // Log seguro - apenas metadados do arquivo, sem conteúdo
+    console.log('Iniciando importação:', {
+      tipo: file.type, 
+      tamanho: `${Math.round(file.size / 1024)} KB`
+    });
+    
     // Validar arquivo CSV usando as funções de segurança importadas
     validateCsvFile(file);
     
     const processedData = await processCSV(file);
+    
+    // Log seguro - apenas quantidade de registros
+    console.log(`Processamento concluído: ${processedData.length} registros válidos`);
     
     // Converter dados processados para o formato de BitcoinEntry
     const entriesToSave: Partial<BitcoinEntry>[] = processedData.map(item => ({
@@ -324,12 +333,38 @@ export const importCSV = async (file: File): Promise<{ success: boolean; message
     // Sanitizar dados antes de salvar (usando função importada)
     const sanitizedEntries = sanitizeCsvData(entriesToSave);
     
+    // Log seguro - apenas contadores
+    console.log('Preparando persistência:', {
+      registrosOriginais: processedData.length,
+      registrosSanitizados: sanitizedEntries.length,
+      periodo: sanitizedEntries.length > 0 ? 
+        `${sanitizedEntries[0].date?.substring(0, 10) || 'N/A'} a ${sanitizedEntries[sanitizedEntries.length-1].date?.substring(0, 10) || 'N/A'}` : 
+        'N/A'
+    });
+    
     // Salvar entradas processadas
     await saveImportedEntries(sanitizedEntries);
-    return { success: true, message: `${sanitizedEntries.length} aportes importados com sucesso.` };
+    
+    // Log seguro de conclusão
+    console.log(`Importação finalizada com sucesso: ${sanitizedEntries.length} registros`);
+    
+    return { 
+      success: true, 
+      message: `${sanitizedEntries.length} aportes importados com sucesso.` 
+    };
   } catch (error) {
-    console.error('Erro na importação:', error);
-    return { success: false, message: error instanceof Error ? error.message : 'Erro desconhecido ao importar CSV.' };
+    // Log seguro de erro - apenas mensagem, sem detalhes técnicos completos
+    console.error('Erro na importação de CSV:', 
+      error instanceof Error ? 
+        error.message.substring(0, 100) + (error.message.length > 100 ? '...' : '') : 
+        'Erro desconhecido');
+    
+    return { 
+      success: false, 
+      message: error instanceof Error ? 
+        error.message : 
+        'Erro desconhecido ao importar CSV.' 
+    };
   }
 };
 
