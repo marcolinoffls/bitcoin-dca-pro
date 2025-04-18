@@ -1,12 +1,12 @@
-
 import React from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { TrendingDown, TrendingUp, Edit, Trash2 } from 'lucide-react';
+import { TrendingDown, TrendingUp, Edit, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { formatNumber } from '@/lib/utils';
 import { BitcoinEntry } from '@/types';
+import { ColumnConfig, SortState } from '@/types/table';
 
 interface EntriesTableProps {
   entries: BitcoinEntry[];
@@ -23,6 +23,9 @@ interface EntriesTableProps {
     percentChange: number;
     currentValue: number;
   };
+  sortState: SortState;
+  onSort: (column: string) => void;
+  visibleColumns: ColumnConfig[];
 }
 
 export const EntriesTable: React.FC<EntriesTableProps> = ({
@@ -33,7 +36,10 @@ export const EntriesTable: React.FC<EntriesTableProps> = ({
   isMobile,
   handleEditClick,
   handleDeleteClick,
-  totals
+  totals,
+  sortState,
+  onSort,
+  visibleColumns,
 }) => {
   const formatBitcoinAmount = (amount: number) => {
     if (displayUnit === 'SATS') {
@@ -43,17 +49,99 @@ export const EntriesTable: React.FC<EntriesTableProps> = ({
     return formatNumber(amount, 8);
   };
 
+  const renderSortIcon = (columnId: string) => {
+    if (sortState.column !== columnId) return null;
+
+    return sortState.direction === 'asc' ? (
+      <ChevronUp className="h-4 w-4 ml-1 text-bitcoin" />
+    ) : (
+      <ChevronDown className="h-4 w-4 ml-1 text-bitcoin" />
+    );
+  };
+
+  const isColumnVisible = (columnId: string) => {
+    return visibleColumns.find(col => col.id === columnId)?.visible ?? true;
+  };
+
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead className={isMobile ? "text-xs" : ""}>Data</TableHead>
-          <TableHead className={isMobile ? "text-xs" : ""}>Valor Investido</TableHead>
-          <TableHead className={isMobile ? "text-xs" : ""}>{displayUnit === 'SATS' ? 'Satoshis' : 'Bitcoin'}</TableHead>
-          <TableHead className={isMobile ? "text-xs" : ""}>Cotação</TableHead>
-          <TableHead className={isMobile ? "text-xs" : ""}>Variação</TableHead>
-          <TableHead className={isMobile ? "text-xs" : ""}>Valor Atual</TableHead>
-          <TableHead className={`text-right ${isMobile ? "text-xs" : ""}`}>Ações</TableHead>
+          {isColumnVisible('date') && (
+            <TableHead 
+              className={`${isMobile ? "text-xs" : ""} cursor-pointer`}
+              onClick={() => onSort('date')}
+            >
+              <div className="flex items-center">
+                Data
+                {renderSortIcon('date')}
+              </div>
+            </TableHead>
+          )}
+          
+          {isColumnVisible('amountInvested') && (
+            <TableHead 
+              className={`${isMobile ? "text-xs" : ""} cursor-pointer`}
+              onClick={() => onSort('amountInvested')}
+            >
+              <div className="flex items-center">
+                Valor Investido
+                {renderSortIcon('amountInvested')}
+              </div>
+            </TableHead>
+          )}
+          
+          {isColumnVisible('btcAmount') && (
+            <TableHead 
+              className={`${isMobile ? "text-xs" : ""} cursor-pointer`}
+              onClick={() => onSort('btcAmount')}
+            >
+              <div className="flex items-center">
+                {displayUnit === 'SATS' ? 'Satoshis' : 'Bitcoin'}
+                {renderSortIcon('btcAmount')}
+              </div>
+            </TableHead>
+          )}
+          
+          {isColumnVisible('exchangeRate') && (
+            <TableHead 
+              className={`${isMobile ? "text-xs" : ""} cursor-pointer`}
+              onClick={() => onSort('exchangeRate')}
+            >
+              <div className="flex items-center">
+                Cotação
+                {renderSortIcon('exchangeRate')}
+              </div>
+            </TableHead>
+          )}
+          
+          {isColumnVisible('percentChange') && (
+            <TableHead 
+              className={`${isMobile ? "text-xs" : ""} cursor-pointer`}
+              onClick={() => onSort('percentChange')}
+            >
+              <div className="flex items-center">
+                Variação
+                {renderSortIcon('percentChange')}
+              </div>
+            </TableHead>
+          )}
+          
+          {isColumnVisible('currentValue') && (
+            <TableHead 
+              className={`${isMobile ? "text-xs" : ""} cursor-pointer`}
+              onClick={() => onSort('currentValue')}
+            >
+              <div className="flex items-center">
+                Valor Atual
+                {renderSortIcon('currentValue')}
+              </div>
+            </TableHead>
+          )}
+          
+          <TableHead className={`text-right ${isMobile ? "text-xs" : ""}`}>
+            Ações
+          </TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -80,44 +168,62 @@ export const EntriesTable: React.FC<EntriesTableProps> = ({
           
           return (
             <TableRow key={entry.id}>
-              <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                {format(entry.date, 'dd/MM/yyyy', { locale: ptBR })}
-                {entry.origin === 'planilha' && (
-                  <span className="ml-1 text-xs text-muted-foreground">(planilha)</span>
-                )}
-                {entry.registrationSource === 'planilha' && (
-                  <span className="ml-1 text-xs text-yellow-600">●</span>
-                )}
-              </TableCell>
-              <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(investedValue)}
-              </TableCell>
-              <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                {formatBitcoinAmount(entry.btcAmount)}
-              </TableCell>
-              <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(entryRateInViewCurrency)}
-              </TableCell>
-              <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                <div className="flex items-center">
-                  {percentChange > 0 ? (
-                    <TrendingUp className="h-4 w-4 mr-1 text-green-500" />
-                  ) : (
-                    <TrendingDown className="h-4 w-4 mr-1 text-red-500" />
+              {isColumnVisible('date') && (
+                <TableCell className={isMobile ? "text-xs py-2" : ""}>
+                  {format(entry.date, 'dd/MM/yyyy', { locale: ptBR })}
+                  {entry.origin === 'planilha' && (
+                    <span className="ml-1 text-xs text-muted-foreground">(planilha)</span>
                   )}
-                  <span className={percentChange > 0 ? 'text-green-500' : 'text-red-500'}>
-                    {formatNumber(percentChange)}%
-                  </span>
-                </div>
-              </TableCell>
-              <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                <div className={percentChange > 0 ? 'text-green-500' : 'text-red-500'}>
-                  {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(currentValue)}
-                  <div className="text-xs text-muted-foreground">
-                    {percentChange > 0 ? '+' : ''}{formatNumber(currentValue - investedValue)}
+                  {entry.registrationSource === 'planilha' && (
+                    <span className="ml-1 text-xs text-yellow-600">●</span>
+                  )}
+                </TableCell>
+              )}
+              
+              {isColumnVisible('amountInvested') && (
+                <TableCell className={isMobile ? "text-xs py-2" : ""}>
+                  {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(entry.amountInvested)}
+                </TableCell>
+              )}
+              
+              {isColumnVisible('btcAmount') && (
+                <TableCell className={isMobile ? "text-xs py-2" : ""}>
+                  {formatBitcoinAmount(entry.btcAmount)}
+                </TableCell>
+              )}
+              
+              {isColumnVisible('exchangeRate') && (
+                <TableCell className={isMobile ? "text-xs py-2" : ""}>
+                  {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(entry.exchangeRate)}
+                </TableCell>
+              )}
+              
+              {isColumnVisible('percentChange') && (
+                <TableCell className={isMobile ? "text-xs py-2" : ""}>
+                  <div className="flex items-center">
+                    {percentChange > 0 ? (
+                      <TrendingUp className="h-4 w-4 mr-1 text-green-500" />
+                    ) : (
+                      <TrendingDown className="h-4 w-4 mr-1 text-red-500" />
+                    )}
+                    <span className={percentChange > 0 ? 'text-green-500' : 'text-red-500'}>
+                      {formatNumber(percentChange)}%
+                    </span>
                   </div>
-                </div>
-              </TableCell>
+                </TableCell>
+              )}
+              
+              {isColumnVisible('currentValue') && (
+                <TableCell className={isMobile ? "text-xs py-2" : ""}>
+                  <div className={percentChange > 0 ? 'text-green-500' : 'text-red-500'}>
+                    {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(currentValue)}
+                    <div className="text-xs text-muted-foreground">
+                      {percentChange > 0 ? '+' : ''}{formatNumber(currentValue - investedValue)}
+                    </div>
+                  </div>
+                </TableCell>
+              )}
+              
               <TableCell className={`text-right ${isMobile ? "text-xs py-2" : ""}`}>
                 <div className="flex justify-end">
                   <Button

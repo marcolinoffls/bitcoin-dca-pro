@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -20,6 +19,8 @@ import { EntriesTable } from './entries/EntriesTable';
 import { EntryFilters } from './entries/EntryFilters';
 import { ROWS_PER_PAGE_OPTIONS } from './entries/constants';
 import { useQueryClient } from '@tanstack/react-query';
+import { SortState, ColumnConfig, DEFAULT_COLUMNS, SortableColumn } from '@/types/table';
+import ColumnVisibilityControl from './entries/ColumnVisibilityControl';
 
 interface EntriesListProps {
   entries: BitcoinEntry[];
@@ -139,12 +140,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
     });
   }, [entries, monthFilter, originFilter, registrationSourceFilter]);
   
-  const sortedEntries = useMemo(() => {
-    return [...filteredEntries].sort(
-      (a, b) => b.date.getTime() - a.date.getTime()
-    ).slice(0, rowsToShow);
-  }, [filteredEntries, rowsToShow]);
-
   const availableMonths = useMemo(() => {
     const months: {[key: string]: string} = {};
     
@@ -253,6 +248,87 @@ const EntriesList: React.FC<EntriesListProps> = ({
     ? entries.find(entry => entry.id === selectedEntryId) 
     : null;
 
+  const [sortState, setSortState] = useState<SortState>({
+    column: 'date',
+    direction: 'desc'
+  });
+  
+  const [visibleColumns, setVisibleColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
+
+  const sortedEntries = useMemo(() => {
+    return [...filteredEntries].sort((a, b) => {
+      if (!sortState.column) return 0;
+
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortState.column) {
+        case 'date':
+          aValue = new Date(a.date).getTime();
+          bValue = new Date(b.date).getTime();
+          break;
+        case 'amountInvested':
+          aValue = a.amountInvested;
+          bValue = b.amountInvested;
+          break;
+        case 'btcAmount':
+          aValue = a.btcAmount;
+          bValue = b.btcAmount;
+          break;
+        case 'exchangeRate':
+          aValue = a.exchangeRate;
+          bValue = b.exchangeRate;
+          break;
+        case 'percentChange':
+          const aRate = a.currency === selectedCurrency ? a.exchangeRate : 
+            (a.currency === 'USD' ? a.exchangeRate * (currentRate.brl / currentRate.usd) : 
+            a.exchangeRate / (currentRate.brl / currentRate.usd));
+          const bRate = b.currency === selectedCurrency ? b.exchangeRate : 
+            (b.currency === 'USD' ? b.exchangeRate * (currentRate.brl / currentRate.usd) : 
+            b.exchangeRate / (currentRate.brl / currentRate.usd));
+          const currentRateValue = selectedCurrency === 'USD' ? currentRate.usd : currentRate.brl;
+          aValue = ((currentRateValue - aRate) / aRate) * 100;
+          bValue = ((currentRateValue - bRate) / bRate) * 100;
+          break;
+        case 'currentValue':
+          const aCurrentRate = a.currency === selectedCurrency ? a.exchangeRate : 
+            (a.currency === 'USD' ? a.exchangeRate * (currentRate.brl / currentRate.usd) : 
+            a.exchangeRate / (currentRate.brl / currentRate.usd));
+          const bCurrentRate = b.currency === selectedCurrency ? b.exchangeRate : 
+            (b.currency === 'USD' ? b.exchangeRate * (currentRate.brl / currentRate.usd) : 
+            b.exchangeRate / (currentRate.brl / currentRate.usd));
+          aValue = a.btcAmount * (selectedCurrency === 'USD' ? currentRate.usd : currentRate.brl);
+          bValue = b.btcAmount * (selectedCurrency === 'USD' ? currentRate.usd : currentRate.brl);
+          break;
+        default:
+          return 0;
+      }
+
+      if (sortState.direction === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    }).slice(0, rowsToShow);
+  }, [filteredEntries, sortState, rowsToShow, selectedCurrency, currentRate]);
+
+  const handleSort = (column: string) => {
+    setSortState(prev => ({
+      column: column as SortableColumn,
+      direction: prev.column === column && prev.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  };
+
+  const handleColumnToggle = (columnId: string) => {
+    setVisibleColumns(prev => 
+      prev.map(col => 
+        col.id === columnId 
+          ? { ...col, visible: !col.visible }
+          : col
+      )
+    );
+  };
+
   return (
     <>
       <Card className="mt-6">
@@ -281,6 +357,12 @@ const EntriesList: React.FC<EntriesListProps> = ({
                 <FileUp size={16} />
                 {!isMobile && <span>Importar CSV</span>}
               </Button>
+              
+              <ColumnVisibilityControl
+                columns={visibleColumns}
+                onColumnToggle={handleColumnToggle}
+              />
+              
               <Popover open={isFilterPopoverOpen} onOpenChange={handleFilterPopoverOpenChange}>
                 <PopoverTrigger asChild>
                   <Button 
@@ -329,6 +411,9 @@ const EntriesList: React.FC<EntriesListProps> = ({
                   handleEditClick={handleEditClick}
                   handleDeleteClick={handleDeleteClick}
                   totals={calculateTotals('BRL')}
+                  sortState={sortState}
+                  onSort={handleSort}
+                  visibleColumns={visibleColumns}
                 />
                 <div className="flex justify-end mt-4">
                   <div className="flex items-center">
@@ -358,6 +443,9 @@ const EntriesList: React.FC<EntriesListProps> = ({
                   handleEditClick={handleEditClick}
                   handleDeleteClick={handleDeleteClick}
                   totals={calculateTotals('USD')}
+                  sortState={sortState}
+                  onSort={handleSort}
+                  visibleColumns={visibleColumns}
                 />
                 <div className="flex justify-end mt-4">
                   <div className="flex items-center">
