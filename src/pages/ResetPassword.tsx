@@ -42,18 +42,20 @@ export default function ResetPassword() {
       const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
       if (error) {
-        // Token pode ter sido consumido no preview do e‑mail, mas sessão já existe
+        // Token pode ter sido consumido no preview do e‑mail.
         const sess = (await supabase.auth.getSession()).data.session;
         if (sess) {
           navigate('/set-password', { replace: true });
-          return;
+          return;                 // encerra a função aqui
         }
-        // Nenhuma sessão → mostra alerta de link inválido
-        setIsValid(false);
+        setIsValid(false);        // não há sessão -> mostra alerta
       } else {
-        // Sessão criada agora → segue para definir senha
+        // Sessão criada agora -> segue para definir senha
         navigate('/set-password', { replace: true });
+        return;                   // encerra para não rodar setIsLoading depois
       }
+      
+      setIsLoading(false);  // executa apenas se não houve redirect acima
 
     run();
   }, [search]);
