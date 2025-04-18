@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -56,9 +57,10 @@ export default function ResetPassword() {
       }
       
       setIsLoading(false);  // executa apenas se não houve redirect acima
+    };
 
     run();
-  }, [search]);
+  }, [search, navigate]);
 
   /** UI para link inválido / expirado */
   const ErrorState = () => (
