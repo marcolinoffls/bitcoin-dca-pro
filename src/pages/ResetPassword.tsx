@@ -33,9 +33,6 @@ export default function ResetPassword() {
       const params = new URLSearchParams(search);
       const code = params.get('code');
 
-      console.log('URL atual ➜', window.location.href);
-      console.log('params ➜', [...params.entries()]);
-
       if (!code) {               // ✅  nova condição
         setIsValid(false);
         setIsLoading(false);
@@ -43,6 +40,22 @@ export default function ResetPassword() {
       }
 
       const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+      // Troca do code pelo session
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+      
+      if (error) {
+        // Token pode ter sido consumido no preview do e‑mail, mas sessão já existe
+        const sess = (await supabase.auth.getSession()).data.session;
+        if (sess) {
+          navigate('/set-password', { replace: true });
+          return;
+        }
+        // Nenhuma sessão → mostra alerta de link inválido
+        setIsValid(false);
+      } else {
+        // Sessão criada agora → segue para definir senha
+        navigate('/set-password', { replace: true });
+      }
 
       if (error || !data.session) {
         console.error('Erro ao trocar code pelo session:', error);
