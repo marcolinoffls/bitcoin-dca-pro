@@ -227,23 +227,33 @@ export const saveImportedEntries = async (entries: Partial<BitcoinEntry>[]) => {
     const userId = user.user.id;
     console.log(`Usuário autenticado: ${userId}`);
     
-    // Converter para o formato esperado pelo Supabase
-    // Usar snake_case para nomes de colunas
-    const preparedEntries = entries.map(entry => ({
-      date: entry.date,
-      amount: entry.amount,
-      btc: entry.btc,
-      price: entry.price,
-      origin: entry.origin,
-      registration_source: 'planilha', // Convertido para snake_case
-      user_id: userId,
-      created_at: new Date().toISOString() // Convertido para snake_case
-    }));
+    // Estrutura bem definida para os dados
+    // Incluindo apenas os campos necessários que existem na tabela
+    const preparedEntries = entries.map(entry => {
+      // Converter formato de data se necessário
+      let formattedDate = entry.date;
+      if (formattedDate && !formattedDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        // Se a data não estiver no formato YYYY-MM-DD, tenta converter
+        const date = new Date(formattedDate);
+        formattedDate = date.toISOString().split('T')[0];
+      }
+      
+      return {
+        date: formattedDate,
+        amount: Number(entry.amount) || 0, // Garantir que é número
+        btc: Number(entry.btc) || 0,      // Garantir que é número
+        price: Number(entry.price) || 0,   // Garantir que é número
+        origin: entry.origin === 'p2p' ? 'p2p' : 'exchange',
+        registration_source: 'planilha',
+        user_id: userId,
+        created_at: new Date().toISOString() // Formato ISO padrão
+      };
+    });
     
     console.log('Enviando dados para o Supabase:', JSON.stringify(preparedEntries[0], null, 2));
     
-    // Usar a tabela correta 'aportes'
-    const { data, error } = await supabase
+    // Envio simplificado - sem especificar colunas
+    const { error } = await supabase
       .from('aportes')
       .insert(preparedEntries);
     
@@ -253,13 +263,12 @@ export const saveImportedEntries = async (entries: Partial<BitcoinEntry>[]) => {
     }
     
     console.log('Aportes salvos com sucesso');
-    return data;
+    return { success: true, count: preparedEntries.length };
   } catch (error) {
     console.error('Erro completo ao salvar aportes:', error);
     throw error;
   }
 };
-
 /**
  * Função principal que realiza todo o processo de importação do CSV
  * @param file Arquivo CSV a ser importado
