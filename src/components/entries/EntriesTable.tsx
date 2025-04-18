@@ -41,6 +41,7 @@ export const EntriesTable: React.FC<EntriesTableProps> = ({
   onSort,
   visibleColumns,
 }) => {
+  // Função para formatar valores em Bitcoin/Satoshis
   const formatBitcoinAmount = (amount: number) => {
     if (displayUnit === 'SATS') {
       const satoshis = amount * 100000000;
@@ -49,6 +50,7 @@ export const EntriesTable: React.FC<EntriesTableProps> = ({
     return formatNumber(amount, 8);
   };
 
+  // Função para renderizar ícone de ordenação
   const renderSortIcon = (columnId: string) => {
     if (sortState.column !== columnId) return null;
 
@@ -59,8 +61,20 @@ export const EntriesTable: React.FC<EntriesTableProps> = ({
     );
   };
 
+  // Função para verificar visibilidade da coluna
   const isColumnVisible = (columnId: string) => {
     return visibleColumns.find(col => col.id === columnId)?.visible ?? true;
+  };
+
+  // Função para converter valores entre moedas
+  const convertCurrencyValue = (value: number, fromCurrency: 'BRL' | 'USD') => {
+    if (fromCurrency === currencyView) return value;
+    
+    if (fromCurrency === 'USD' && currencyView === 'BRL') {
+      return value * currentRate.brl / currentRate.usd;
+    } else {
+      return value * currentRate.usd / currentRate.brl;
+    }
   };
 
   return (
@@ -146,25 +160,15 @@ export const EntriesTable: React.FC<EntriesTableProps> = ({
       </TableHeader>
       <TableBody>
         {entries.map((entry) => {
+          // Conversão de valores para a moeda de visualização
+          const investedValue = convertCurrencyValue(entry.amountInvested, entry.currency);
+          const exchangeRateInViewCurrency = convertCurrencyValue(entry.exchangeRate, entry.currency);
+          
+          // Cálculos de variação e valor atual
           const currentRateValue = currencyView === 'USD' ? currentRate.usd : currentRate.brl;
-          
-          let entryRateInViewCurrency = entry.exchangeRate;
-          if (entry.currency !== currencyView) {
-            entryRateInViewCurrency = entry.currency === 'USD' 
-              ? entry.exchangeRate * (currentRate.brl / currentRate.usd)
-              : entry.exchangeRate / (currentRate.brl / currentRate.usd);
-          }
-          
-          const percentChange = ((currentRateValue - entryRateInViewCurrency) / entryRateInViewCurrency) * 100;
-          
-          let investedValue = entry.amountInvested;
-          if (entry.currency !== currencyView) {
-            investedValue = entry.currency === 'USD'
-              ? entry.amountInvested * (currentRate.brl / currentRate.usd)
-              : entry.amountInvested / (currentRate.brl / currentRate.usd);
-          }
-          
-          const currentValue = investedValue * (1 + percentChange / 100);
+          const percentChange = ((currentRateValue - exchangeRateInViewCurrency) / exchangeRateInViewCurrency) * 100;
+          const currentValue = entry.btcAmount * currentRateValue;
+          const profit = currentValue - investedValue;
           
           return (
             <TableRow key={entry.id}>
@@ -182,7 +186,7 @@ export const EntriesTable: React.FC<EntriesTableProps> = ({
               
               {isColumnVisible('amountInvested') && (
                 <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                  {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(entry.amountInvested)}
+                  {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(investedValue)}
                 </TableCell>
               )}
               
@@ -194,7 +198,7 @@ export const EntriesTable: React.FC<EntriesTableProps> = ({
               
               {isColumnVisible('exchangeRate') && (
                 <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                  {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(entry.exchangeRate)}
+                  {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(exchangeRateInViewCurrency)}
                 </TableCell>
               )}
               
@@ -215,10 +219,10 @@ export const EntriesTable: React.FC<EntriesTableProps> = ({
               
               {isColumnVisible('currentValue') && (
                 <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                  <div className={percentChange > 0 ? 'text-green-500' : 'text-red-500'}>
+                  <div className={profit > 0 ? 'text-green-500' : 'text-red-500'}>
                     {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(currentValue)}
                     <div className="text-xs text-muted-foreground">
-                      {percentChange > 0 ? '+' : ''}{formatNumber(currentValue - investedValue)}
+                      {profit > 0 ? '+' : ''}{formatNumber(profit)}
                     </div>
                   </div>
                 </TableCell>
@@ -247,6 +251,7 @@ export const EntriesTable: React.FC<EntriesTableProps> = ({
           );
         })}
         
+        {/* Linha de totais */}
         <TableRow className="bg-gray-100/80 font-semibold border-t-2">
           <TableCell className={isMobile ? "text-xs py-2" : ""}>
             TOTAIS
