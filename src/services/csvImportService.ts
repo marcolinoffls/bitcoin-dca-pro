@@ -217,30 +217,46 @@ const validateData = (data: CsvAporte[]): CsvAporte[] => {
  * @param entries Array de aportes a serem salvos
  */
 export const saveImportedEntries = async (entries: Partial<BitcoinEntry>[]) => {
-  const { data: user } = await supabase.auth.getUser();
-  
-  if (!user?.user) {
-    throw new Error('Usuário não autenticado');
-  }
-  
-  const userId = user.user.id;
-  
-  // Adiciona o userId e a fonte de registro (planilha) em cada entrada
-  const preparedEntries = entries.map(entry => ({
-    ...entry,
-    user_id: userId,
-    registrationSource: 'planilha',
-    createdAt: new Date().toISOString()
-  }));
-  
-  // Corrigido o nome da tabela de 'bitcoin_entries' para 'aportes'
-  const { error } = await supabase
-    .from('aportes')  // NOME CORRETO DA TABELA
-    .insert(preparedEntries);
-  
-  if (error) {
-    console.error('Erro ao salvar aportes:', error);
-    throw new Error(`Erro ao salvar aportes: ${error.message}`);
+  try {
+    const { data: user } = await supabase.auth.getUser();
+    
+    if (!user?.user) {
+      throw new Error('Usuário não autenticado');
+    }
+    
+    const userId = user.user.id;
+    console.log(`Usuário autenticado: ${userId}`);
+    
+    // Converter para o formato esperado pelo Supabase
+    // Usar snake_case para nomes de colunas
+    const preparedEntries = entries.map(entry => ({
+      date: entry.date,
+      amount: entry.amount,
+      btc: entry.btc,
+      price: entry.price,
+      origin: entry.origin,
+      registration_source: 'planilha', // Convertido para snake_case
+      user_id: userId,
+      created_at: new Date().toISOString() // Convertido para snake_case
+    }));
+    
+    console.log('Enviando dados para o Supabase:', JSON.stringify(preparedEntries[0], null, 2));
+    
+    // Usar a tabela correta 'aportes'
+    const { data, error } = await supabase
+      .from('aportes')
+      .insert(preparedEntries);
+    
+    if (error) {
+      console.error('Erro ao salvar aportes:', error);
+      throw new Error(`Erro ao salvar aportes: ${error.message}`);
+    }
+    
+    console.log('Aportes salvos com sucesso');
+    return data;
+  } catch (error) {
+    console.error('Erro completo ao salvar aportes:', error);
+    throw error;
   }
 };
 
