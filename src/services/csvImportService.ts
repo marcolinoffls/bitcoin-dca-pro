@@ -212,10 +212,6 @@ const validateData = (data: CsvAporte[]): CsvAporte[] => {
   });
 };
 
-/**
- * Salva os aportes importados no Supabase
- * @param entries Array de aportes a serem salvos
- */
 export const saveImportedEntries = async (entries: Partial<BitcoinEntry>[]) => {
   try {
     const { data: user } = await supabase.auth.getUser();
@@ -227,38 +223,49 @@ export const saveImportedEntries = async (entries: Partial<BitcoinEntry>[]) => {
     const userId = user.user.id;
     console.log(`Usuário autenticado: ${userId}`);
     
-    // Estrutura bem definida para os dados
-    // Incluindo apenas os campos necessários que existem na tabela
+    // Estrutura usando nomes em português que correspondem às colunas da tabela
     const preparedEntries = entries.map(entry => {
       // Converter formato de data se necessário
       let formattedDate = entry.date;
       if (formattedDate && !formattedDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        // Se a data não estiver no formato YYYY-MM-DD, tenta converter
         const date = new Date(formattedDate);
         formattedDate = date.toISOString().split('T')[0];
       }
       
       return {
-        date: formattedDate,
-        amount: Number(entry.amount) || 0, // Garantir que é número
-        btc: Number(entry.btc) || 0,      // Garantir que é número
-        price: Number(entry.price) || 0,   // Garantir que é número
-        origin: entry.origin === 'p2p' ? 'p2p' : 'exchange',
-        registration_source: 'planilha',
+        data_aporte: formattedDate,                  // em vez de date
+        valor_investido: Number(entry.amount) || 0,  // em vez de amount
+        bitcoin: Number(entry.btc) || 0,             // em vez de btc
+        cotacao: Number(entry.price) || 0,           // em vez de price
+        origem_aporte: entry.origin === 'p2p' ? 'p2p' : 'exchange', // em vez de origin
+        origem_registro: 'planilha',                 // em vez de registration_source
         user_id: userId,
-        created_at: new Date().toISOString() // Formato ISO padrão
+        created_at: new Date().toISOString()         // mantido como está
       };
     });
     
     console.log('Enviando dados para o Supabase:', JSON.stringify(preparedEntries[0], null, 2));
     
-    // Envio simplificado - sem especificar colunas
     const { error } = await supabase
       .from('aportes')
       .insert(preparedEntries);
     
     if (error) {
       console.error('Erro ao salvar aportes:', error);
+      
+      // Código para análise detalhada do erro
+      if ('message' in error) {
+        console.error('Mensagem de erro detalhada:', error.message);
+        
+        if ('details' in error) {
+          console.error('Detalhes do erro:', error.details);
+        }
+        
+        if ('hint' in error) {
+          console.error('Dica do erro:', error.hint);
+        }
+      }
+      
       throw new Error(`Erro ao salvar aportes: ${error.message}`);
     }
     
@@ -269,41 +276,6 @@ export const saveImportedEntries = async (entries: Partial<BitcoinEntry>[]) => {
     throw error;
   }
 };
-
-/**
- * Função principal que realiza todo o processo de importação do CSV
- * @param file Arquivo CSV a ser importado
- * @returns Objeto com status de sucesso e mensagem
- */
-export const importCSV = async (file: File) => {
-  try {
-    // Validar arquivo CSV usando as funções de segurança importadas
-    validateCsvFile(file);
-    
-    const processedData = await processCSV(file);
-    
-    // Converter dados processados para o formato de BitcoinEntry
-    const entriesToSave: Partial<BitcoinEntry>[] = processedData.map(item => ({
-      date: item.date,
-      amount: item.amount,
-      btc: item.btc,
-      price: item.rate, // Usando a cotação calculada automaticamente
-      origin: item.origin,
-      registrationSource: 'planilha' // Marcando que veio da importação
-    }));
-    
-    // Sanitizar dados antes de salvar (usando função importada)
-    const sanitizedEntries = sanitizeCsvData(entriesToSave);
-    
-    // Salvar entradas processadas
-    await saveImportedEntries(sanitizedEntries);
-    return { success: true, message: `${sanitizedEntries.length} aportes importados com sucesso.` };
-  } catch (error) {
-    console.error('Erro na importação:', error);
-    return { success: false, message: error instanceof Error ? error.message : 'Erro desconhecido ao importar CSV.' };
-  }
-};
-
 /**
  * Envia o arquivo CSV para processamento seguro via webhook externo
  * @param file Arquivo CSV a ser enviado
