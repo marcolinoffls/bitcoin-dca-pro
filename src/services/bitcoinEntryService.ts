@@ -16,9 +16,10 @@
  * - Corrigido problema de timezone, forçando o horário local ao interpretar datas
  * - Atualizado para suportar novos tipos de origem (planilha) nos aportes
  * - Adicionado suporte a cotação opcional com cálculo automático
+ * - Corrigida a tipagem para compatibilidade com o Supabase
  */
 
-import { BitcoinEntry, CurrentRate, Origin } from '@/types';
+import { BitcoinEntry, CurrentRate, Origin, AporteDB } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -111,20 +112,24 @@ export const createBitcoinEntry = async (
   console.log('Data sendo enviada para criação:', formattedDate);
   
   const newEntryId = uuidv4();
+  
+  // Criando objeto que corresponde ao tipo esperado pela tabela do Supabase
+  const newEntry: AporteDB = {
+    id: newEntryId,
+    user_id: userId,
+    data_aporte: formattedDate,
+    moeda: currency,
+    cotacao_moeda: currency,
+    valor_investido: amountInvested,
+    bitcoin: btcAmount,
+    cotacao: finalRate,
+    origem_aporte: origin,
+    origem_registro: 'manual' // Registros criados via formulário são 'manual'
+  };
+
   const { error } = await supabase
     .from('aportes')
-    .insert({
-      id: newEntryId,
-      data_aporte: formattedDate,
-      moeda: currency,
-      cotacao_moeda: currency,
-      valor_investido: amountInvested,
-      bitcoin: btcAmount,
-      cotacao: finalRate,
-      origem_aporte: origin,
-      origem_registro: 'manual', // Registros criados via formulário são 'manual'
-      user_id: userId
-    });
+    .insert(newEntry);
 
   if (error) {
     throw error;
@@ -171,7 +176,8 @@ export const updateBitcoinEntry = async (
   const formattedDate = date.toISOString().split('T')[0];
   console.log('Data sendo enviada para atualização:', formattedDate, 'Objeto Date original:', date);
   
-  const updateData = {
+  // Criando objeto que corresponde ao tipo esperado pela tabela do Supabase para update
+  const updateData: Omit<AporteDB, 'id' | 'user_id' | 'origem_registro' | 'created_at'> = {
     data_aporte: formattedDate,
     moeda: currency,
     cotacao_moeda: currency,

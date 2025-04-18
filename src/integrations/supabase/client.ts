@@ -15,7 +15,6 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: false,  // agora o app quem controla o fluxo
-    multiTab: false,                // 👈  NOVO: não propaga a sessão entre abas
     storage: localStorage,
   }
 });

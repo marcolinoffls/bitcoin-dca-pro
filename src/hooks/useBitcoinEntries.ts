@@ -1,9 +1,8 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { BitcoinEntry, CurrentRate, Origin } from '@/types';
+import { BitcoinEntry, CurrentRate, Origin, AporteDB } from '@/types';
 import { fetchCurrentBitcoinRate } from '@/services/bitcoinService';
 import { 
   fetchBitcoinEntries, 
@@ -11,21 +10,6 @@ import {
   deleteBitcoinEntry,
   deleteAllSpreadsheetEntries
 } from '@/services/bitcoinEntryService';
-
-// Interface para mapear os dados do Supabase para os tipos da aplicação
-interface SupabaseAporte {
-  id: string;
-  data_aporte: string;
-  valor_investido: number;
-  bitcoin: number;
-  cotacao: number;
-  moeda: 'BRL' | 'USD';
-  origem_aporte: 'corretora' | 'p2p' | 'planilha';
-  origem_registro: 'manual' | 'planilha';
-  user_id: string;
-  cotacao_moeda: string;
-  created_at: string;
-}
 
 /**
  * Converte string de data para objeto Date, forçando o fuso horário local
@@ -52,6 +36,7 @@ const parseLocalDate = (dateString: string): Date => {
  * Atualização:
  * - Adicionado suporte a cotação opcional, calculando automaticamente
  *   quando o valor não é fornecido
+ * - Corrigida tipagem para compatibilidade com o Supabase
  */
 export const useBitcoinEntries = () => {
   const { user, session } = useAuth();
@@ -145,7 +130,8 @@ export const useBitcoinEntries = () => {
       console.log('Cotação calculada automaticamente:', finalRate);
     }
     
-    const { error } = await supabase.from('aportes').insert([{
+    // Criando objeto que corresponde ao tipo esperado pela tabela do Supabase
+    const newEntry: AporteDB = {
       user_id: user.id,
       data_aporte: date.toISOString().split('T')[0],
       valor_investido: amountInvested,
@@ -153,8 +139,11 @@ export const useBitcoinEntries = () => {
       cotacao: finalRate,
       moeda: currency,
       cotacao_moeda: currency,
-      origem_aporte: origin
-    }]);
+      origem_aporte: origin,
+      origem_registro: 'manual'
+    };
+    
+    const { error } = await supabase.from('aportes').insert(newEntry);
     
     if (error) throw error;
 
@@ -231,7 +220,7 @@ export const useBitcoinEntries = () => {
         finalEntry.exchangeRate,
         finalEntry.currency,
         finalEntry.date,
-        finalEntry.origin
+        finalEntry.origin as Origin
       );
       
       console.log('Aporte atualizado com sucesso via serviço');

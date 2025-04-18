@@ -1,3 +1,4 @@
+
 export interface BitcoinEntry {
   id: string;
   date: Date;
@@ -5,8 +6,8 @@ export interface BitcoinEntry {
   btcAmount: number;
   exchangeRate: number;
   currency: 'BRL' | 'USD';
-  origin?: 'corretora' | 'p2p' | 'planilha';
-  registrationSource?: 'manual' | 'planilha';
+  origin?: Origin;
+  registrationSource?: RegistrationSource;
 }
 
 export interface CurrentRate {
@@ -26,5 +27,21 @@ export interface PriceVariation {
   timestamp: Date;   // Data/hora da última atualização
 }
 
-export type Origin = "corretora" | "p2p" | "planilha";
+// Ajustado para incluir 'exchange' como um tipo válido para compatibilidade com csvImportService
+export type Origin = "corretora" | "p2p" | "planilha" | "exchange";
 export type RegistrationSource = "manual" | "planilha";
+
+// Interface para mapear com as colunas da tabela de aportes no Supabase
+export interface AporteDB {
+  id?: string;
+  user_id: string;
+  data_aporte: string;
+  valor_investido: number;
+  bitcoin: number;
+  cotacao: number;
+  moeda: 'BRL' | 'USD';
+  cotacao_moeda: 'BRL' | 'USD';
+  origem_aporte: Origin;
+  origem_registro: RegistrationSource;
+  created_at?: string;
+}
