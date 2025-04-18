@@ -234,9 +234,10 @@ export const saveImportedEntries = async (entries: Partial<BitcoinEntry>[]) => {
     }
     
     const userId = user.user.id;
-    console.log(`Usuário autenticado: ${userId}`);
+    // Log seguro do ID do usuário (mostra apenas parte inicial)
+    console.log(`Usuário autenticado: ${userId.substring(0, 6)}...`);
     
-    // Mapear para todos os campos necessários da tabela
+    // Resto do código permanece o mesmo
     const preparedEntries = entries.map(entry => {
       // Converter formato de data se necessário
       let formattedDate = entry.date;
@@ -253,47 +254,46 @@ export const saveImportedEntries = async (entries: Partial<BitcoinEntry>[]) => {
       
       return {
         data_aporte: formattedDate,
-        moeda: 'BRL',                               // Campo obrigatório adicionado
+        moeda: 'BRL',
         valor_investido: Number(entry.amount) || 0,
         bitcoin: Number(entry.btc) || 0,
-        cotacao: priceValue,                        // Uso da cotação calculada
-        cotacao_moeda: 'BRL',                       // Campo obrigatório adicionado
-        origem_aporte: entry.origin === 'p2p' ? 'p2p' : 'corretora', // Corrigido para 'corretora'
+        cotacao: priceValue,
+        cotacao_moeda: 'BRL',
+        origem_aporte: entry.origin === 'p2p' ? 'p2p' : 'corretora',
         origem_registro: 'planilha',
         user_id: userId,
         created_at: new Date().toISOString()
       };
     });
     
-    console.log('Enviando dados para o Supabase:', JSON.stringify(preparedEntries[0], null, 2));
+    // Log seguro: apenas metadados, sem expor valores financeiros
+    console.log('Enviando dados para o Supabase:', {
+      quantidade: preparedEntries.length,
+      primeiroPeriodo: preparedEntries[0]?.data_aporte || 'N/A',
+      ultimoPeriodo: preparedEntries[preparedEntries.length-1]?.data_aporte || 'N/A'
+    });
     
     const { error } = await supabase
       .from('aportes')
       .insert(preparedEntries);
     
     if (error) {
-      console.error('Erro ao salvar aportes:', error);
+      // Log seguro de erros: sem expor detalhes completos
+      console.error('Erro ao salvar aportes - código:', error.code);
       
-      // Código para análise detalhada do erro
+      // Log apenas do tipo de erro, não do conteúdo completo
       if ('message' in error) {
-        console.error('Mensagem de erro detalhada:', error.message);
-        
-        if ('details' in error) {
-          console.error('Detalhes do erro:', error.details);
-        }
-        
-        if ('hint' in error) {
-          console.error('Dica do erro:', error.hint);
-        }
+        console.error('Tipo de erro:', error.code || 'Erro sem código');
       }
       
       throw new Error(`Erro ao salvar aportes: ${error.message}`);
     }
     
-    console.log('Aportes salvos com sucesso');
+    console.log('Aportes salvos com sucesso:', preparedEntries.length);
     return { success: true, count: preparedEntries.length };
   } catch (error) {
-    console.error('Erro completo ao salvar aportes:', error);
+    // Log seguro para erros genéricos
+    console.error('Erro ao processar aportes');
     throw error;
   }
 };
