@@ -32,7 +32,6 @@ export default function ResetPassword() {
 
       const params = new URLSearchParams(search);
       const code = params.get('code');
-      const type = params.get('type');        // deve vir "recovery"
 
       if (!code || type !== 'recovery') {
         setIsValid(false);
