@@ -33,7 +33,7 @@ export default function ResetPassword() {
       const params = new URLSearchParams(search);
       const code = params.get('code');
 
-      if (!code || type !== 'recovery') {
+      if (!code) {               // ✅  nova condição
         setIsValid(false);
         setIsLoading(false);
         return;
