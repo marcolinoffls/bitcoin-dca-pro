@@ -41,11 +41,11 @@ const ColumnVisibilityControl: React.FC<ColumnVisibilityControlProps> = ({
             {columns.map((column) => (
               <div key={column.id} className="flex items-center space-x-2">
                 <Checkbox
-                  id={column.id}
+                  id={`column-${column.id}`}
                   checked={column.visible}
                   onCheckedChange={() => onColumnToggle(column.id)}
                 />
-                <Label htmlFor={column.id} className="text-sm font-normal">
+                <Label htmlFor={`column-${column.id}`} className="text-sm font-normal">
                   {column.label}
                 </Label>
               </div>
@@ -58,4 +58,3 @@ const ColumnVisibilityControl: React.FC<ColumnVisibilityControlProps> = ({
 };
 
 export default ColumnVisibilityControl;
-

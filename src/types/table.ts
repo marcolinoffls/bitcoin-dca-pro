@@ -37,4 +37,3 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'percentChange', label: 'Variação', visible: true },
   { id: 'currentValue', label: 'Valor Atual', visible: true }
 ];
-
