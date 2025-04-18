@@ -237,9 +237,21 @@ export const saveImportedEntries = async (entries: Partial<BitcoinEntry>[]) => {
     // Mascarar ID do usuário no log
     console.log(`Usuário autenticado: ${userId.substring(0, 5)}...`);
     
-    // Resto do código para mapear os dados
+    // Mapear para todos os campos necessários da tabela
     const preparedEntries = entries.map(entry => {
-      // ... código existente ...
+      // Converter formato de data se necessário
+      let formattedDate = entry.date;
+      if (formattedDate && !formattedDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const date = new Date(formattedDate);
+        formattedDate = date.toISOString().split('T')[0];
+      }
+      
+      // Garantir que a cotação (price) existe - se não, calcular
+      let priceValue = Number(entry.price) || 0;
+      if (priceValue <= 0 && entry.amount && entry.btc) {
+        priceValue = Number(entry.amount) / Number(entry.btc);
+      }
+      
       return {
         data_aporte: formattedDate,
         moeda: 'BRL',
