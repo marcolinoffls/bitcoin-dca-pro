@@ -34,6 +34,8 @@ export default function PasswordResetCard() {
     try {
       setIsSubmitting(true);
       await resetPassword(user.email);
+      await supabase.auth.signOut();   // limpa tokens desta aba
+
     } finally {
       setIsSubmitting(false);
       setShowForm(false); // fecha o mini-form após enviar
