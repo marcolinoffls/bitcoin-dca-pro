@@ -7,7 +7,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
-import SetPassword from "./pages/SetPassword";
 import NotFound from "./pages/NotFound";
 import { useState } from "react";
 import { AuthProvider } from "./hooks/useAuth";
@@ -33,13 +32,14 @@ const App = () => {
           <BrowserRouter>
             <Routes>
               <Route path="/auth" element={<Auth />} />
+              {/* A rota de reset-password não tem RequireAuth para permitir acesso mesmo sem login */}
               <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/set-password" element={<SetPassword />} />
               <Route path="/" element={
                 <RequireAuth>
                   <Index />
                 </RequireAuth>
               } />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
