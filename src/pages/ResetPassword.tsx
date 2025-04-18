@@ -40,9 +40,7 @@ export default function ResetPassword() {
       }
 
       const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-      // Troca do code pelo session
-      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-      
+
       if (error) {
         // Token pode ter sido consumido no preview do e‑mail, mas sessão já existe
         const sess = (await supabase.auth.getSession()).data.session;
@@ -56,15 +54,6 @@ export default function ResetPassword() {
         // Sessão criada agora → segue para definir senha
         navigate('/set-password', { replace: true });
       }
-
-      if (error || !data.session) {
-        console.error('Erro ao trocar code pelo session:', error);
-        setIsValid(false);
-      } else {
-        setIsValid(true);   // sessão criada com sucesso
-      }
-      setIsLoading(false);
-    };
 
     run();
   }, [search]);
