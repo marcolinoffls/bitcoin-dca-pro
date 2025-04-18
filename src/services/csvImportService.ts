@@ -212,6 +212,10 @@ const validateData = (data: CsvAporte[]): CsvAporte[] => {
   });
 };
 
+/**
+ * Salva os aportes importados no Supabase
+ * @param entries Array de aportes a serem salvos
+ */
 export const saveImportedEntries = async (entries: Partial<BitcoinEntry>[]) => {
   try {
     const { data: user } = await supabase.auth.getUser();
@@ -223,7 +227,7 @@ export const saveImportedEntries = async (entries: Partial<BitcoinEntry>[]) => {
     const userId = user.user.id;
     console.log(`Usuário autenticado: ${userId}`);
     
-    // Estrutura usando nomes em português que correspondem às colunas da tabela
+    // Mapear para todos os campos necessários da tabela
     const preparedEntries = entries.map(entry => {
       // Converter formato de data se necessário
       let formattedDate = entry.date;
@@ -232,15 +236,23 @@ export const saveImportedEntries = async (entries: Partial<BitcoinEntry>[]) => {
         formattedDate = date.toISOString().split('T')[0];
       }
       
+      // Garantir que a cotação (price) existe - se não, calcular
+      let priceValue = Number(entry.price) || 0;
+      if (priceValue <= 0 && entry.amount && entry.btc) {
+        priceValue = Number(entry.amount) / Number(entry.btc);
+      }
+      
       return {
-        data_aporte: formattedDate,                  // em vez de date
-        valor_investido: Number(entry.amount) || 0,  // em vez de amount
-        bitcoin: Number(entry.btc) || 0,             // em vez de btc
-        cotacao: Number(entry.price) || 0,           // em vez de price
-        origem_aporte: entry.origin === 'p2p' ? 'p2p' : 'exchange', // em vez de origin
-        origem_registro: 'planilha',                 // em vez de registration_source
+        data_aporte: formattedDate,
+        moeda: 'BRL',                               // Campo obrigatório adicionado
+        valor_investido: Number(entry.amount) || 0,
+        bitcoin: Number(entry.btc) || 0,
+        cotacao: priceValue,                        // Uso da cotação calculada
+        cotacao_moeda: 'BRL',                       // Campo obrigatório adicionado
+        origem_aporte: entry.origin === 'p2p' ? 'p2p' : 'corretora', // Corrigido para 'corretora'
+        origem_registro: 'planilha',
         user_id: userId,
-        created_at: new Date().toISOString()         // mantido como está
+        created_at: new Date().toISOString()
       };
     });
     
@@ -276,6 +288,41 @@ export const saveImportedEntries = async (entries: Partial<BitcoinEntry>[]) => {
     throw error;
   }
 };
+
+/**
+ * Função principal que realiza todo o processo de importação do CSV
+ * @param file Arquivo CSV a ser importado
+ * @returns Objeto com status de sucesso e mensagem
+ */
+export const importCSV = async (file: File) => {
+  try {
+    // Validar arquivo CSV usando as funções de segurança importadas
+    validateCsvFile(file);
+    
+    const processedData = await processCSV(file);
+    
+    // Converter dados processados para o formato de BitcoinEntry
+    const entriesToSave: Partial<BitcoinEntry>[] = processedData.map(item => ({
+      date: item.date,
+      amount: item.amount,
+      btc: item.btc,
+      price: item.rate, // Usando a cotação calculada automaticamente
+      origin: item.origin,
+      registrationSource: 'planilha' // Marcando que veio da importação
+    }));
+    
+    // Sanitizar dados antes de salvar (usando função importada)
+    const sanitizedEntries = sanitizeCsvData(entriesToSave);
+    
+    // Salvar entradas processadas
+    await saveImportedEntries(sanitizedEntries);
+    return { success: true, message: `${sanitizedEntries.length} aportes importados com sucesso.` };
+  } catch (error) {
+    console.error('Erro na importação:', error);
+    return { success: false, message: error instanceof Error ? error.message : 'Erro desconhecido ao importar CSV.' };
+  }
+};
+
 /**
  * Envia o arquivo CSV para processamento seguro via webhook externo
  * @param file Arquivo CSV a ser enviado
