@@ -269,6 +269,7 @@ export const saveImportedEntries = async (entries: Partial<BitcoinEntry>[]) => {
     throw error;
   }
 };
+
 /**
  * Função principal que realiza todo o processo de importação do CSV
  * @param file Arquivo CSV a ser importado
