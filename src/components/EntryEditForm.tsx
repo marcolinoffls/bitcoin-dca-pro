@@ -1,4 +1,3 @@
-
 /**
  * Componente EntryEditForm
  *
@@ -85,7 +84,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
   const [exchangeRate, setExchangeRate] = useState(entry.exchangeRate);
   const [exchangeRateDisplay, setExchangeRateDisplay] = useState(formatNumber(entry.exchangeRate));
   const [currency, setCurrency] = useState<'BRL' | 'USD'>(entry.currency);
-  const [origin, setOrigin] = useState<'corretora' | 'p2p' | 'planilha'>(entry.origin || 'corretora');
+  const [origin, setOrigin] = useState<Origin>(entry.origin || 'corretora');
   const [formError, setFormError] = useState<string | null>(null);
   const [rateInfoMessage, setRateInfoMessage] = useState<string | null>(null);
   const [isExchangeRateCalculated, setIsExchangeRateCalculated] = useState<boolean>(false);
@@ -148,6 +147,10 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
       setExchangeRateDisplay(formatNumber(newRate));
       setIsExchangeRateCalculated(false);
     }
+  };
+
+  const handleOriginChange = (newOrigin: Origin) => {
+    setOrigin(newOrigin);
   };
 
   // Função para atualizar a data do aporte
@@ -382,7 +385,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
       )}
 
       {/* Origem do aporte */}
-      <OriginSelector origin={origin} onOriginChange={setOrigin} />
+      <OriginSelector origin={origin} onOriginChange={handleOriginChange} />
 
       {/* Botões de ação */}
       <div className="flex gap-4 pt-4">

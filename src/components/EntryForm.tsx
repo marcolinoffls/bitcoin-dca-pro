@@ -1,4 +1,3 @@
-
 /**
  * Componente: EntryForm
  * 
@@ -113,7 +112,6 @@ const EntryForm: React.FC<EntryFormProps> = ({
       onCancelEdit();
     }
   };
-// ...existing code...
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

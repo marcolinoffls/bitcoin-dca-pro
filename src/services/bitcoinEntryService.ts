@@ -1,21 +1,10 @@
 /**
  * Fornece as funções para interagir com os aportes de Bitcoin no Supabase
- * - Busca todos os aportes
- * - Cria novos aportes
- * - Atualiza aportes existentes
- * - Exclui aportes
  * 
  * Atualizações:
- * - Adicionado suporte à nova coluna origem_registro para rastrear aportes criados manualmente e por importação
- * - Corrigido problema de atualização da data não ser persistida corretamente
- * - Adicionados logs para monitorar as conversões de data
- * - Melhorada a manipulação dos valores para conversão correta entre string e number
- * - Adicionada verificação extra para garantir que a data seja formatada corretamente
- * - Melhorada a validação e conversão de datas para garantir persistência no Supabase
- * - Corrigido problema de timezone, forçando o horário local ao interpretar datas
- * - Atualizado para suportar novos tipos de origem (planilha) nos aportes
- * - Adicionado suporte a cotação opcional com cálculo automático
- * - Corrigida a tipagem para compatibilidade com o Supabase
+ * - Adicionado suporte ao cálculo e armazenamento do valor em USD
+ * - Implementada lógica para registro da cotação USD/BRL
+ * - Removido tipo "exchange" das origens permitidas
  */
 
 import { BitcoinEntry, CurrentRate, Origin, AporteDB } from '@/types';
@@ -74,7 +63,9 @@ export const fetchBitcoinEntries = async () => {
       exchangeRate: Number(entry.cotacao),
       currency: entry.moeda as 'BRL' | 'USD',
       origin: entry.origem_aporte as Origin,
-      registrationSource: entry.origem_registro as 'manual' | 'planilha'
+      registrationSource: entry.origem_registro as 'manual' | 'planilha',
+      valorUsd: entry.valor_usd || undefined,
+      cotacaoUsdBrl: entry.cotacao_usd_brl || undefined,
     };
   }) || [];
   
@@ -129,9 +120,12 @@ export const createBitcoinEntry = async (
     } catch (error) {
       console.error('Erro ao buscar cotação USD/BRL:', error);
     }
+  } else {
+    // Se já está em USD, mantém o mesmo valor
+    valorUsd = amountInvested;
+    cotacaoUsdBrl = 1;
   }
 
-  // Criando objeto que corresponde ao tipo esperado pela tabela do Supabase
   const newEntry: AporteDB = {
     id: newEntryId,
     user_id: userId,
@@ -196,7 +190,6 @@ export const updateBitcoinEntry = async (
   
   // Formata a data para o formato ISO (YYYY-MM-DD)
   const formattedDate = date.toISOString().split('T')[0];
-  console.log('Data sendo enviada para atualização:', formattedDate, 'Objeto Date original:', date);
   
   // Calcular valor em USD se a moeda for BRL
   let valorUsd = null;
@@ -214,9 +207,12 @@ export const updateBitcoinEntry = async (
     } catch (error) {
       console.error('Erro ao buscar cotação USD/BRL para atualização:', error);
     }
+  } else {
+    // Se já está em USD, mantém o mesmo valor
+    valorUsd = amountInvested;
+    cotacaoUsdBrl = 1;
   }
   
-  // Criando objeto que corresponde ao tipo esperado pela tabela do Supabase para update
   const updateData: Omit<AporteDB, 'id' | 'user_id' | 'origem_registro' | 'created_at'> = {
     data_aporte: formattedDate,
     moeda: currency,
@@ -228,8 +224,6 @@ export const updateBitcoinEntry = async (
     valor_usd: valorUsd,
     cotacao_usd_brl: cotacaoUsdBrl
   };
-  
-  console.log('Dados completos sendo enviados para atualização:', updateData);
   
   const { error, data } = await supabase
     .from('aportes')

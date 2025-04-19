@@ -4,17 +4,16 @@
 export interface CurrentRate {
   usd: number;
   brl: number;
-  timestamp: Date; // Adicionado timestamp que estava faltando
+  timestamp: Date;
 }
 
 /**
  * Tipos de origem permitidos para os aportes
  * - "corretora": Compra realizada em exchange centralizada
  * - "p2p": Compra peer-to-peer
- * - "exchange": Tipo legado, usado em importações de planilhas (equivalente a "corretora")
  * - "planilha": Aportes importados de planilhas
  */
-export type Origin = "corretora" | "p2p" | "exchange" | "planilha";
+export type Origin = "corretora" | "p2p" | "planilha";
 
 /**
  * Interface principal para os registros de aportes no aplicativo
@@ -26,8 +25,10 @@ export interface BitcoinEntry {
   btcAmount: number;
   exchangeRate: number;
   currency: "BRL" | "USD";
-  origin?: Origin;
-  registrationSource?: "manual" | "planilha";
+  origin: Origin;
+  registrationSource: "manual" | "planilha";
+  valorUsd?: number;        // Valor em USD calculado no momento do registro
+  cotacaoUsdBrl?: number;   // Cotação USD/BRL usada na conversão
 }
 
 /**
