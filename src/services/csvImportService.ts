@@ -9,25 +9,9 @@ import {
   WEBHOOK_URL,
   REQUEST_TIMEOUT
 } from '@/config/security';
-import { BitcoinEntry, Origin } from '@/types';
+import { BitcoinEntry, Origin, AporteDB, CsvAporte, ImportedEntry } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import Papa from 'papaparse';
-
-/**
- * Interface para mapear os dados do CSV para o formato interno
- * @property date Data do aporte no formato string
- * @property amount Valor investido em moeda local
- * @property btc Quantidade de Bitcoin adquirido
- * @property rate Cotação calculada ou fornecida
- * @property origin Origem do aporte (exchange ou p2p)
- */
-interface CsvAporte {
-  date: string;
-  amount: number;
-  btc: number;
-  rate: number;
-  origin: Origin;
-}
 
 /**
  * Processa o arquivo CSV e retorna um array com os dados formatados
@@ -157,7 +141,7 @@ const normalizeData = (rawData: any[]): CsvAporte[] => {
     let origin = originColumn ? String(originColumn[1]).trim().toLowerCase() : '';
     
     // Atribuir o valor padrão 'exchange' (corretora) se estiver vazio ou não reconhecido
-    if (!origin || (origin !== 'p2p' && origin !== 'corretora' && origin !== 'exchange')) {
+    if (!origin || (origin !== 'p2p' && origin !== 'corretora' && origin !== 'exchange' && origin !== 'planilha')) {
       origin = 'exchange'; // Valor padrão é corretora/exchange
     } else if (origin === 'corretora') {
       origin = 'exchange'; // Normalizar 'corretora' para 'exchange'
@@ -181,7 +165,7 @@ const normalizeData = (rawData: any[]): CsvAporte[] => {
       amount,
       btc: btcAmount,
       rate,
-      origin: origin as 'p2p' | 'exchange'
+      origin: origin as Origin
     };
   }).filter(item => item.amount > 0 && item.btc > 0); // Filtrar linhas inválidas
 };
@@ -225,7 +209,7 @@ const validateData = (data: CsvAporte[]): CsvAporte[] => {
  * Salva os aportes importados no Supabase
  * @param entries Array de aportes a serem salvos
  */
-export const saveImportedEntries = async (entries: Partial<BitcoinEntry>[]) => {
+export const saveImportedEntries = async (entries: ImportedEntry[]) => {
   try {
     const { data: user } = await supabase.auth.getUser();
     
@@ -237,14 +221,10 @@ export const saveImportedEntries = async (entries: Partial<BitcoinEntry>[]) => {
     // Log seguro do ID do usuário (mostra apenas parte inicial)
     console.log(`Usuário autenticado: ${userId.substring(0, 6)}...`);
     
-    // Resto do código permanece o mesmo
+    // Preparar entradas para o Supabase
     const preparedEntries = entries.map(entry => {
-      // Converter formato de data se necessário
-      let formattedDate = entry.date;
-      if (formattedDate && !formattedDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        const date = new Date(formattedDate);
-        formattedDate = date.toISOString().split('T')[0];
-      }
+      // Formatar a data para o formato esperado pelo Supabase (YYYY-MM-DD)
+      const dateStr = typeof entry.date === 'string' ? entry.date : ''; 
       
       // Garantir que a cotação (price) existe - se não, calcular
       let priceValue = Number(entry.price) || 0;
@@ -253,13 +233,13 @@ export const saveImportedEntries = async (entries: Partial<BitcoinEntry>[]) => {
       }
       
       return {
-        data_aporte: formattedDate,
+        data_aporte: dateStr,
         moeda: 'BRL',
         valor_investido: Number(entry.amount) || 0,
         bitcoin: Number(entry.btc) || 0,
         cotacao: priceValue,
         cotacao_moeda: 'BRL',
-        origem_aporte: entry.origin === 'p2p' ? 'p2p' : 'corretora',
+        origem_aporte: entry.origin,
         origem_registro: 'planilha',
         user_id: userId,
         created_at: new Date().toISOString()
@@ -321,7 +301,7 @@ export const importCSV = async (file: File): Promise<{ success: boolean; message
     console.log(`Processamento concluído: ${processedData.length} registros válidos`);
     
     // Converter dados processados para o formato de BitcoinEntry
-    const entriesToSave: Partial<BitcoinEntry>[] = processedData.map(item => ({
+    const entriesToSave: ImportedEntry[] = processedData.map(item => ({
       date: item.date,
       amount: item.amount,
       btc: item.btc,
@@ -405,7 +385,7 @@ export const sendSecureCSVToWebhook = async (
       method: 'POST',
       headers,
       body: formData,
-      timeout: REQUEST_TIMEOUT
+      // Remover timeout que não existe no tipo RequestInit
     });
     
     // Validar resposta do webhook usando função importada
@@ -413,7 +393,7 @@ export const sendSecureCSVToWebhook = async (
     
     return { 
       success: true, 
-      message: result.message || 'Arquivo enviado com sucesso! Você receberá um email quando o processamento for concluído.' 
+      message: result?.message || 'Arquivo enviado com sucesso! Você receberá um email quando o processamento for concluído.' 
     };
   } catch (error) {
     console.error('Erro ao enviar CSV para processamento externo:', error);

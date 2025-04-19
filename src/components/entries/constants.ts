@@ -8,6 +8,7 @@ export const ROWS_PER_PAGE_OPTIONS = [
 export const ORIGIN_FILTER_OPTIONS = [
   { value: 'all', label: 'Todas as origens' },
   { value: 'corretora', label: 'Corretora' },
+  { value: 'exchange', label: 'Exchange (legado)' },
   { value: 'p2p', label: 'P2P' },
   { value: 'planilha', label: 'Planilha' }
 ];

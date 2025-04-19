@@ -1,12 +1,25 @@
 
+/**
+ * Interface para cotação atual do Bitcoin
+ */
 export interface CurrentRate {
   usd: number;
   brl: number;
-  timestamp: Date;
+  timestamp: Date; // Adicionado timestamp que estava faltando
 }
 
-export type Origin = "planilha" | "corretora" | "p2p" | "exchange";
+/**
+ * Tipos de origem permitidos para os aportes
+ * - "corretora": Compra realizada em exchange centralizada
+ * - "p2p": Compra peer-to-peer
+ * - "exchange": Tipo legado, usado em importações de planilhas (equivalente a "corretora")
+ * - "planilha": Aportes importados de planilhas
+ */
+export type Origin = "corretora" | "p2p" | "exchange" | "planilha";
 
+/**
+ * Interface principal para os registros de aportes no aplicativo
+ */
 export interface BitcoinEntry {
   id: string;
   date: Date;
@@ -29,11 +42,14 @@ export interface PriceVariation {
   timestamp: Date;   // Data/hora da última atualização
 }
 
-// Interface para mapear com as colunas da tabela de aportes no Supabase
+/**
+ * Interface para mapear com as colunas da tabela de aportes no Supabase
+ * Usada para garantir tipagem correta durante operações com o banco de dados
+ */
 export interface AporteDB {
   id?: string;
   user_id: string;
-  data_aporte: string;
+  data_aporte: string; // Formato YYYY-MM-DD na base
   valor_investido: number;
   bitcoin: number;
   cotacao: number;
@@ -44,11 +60,27 @@ export interface AporteDB {
   created_at?: string;
 }
 
-// Interface para dados importados de CSV
+/**
+ * Interface para dados de importação CSV
+ * Representa o formato intermediário dos dados antes de serem salvos no Supabase
+ */
 export interface CsvAporte {
-  date: string;
-  amount: number;
-  btc: number;
-  rate: number;
-  origin: Origin;
+  date: string;       // Data no formato string (será convertida)
+  amount: number;     // Valor investido
+  btc: number;        // Quantidade de Bitcoin
+  rate: number;       // Cotação
+  origin: Origin;     // Origem do aporte
+}
+
+/**
+ * Interface para mapeamento dos dados de importação CSV para o BitcoinEntry
+ * Usada durante a conversão de dados importados para o formato final
+ */
+export interface ImportedEntry {
+  date: string;                   // Data no formato string
+  amount: number;                 // Valor investido
+  btc: number;                    // Quantidade de Bitcoin
+  price: number;                  // Cotação
+  origin: Origin;                 // Origem do aporte
+  registrationSource: "planilha"; // Sempre "planilha" para importações
 }
