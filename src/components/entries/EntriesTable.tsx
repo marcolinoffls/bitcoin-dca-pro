@@ -2,12 +2,11 @@
 import React from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { TrendingDown, TrendingUp, Edit, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
+import { TrendingDown, TrendingUp, Edit, Trash2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { formatNumber } from '@/lib/utils';
 import { BitcoinEntry } from '@/types';
-import { ColumnConfig, SortState } from '@/types/table';
 
 interface EntriesTableProps {
   entries: BitcoinEntry[];
@@ -24,9 +23,6 @@ interface EntriesTableProps {
     percentChange: number;
     currentValue: number;
   };
-  sortState: SortState;
-  onSort: (column: string) => void;
-  visibleColumns?: ColumnConfig[];
 }
 
 export const EntriesTable: React.FC<EntriesTableProps> = ({
@@ -37,12 +33,8 @@ export const EntriesTable: React.FC<EntriesTableProps> = ({
   isMobile,
   handleEditClick,
   handleDeleteClick,
-  totals,
-  sortState,
-  onSort,
-  visibleColumns = [],
+  totals
 }) => {
-  // Função para formatar valores em Bitcoin/Satoshis
   const formatBitcoinAmount = (amount: number) => {
     if (displayUnit === 'SATS') {
       const satoshis = amount * 100000000;
@@ -51,191 +43,81 @@ export const EntriesTable: React.FC<EntriesTableProps> = ({
     return formatNumber(amount, 8);
   };
 
-  // Função para renderizar ícone de ordenação
-  const renderSortIcon = (columnId: string) => {
-    if (sortState.column !== columnId) return null;
-
-    return sortState.direction === 'asc' ? (
-      <ChevronUp className="h-4 w-4 ml-1 text-bitcoin" />
-    ) : (
-      <ChevronDown className="h-4 w-4 ml-1 text-bitcoin" />
-    );
-  };
-
-  // Função para verificar visibilidade da coluna
-  // Agora com tratamento para caso visibleColumns esteja undefined ou vazio
-  const isColumnVisible = (columnId: string) => {
-    // Se visibleColumns estiver vazio ou não definido, todas as colunas são visíveis
-    if (!visibleColumns || visibleColumns.length === 0) {
-      return true;
-    }
-    
-    // Caso contrário, verificamos se a coluna está marcada como visível
-    return visibleColumns.find(col => col.id === columnId)?.visible ?? true;
-  };
-
-  // Função para converter valores entre moedas
-  const convertCurrencyValue = (value: number, fromCurrency: 'BRL' | 'USD') => {
-    if (fromCurrency === currencyView) return value;
-    
-    if (fromCurrency === 'USD' && currencyView === 'BRL') {
-      return value * currentRate.brl / currentRate.usd;
-    } else {
-      return value * currentRate.usd / currentRate.brl;
-    }
-  };
-
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          {isColumnVisible('date') && (
-            <TableHead 
-              className={`${isMobile ? "text-xs" : ""} cursor-pointer`}
-              onClick={() => onSort('date')}
-            >
-              <div className="flex items-center">
-                Data
-                {renderSortIcon('date')}
-              </div>
-            </TableHead>
-          )}
-          
-          {isColumnVisible('amountInvested') && (
-            <TableHead 
-              className={`${isMobile ? "text-xs" : ""} cursor-pointer`}
-              onClick={() => onSort('amountInvested')}
-            >
-              <div className="flex items-center">
-                Valor Investido
-                {renderSortIcon('amountInvested')}
-              </div>
-            </TableHead>
-          )}
-          
-          {isColumnVisible('btcAmount') && (
-            <TableHead 
-              className={`${isMobile ? "text-xs" : ""} cursor-pointer`}
-              onClick={() => onSort('btcAmount')}
-            >
-              <div className="flex items-center">
-                {displayUnit === 'SATS' ? 'Satoshis' : 'Bitcoin'}
-                {renderSortIcon('btcAmount')}
-              </div>
-            </TableHead>
-          )}
-          
-          {isColumnVisible('exchangeRate') && (
-            <TableHead 
-              className={`${isMobile ? "text-xs" : ""} cursor-pointer`}
-              onClick={() => onSort('exchangeRate')}
-            >
-              <div className="flex items-center">
-                Cotação
-                {renderSortIcon('exchangeRate')}
-              </div>
-            </TableHead>
-          )}
-          
-          {isColumnVisible('percentChange') && (
-            <TableHead 
-              className={`${isMobile ? "text-xs" : ""} cursor-pointer`}
-              onClick={() => onSort('percentChange')}
-            >
-              <div className="flex items-center">
-                Variação
-                {renderSortIcon('percentChange')}
-              </div>
-            </TableHead>
-          )}
-          
-          {isColumnVisible('currentValue') && (
-            <TableHead 
-              className={`${isMobile ? "text-xs" : ""} cursor-pointer`}
-              onClick={() => onSort('currentValue')}
-            >
-              <div className="flex items-center">
-                Valor Atual
-                {renderSortIcon('currentValue')}
-              </div>
-            </TableHead>
-          )}
-          
-          <TableHead className={`text-right ${isMobile ? "text-xs" : ""}`}>
-            Ações
-          </TableHead>
+          <TableHead className={isMobile ? "text-xs" : ""}>Data</TableHead>
+          <TableHead className={isMobile ? "text-xs" : ""}>Valor Investido</TableHead>
+          <TableHead className={isMobile ? "text-xs" : ""}>{displayUnit === 'SATS' ? 'Satoshis' : 'Bitcoin'}</TableHead>
+          <TableHead className={isMobile ? "text-xs" : ""}>Cotação</TableHead>
+          <TableHead className={isMobile ? "text-xs" : ""}>Variação</TableHead>
+          <TableHead className={isMobile ? "text-xs" : ""}>Valor Atual</TableHead>
+          <TableHead className={`text-right ${isMobile ? "text-xs" : ""}`}>Ações</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {entries.map((entry) => {
-          // Conversão de valores para a moeda de visualização
-          const investedValue = convertCurrencyValue(entry.amountInvested, entry.currency);
-          const exchangeRateInViewCurrency = convertCurrencyValue(entry.exchangeRate, entry.currency);
-          
-          // Cálculos de variação e valor atual
           const currentRateValue = currencyView === 'USD' ? currentRate.usd : currentRate.brl;
-          const percentChange = ((currentRateValue - exchangeRateInViewCurrency) / exchangeRateInViewCurrency) * 100;
-          const currentValue = entry.btcAmount * currentRateValue;
-          const profit = currentValue - investedValue;
+          
+          let entryRateInViewCurrency = entry.exchangeRate;
+          if (entry.currency !== currencyView) {
+            entryRateInViewCurrency = entry.currency === 'USD' 
+              ? entry.exchangeRate * (currentRate.brl / currentRate.usd)
+              : entry.exchangeRate / (currentRate.brl / currentRate.usd);
+          }
+          
+          const percentChange = ((currentRateValue - entryRateInViewCurrency) / entryRateInViewCurrency) * 100;
+          
+          let investedValue = entry.amountInvested;
+          if (entry.currency !== currencyView) {
+            investedValue = entry.currency === 'USD'
+              ? entry.amountInvested * (currentRate.brl / currentRate.usd)
+              : entry.amountInvested / (currentRate.brl / currentRate.usd);
+          }
+          
+          const currentValue = investedValue * (1 + percentChange / 100);
           
           return (
             <TableRow key={entry.id}>
-              {isColumnVisible('date') && (
-                <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                  {format(entry.date, 'dd/MM/yyyy', { locale: ptBR })}
-                  {entry.origin === 'planilha' && (
-                    <span className="ml-1 text-xs text-muted-foreground">(planilha)</span>
+              <TableCell className={isMobile ? "text-xs py-2" : ""}>
+                {format(entry.date, 'dd/MM/yyyy', { locale: ptBR })}
+                {entry.origin === 'planilha' && (
+                  <span className="ml-1 text-xs text-muted-foreground">(planilha)</span>
+                )}
+                {entry.registrationSource === 'planilha' && (
+                  <span className="ml-1 text-xs text-yellow-600">●</span>
+                )}
+              </TableCell>
+              <TableCell className={isMobile ? "text-xs py-2" : ""}>
+                {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(investedValue)}
+              </TableCell>
+              <TableCell className={isMobile ? "text-xs py-2" : ""}>
+                {formatBitcoinAmount(entry.btcAmount)}
+              </TableCell>
+              <TableCell className={isMobile ? "text-xs py-2" : ""}>
+                {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(entryRateInViewCurrency)}
+              </TableCell>
+              <TableCell className={isMobile ? "text-xs py-2" : ""}>
+                <div className="flex items-center">
+                  {percentChange > 0 ? (
+                    <TrendingUp className="h-4 w-4 mr-1 text-green-500" />
+                  ) : (
+                    <TrendingDown className="h-4 w-4 mr-1 text-red-500" />
                   )}
-                  {entry.registrationSource === 'planilha' && (
-                    <span className="ml-1 text-xs text-yellow-600">●</span>
-                  )}
-                </TableCell>
-              )}
-              
-              {isColumnVisible('amountInvested') && (
-                <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                  {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(investedValue)}
-                </TableCell>
-              )}
-              
-              {isColumnVisible('btcAmount') && (
-                <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                  {formatBitcoinAmount(entry.btcAmount)}
-                </TableCell>
-              )}
-              
-              {isColumnVisible('exchangeRate') && (
-                <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                  {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(exchangeRateInViewCurrency)}
-                </TableCell>
-              )}
-              
-              {isColumnVisible('percentChange') && (
-                <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                  <div className="flex items-center">
-                    {percentChange > 0 ? (
-                      <TrendingUp className="h-4 w-4 mr-1 text-green-500" />
-                    ) : (
-                      <TrendingDown className="h-4 w-4 mr-1 text-red-500" />
-                    )}
-                    <span className={percentChange > 0 ? 'text-green-500' : 'text-red-500'}>
-                      {formatNumber(percentChange)}%
-                    </span>
+                  <span className={percentChange > 0 ? 'text-green-500' : 'text-red-500'}>
+                    {formatNumber(percentChange)}%
+                  </span>
+                </div>
+              </TableCell>
+              <TableCell className={isMobile ? "text-xs py-2" : ""}>
+                <div className={percentChange > 0 ? 'text-green-500' : 'text-red-500'}>
+                  {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(currentValue)}
+                  <div className="text-xs text-muted-foreground">
+                    {percentChange > 0 ? '+' : ''}{formatNumber(currentValue - investedValue)}
                   </div>
-                </TableCell>
-              )}
-              
-              {isColumnVisible('currentValue') && (
-                <TableCell className={isMobile ? "text-xs py-2" : ""}>
-                  <div className={profit > 0 ? 'text-green-500' : 'text-red-500'}>
-                    {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(currentValue)}
-                    <div className="text-xs text-muted-foreground">
-                      {profit > 0 ? '+' : ''}{formatNumber(profit)}
-                    </div>
-                  </div>
-                </TableCell>
-              )}
-              
+                </div>
+              </TableCell>
               <TableCell className={`text-right ${isMobile ? "text-xs py-2" : ""}`}>
                 <div className="flex justify-end">
                   <Button
@@ -261,38 +143,57 @@ export const EntriesTable: React.FC<EntriesTableProps> = ({
         
         {/* Linha de totais */}
         <TableRow className="bg-gray-100/80 font-semibold border-t-2">
-          <TableCell className={isMobile ? "text-xs py-2" : ""}>
-            TOTAIS
-          </TableCell>
-          <TableCell className={isMobile ? "text-xs py-2" : ""}>
-            {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(totals.totalInvested)}
-          </TableCell>
-          <TableCell className={isMobile ? "text-xs py-2" : ""}>
-            {formatBitcoinAmount(totals.totalBtc)}
-          </TableCell>
-          <TableCell className={isMobile ? "text-xs py-2" : ""}>
-            {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(totals.avgPrice)}
-          </TableCell>
-          <TableCell className={isMobile ? "text-xs py-2" : ""}>
-            <div className="flex items-center">
-              {totals.percentChange > 0 ? (
-                <TrendingUp className="h-4 w-4 mr-1 text-green-500" />
-              ) : (
-                <TrendingDown className="h-4 w-4 mr-1 text-red-500" />
-              )}
-              <span className={totals.percentChange > 0 ? 'text-green-500' : 'text-red-500'}>
-                {formatNumber(totals.percentChange)}%
-              </span>
-            </div>
-          </TableCell>
-          <TableCell className={isMobile ? "text-xs py-2" : ""}>
-            <div className={totals.percentChange > 0 ? 'text-green-500' : 'text-red-500'}>
-              {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(totals.currentValue)}
-              <div className="text-xs text-muted-foreground">
-                {totals.percentChange > 0 ? '+' : ''}{formatNumber(totals.currentValue - totals.totalInvested)}
+          {isColumnVisible('date') && (
+            <TableCell className={isMobile ? "text-xs py-2" : ""}>
+              TOTAIS
+            </TableCell>
+          )}
+          
+          {isColumnVisible('amountInvested') && (
+            <TableCell className={isMobile ? "text-xs py-2" : ""}>
+              {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(totals.totalInvested)}
+            </TableCell>
+          )}
+          
+          {isColumnVisible('btcAmount') && (
+            <TableCell className={isMobile ? "text-xs py-2" : ""}>
+              {formatBitcoinAmount(totals.totalBtc)}
+            </TableCell>
+          )}
+          
+          {isColumnVisible('exchangeRate') && (
+            <TableCell className={isMobile ? "text-xs py-2" : ""}>
+              {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(totals.avgPrice)}
+            </TableCell>
+          )}
+          
+          {isColumnVisible('percentChange') && (
+            <TableCell className={isMobile ? "text-xs py-2" : ""}>
+              <div className="flex items-center">
+                {totals.percentChange > 0 ? (
+                  <TrendingUp className="h-4 w-4 mr-1 text-green-500" />
+                ) : (
+                  <TrendingDown className="h-4 w-4 mr-1 text-red-500" />
+                )}
+                <span className={totals.percentChange > 0 ? 'text-green-500' : 'text-red-500'}>
+                  {formatNumber(totals.percentChange)}%
+                </span>
               </div>
-            </div>
-          </TableCell>
+            </TableCell>
+          )}
+          
+          {isColumnVisible('currentValue') && (
+            <TableCell className={isMobile ? "text-xs py-2" : ""}>
+              <div className={totals.percentChange > 0 ? 'text-green-500' : 'text-red-500'}>
+                {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(totals.currentValue)}
+                <div className="text-xs text-muted-foreground">
+                  {totals.percentChange > 0 ? '+' : ''}{formatNumber(totals.currentValue - totals.totalInvested)}
+                </div>
+              </div>
+            </TableCell>
+          )}
+          
+          {/* Célula de ações sempre visível */}
           <TableCell></TableCell>
         </TableRow>
       </TableBody>
