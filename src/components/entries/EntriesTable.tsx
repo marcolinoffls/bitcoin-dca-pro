@@ -1,3 +1,4 @@
+
 /**
  * Componente que exibe os aportes em formato de tabela
  * com suporte a ordenação e visibilidade de colunas
@@ -16,7 +17,7 @@ import { cn } from '@/lib/utils';
 interface EntriesTableProps {
   entries: BitcoinEntry[];
   currencyView: 'BRL' | 'USD';
-  currentRate: { usd: number; brl: number };
+  currentRate: { usd: number; brl: number; timestamp: Date };
   displayUnit: 'BTC' | 'SATS';
   isMobile: boolean;
   handleEditClick: (id: string) => void;
@@ -46,7 +47,28 @@ export const EntriesTable: React.FC<EntriesTableProps> = ({
   onSort,
   visibleColumns
 }) => {
-  // Restante do código mantido igual...
+  // Verifica se uma coluna está visível
+  const isColumnVisible = (columnId: string) => {
+    const column = visibleColumns.find(col => col.id === columnId);
+    return column?.visible ?? false;
+  };
+
+  // Formata o valor de bitcoin de acordo com a unidade selecionada (BTC ou SATS)
+  const formatBitcoinAmount = (amount: number) => {
+    if (displayUnit === 'SATS') {
+      return formatNumber(amount * 100000000); // Converter para satoshis
+    }
+    return formatNumber(amount, 8); // BTC com 8 casas decimais
+  };
+
+  // Renderiza o ícone de ordenação
+  const renderSortIcon = (column: string) => {
+    if (sortState?.column !== column) return null;
+    
+    return sortState.direction === 'asc' 
+      ? <ArrowUp className="h-4 w-4 ml-1" /> 
+      : <ArrowDown className="h-4 w-4 ml-1" />;
+  };
 
   /**
    * Retorna classes CSS para animação de colunas
@@ -152,7 +174,34 @@ export const EntriesTable: React.FC<EntriesTableProps> = ({
         </TableHeader>
         <TableBody>
           {entries.map((entry) => {
-            // Restante do código mantido igual...
+            // Calcula os valores para exibição
+            let investedValue = entry.amountInvested;
+            
+            // Converter valores se a moeda de exibição for diferente da moeda do aporte
+            if (entry.currency !== currencyView) {
+              if (entry.currency === 'USD' && currencyView === 'BRL') {
+                investedValue = entry.amountInvested * currentRate.brl / currentRate.usd;
+              } else if (entry.currency === 'BRL' && currencyView === 'USD') {
+                investedValue = entry.amountInvested * currentRate.usd / currentRate.brl;
+              }
+            }
+            
+            // Calcular a cotação na moeda de visualização atual
+            let entryRateInViewCurrency = entry.exchangeRate;
+            if (entry.currency !== currencyView) {
+              if (entry.currency === 'USD' && currencyView === 'BRL') {
+                entryRateInViewCurrency = entry.exchangeRate * currentRate.brl / currentRate.usd;
+              } else if (entry.currency === 'BRL' && currencyView === 'USD') {
+                entryRateInViewCurrency = entry.exchangeRate * currentRate.usd / currentRate.brl;
+              }
+            }
+            
+            // Calcular a variação percentual
+            const currentRateValue = currencyView === 'USD' ? currentRate.usd : currentRate.brl;
+            const percentChange = ((currentRateValue - entryRateInViewCurrency) / entryRateInViewCurrency) * 100;
+            
+            // Calcular o valor atual
+            const currentValue = entry.btcAmount * currentRateValue;
             
             return (
               <TableRow key={entry.id}>
