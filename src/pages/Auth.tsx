@@ -95,7 +95,7 @@ const Auth = () => {
       
       // Define URL de redirecionamento específica para completar a autenticação
       // Usa URL absoluta para garantir que o redirecionamento funcione corretamente
-      const redirectUrl = `${window.location.origin}/auth`; // Redireciona de volta para a página de autenticação
+      const redirectUrl = `${window.location.origin}/auth/callback`; // Redireciona de volta para a página de autenticação
       
       console.log('URL de redirecionamento:', redirectUrl);
       
