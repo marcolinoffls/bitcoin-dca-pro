@@ -135,15 +135,6 @@ const ImportCsvModal: React.FC<ImportCsvModalProps> = ({
               <FileUp className="h-4 w-4 mr-2" />
               Importar Localmente
             </Button>
-            <Button
-              variant={uploadMode === 'webhook' ? "default" : "outline"}
-              size="sm"
-              className="flex-1"
-              onClick={() => setUploadMode('webhook')}
-            >
-              <Shield className="h-4 w-4 mr-2" />
-              Envio Seguro Externo
-            </Button>
           </div>
 
           {/* Descrição do modo selecionado */}
