@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate, useLocation } from 'react-router-dom';
@@ -26,14 +27,14 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false); // Estado para controlar carregamento do botão Google
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState('login');
   const [passwordError, setPasswordError] = useState('');
   const [resetSent, setResetSent] = useState(false);
   const [resetRequested, setResetRequested] = useState(false);
   const location = useLocation();
-  const { toast } = useToast();
+  const { toast } = useToast(); // Hook para notificações
 
   if (loading) {
     return (
@@ -86,22 +87,26 @@ const Auth = () => {
     }
   };
 
+  // Função aprimorada para login com Google
   const handleGoogleSignIn = async () => {
     try {
       console.log('Iniciando login com Google...');
       setIsGoogleLoading(true);
       
-      const redirectTo = `${window.location.origin}/auth/callback`;
+      // Define URL de redirecionamento específica para completar a autenticação
+      // Usa URL absoluta para garantir que o redirecionamento funcione corretamente
+      const redirectUrl = `${window.location.origin}/auth/callback`; // Redireciona de volta para a página de autenticação
       
-      console.log('URL de redirecionamento:', redirectTo);
+      console.log('URL de redirecionamento:', redirectUrl);
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: redirectTo,
+          redirectTo: redirectUrl,
           queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
+            // Parâmetros opcionais para personalizar a tela de consentimento do Google
+            // access_type: 'offline', // Solicita refresh token
+            // prompt: 'consent', // Sempre mostra a tela de consentimento
           }
         },
       });
@@ -113,16 +118,20 @@ const Auth = () => {
         throw error;
       }
       
+      // Se chegou aqui e não há erro, o usuário será redirecionado para o Google
       console.log('Redirecionando para autenticação do Google...');
       
     } catch (error: any) {
       console.error('Erro ao tentar login com Google:', error.message);
+      // Mostrar feedback visual para o usuário
       toast({
         variant: "destructive",
         title: "Erro no login com Google",
         description: error.message || "Não foi possível conectar com o Google. Tente novamente.",
       });
     } finally {
+      // O estado de carregamento será resetado após o redirecionamento, 
+      // mas é importante resetar em caso de erro
       setIsGoogleLoading(false);
     }
   };
@@ -138,14 +147,17 @@ const Auth = () => {
     setPasswordError('');
     
     try {
+      // Utilizando a função do hook useAuth em vez de chamar diretamente o Supabase
       await resetPassword(email);
       setResetSent(true);
     } catch (error: any) {
       console.error('Erro ao enviar email de redefinição:', error);
       
+      // Mensagem de erro já tratada no hook useAuth
       if (error.message?.includes('SMTP') || error.message?.includes('Authentication failed')) {
         setPasswordError('Problema com o servidor de email. Por favor, entre em contato com o suporte técnico informando: "Erro SMTP".');
       }
+      // Outras mensagens de erro já são tratadas no hook useAuth e exibidas via toast
     } finally {
       setIsSubmitting(false);
     }
@@ -154,51 +166,6 @@ const Auth = () => {
   const toggleShowPassword = () => {
     setShowPassword(!showPassword);
   };
-
-  const GoogleButton = () => (
-    <Button 
-      type="button" 
-      variant="outline" 
-      className="w-full"
-      onClick={handleGoogleSignIn}
-      disabled={isGoogleLoading}
-    >
-      {isGoogleLoading ? (
-        <span className="flex items-center justify-center">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500 mr-2"></div>
-          Conectando...
-        </span>
-      ) : (
-        <>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            height="24"
-            viewBox="0 0 24 24"
-            width="24"
-            className="ml-[-1px]"
-          >
-            <path
-              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-              fill="#4285F4"
-            />
-            <path
-              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-              fill="#34A853"
-            />
-            <path
-              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-              fill="#FBBC05"
-            />
-            <path
-              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-              fill="#EA4335"
-            />
-          </svg>
-          Google
-        </>
-      )}
-    </Button>
-  );
 
   return (
     <div className="container flex items-center justify-center min-h-screen py-8">
@@ -293,18 +260,18 @@ const Auth = () => {
             </div>
           ) : (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 gap-2 p-1">
+              <TabsList className="grid w-full grid-cols-2 gap-2 p-1"> {/* Adicionado gap-2 e p-1 */}
                 <TabsTrigger 
                   value="login"
-                  aria-label="Entrar na conta"
-                  className="rounded data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  aria-label="Entrar na conta" // Melhoria de acessibilidade
+                  className="rounded data-[state=active]:bg-background data-[state=active]:shadow-sm" // Melhoria visual
                 >
                   Entrar
                 </TabsTrigger>
                 <TabsTrigger 
                   value="register"
-                  aria-label="Criar nova conta"
-                  className="rounded data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  aria-label="Criar nova conta" // Melhoria de acessibilidade
+                  className="rounded data-[state=active]:bg-background data-[state=active]:shadow-sm" // Melhoria visual
                 >
                   Criar Conta
                 </TabsTrigger>
@@ -388,7 +355,48 @@ const Auth = () => {
                       <span className="relative px-2 bg-card text-xs text-muted-foreground">ou continue com</span>
                     </div>
                     
-                    <GoogleButton />
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={handleGoogleSignIn}
+                      disabled={isGoogleLoading}
+                    >
+                      {isGoogleLoading ? (
+                        <span className="flex items-center justify-center">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500 mr-2"></div>
+                          Conectando...
+                        </span>
+                      ) : (
+                        <>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            width="24"
+                            className="ml-[-1px]"
+                          >
+                            <path
+                              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                              fill="#4285F4"
+                            />
+                            <path
+                              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                              fill="#34A853"
+                            />
+                            <path
+                              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                              fill="#FBBC05"
+                            />
+                            <path
+                              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                              fill="#EA4335"
+                            />
+                          </svg>
+                          Google
+                        </>
+                      )}
+                    </Button>
                   </CardFooter>
                 </form>
               </TabsContent>
@@ -489,7 +497,48 @@ const Auth = () => {
                       <span className="relative px-2 bg-card text-xs text-muted-foreground">ou continue com</span>
                     </div>
                     
-                    <GoogleButton />
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={handleGoogleSignIn}
+                      disabled={isGoogleLoading}
+                    >
+                      {isGoogleLoading ? (
+                        <span className="flex items-center justify-center">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500 mr-2"></div>
+                          Conectando...
+                        </span>
+                      ) : (
+                        <>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            width="24"
+                            className="ml-[-1px]"
+                          >
+                            <path
+                              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                              fill="#4285F4"
+                            />
+                            <path
+                              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                              fill="#34A853"
+                            />
+                            <path
+                              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                              fill="#FBBC05"
+                            />
+                            <path
+                              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                              fill="#EA4335"
+                            />
+                          </svg>
+                          Google
+                        </>
+                      )}
+                    </Button>
                   </CardFooter>
                 </form>
               </TabsContent>

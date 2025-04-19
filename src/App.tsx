@@ -12,7 +12,6 @@ import { useState } from "react";
 import { AuthProvider } from "./hooks/useAuth";
 import RequireAuth from "./components/RequireAuth";
 import "./styles/globals.css";  // Importação dos estilos globais
-import AuthCallback from './pages/AuthCallback';
 
 const App = () => {
   // Create a client and put it in state to avoid re-creating it on every render
@@ -34,7 +33,6 @@ const App = () => {
           <BrowserRouter>
             <Routes>
               <Route path="/auth" element={<Auth />} />
-              <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/set-password" element={<SetPassword />} />
               <Route path="/" element={
