@@ -14,6 +14,7 @@ export type Database = {
           bitcoin: number
           cotacao: number
           cotacao_moeda: string
+          cotacao_usd_brl: number | null
           created_at: string
           data_aporte: string
           id: string
@@ -22,11 +23,13 @@ export type Database = {
           origem_registro: string
           user_id: string | null
           valor_investido: number
+          valor_usd: number | null
         }
         Insert: {
           bitcoin: number
           cotacao: number
           cotacao_moeda?: string
+          cotacao_usd_brl?: number | null
           created_at?: string
           data_aporte: string
           id?: string
@@ -35,11 +38,13 @@ export type Database = {
           origem_registro?: string
           user_id?: string | null
           valor_investido: number
+          valor_usd?: number | null
         }
         Update: {
           bitcoin?: number
           cotacao?: number
           cotacao_moeda?: string
+          cotacao_usd_brl?: number | null
           created_at?: string
           data_aporte?: string
           id?: string
@@ -48,6 +53,7 @@ export type Database = {
           origem_registro?: string
           user_id?: string | null
           valor_investido?: number
+          valor_usd?: number | null
         }
         Relationships: []
       }

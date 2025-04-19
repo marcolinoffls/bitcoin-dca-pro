@@ -1,4 +1,3 @@
-
 /**
  * Fornece as funções para interagir com os aportes de Bitcoin no Supabase
  * - Busca todos os aportes
@@ -113,6 +112,25 @@ export const createBitcoinEntry = async (
   
   const newEntryId = uuidv4();
   
+  // Calcular valor em USD se a moeda for BRL
+  let valorUsd = null;
+  let cotacaoUsdBrl = null;
+  
+  if (currency === 'BRL') {
+    try {
+      // Busca cotação atual USD/BRL
+      const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,brl');
+      const data = await response.json();
+      if (data.bitcoin && data.bitcoin.usd && data.bitcoin.brl) {
+        cotacaoUsdBrl = data.bitcoin.brl / data.bitcoin.usd;
+        valorUsd = amountInvested / cotacaoUsdBrl;
+        console.log('Valores USD calculados:', { valorUsd, cotacaoUsdBrl });
+      }
+    } catch (error) {
+      console.error('Erro ao buscar cotação USD/BRL:', error);
+    }
+  }
+
   // Criando objeto que corresponde ao tipo esperado pela tabela do Supabase
   const newEntry: AporteDB = {
     id: newEntryId,
@@ -124,7 +142,9 @@ export const createBitcoinEntry = async (
     bitcoin: btcAmount,
     cotacao: finalRate,
     origem_aporte: origin,
-    origem_registro: 'manual' // Registros criados via formulário são 'manual'
+    origem_registro: 'manual',
+    valor_usd: valorUsd,
+    cotacao_usd_brl: cotacaoUsdBrl
   };
 
   const { error } = await supabase
@@ -143,7 +163,9 @@ export const createBitcoinEntry = async (
     exchangeRate: finalRate,
     currency,
     origin,
-    registrationSource: 'manual'
+    registrationSource: 'manual' as const,
+    valorUsd,
+    cotacaoUsdBrl
   };
 };
 
@@ -176,6 +198,24 @@ export const updateBitcoinEntry = async (
   const formattedDate = date.toISOString().split('T')[0];
   console.log('Data sendo enviada para atualização:', formattedDate, 'Objeto Date original:', date);
   
+  // Calcular valor em USD se a moeda for BRL
+  let valorUsd = null;
+  let cotacaoUsdBrl = null;
+  
+  if (currency === 'BRL') {
+    try {
+      const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,brl');
+      const data = await response.json();
+      if (data.bitcoin && data.bitcoin.usd && data.bitcoin.brl) {
+        cotacaoUsdBrl = data.bitcoin.brl / data.bitcoin.usd;
+        valorUsd = amountInvested / cotacaoUsdBrl;
+        console.log('Valores USD calculados para atualização:', { valorUsd, cotacaoUsdBrl });
+      }
+    } catch (error) {
+      console.error('Erro ao buscar cotação USD/BRL para atualização:', error);
+    }
+  }
+  
   // Criando objeto que corresponde ao tipo esperado pela tabela do Supabase para update
   const updateData: Omit<AporteDB, 'id' | 'user_id' | 'origem_registro' | 'created_at'> = {
     data_aporte: formattedDate,
@@ -184,8 +224,9 @@ export const updateBitcoinEntry = async (
     valor_investido: amountInvested,
     bitcoin: btcAmount,
     cotacao: finalRate,
-    origem_aporte: origin
-    // Não atualizamos origem_registro para preservar a origem do registro
+    origem_aporte: origin,
+    valor_usd: valorUsd,
+    cotacao_usd_brl: cotacaoUsdBrl
   };
   
   console.log('Dados completos sendo enviados para atualização:', updateData);

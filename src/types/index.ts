@@ -1,4 +1,3 @@
-
 /**
  * Interface para cotação atual do Bitcoin
  */
@@ -49,7 +48,7 @@ export interface PriceVariation {
 export interface AporteDB {
   id?: string;
   user_id: string;
-  data_aporte: string; // Formato YYYY-MM-DD na base
+  data_aporte: string;
   valor_investido: number;
   bitcoin: number;
   cotacao: number;
@@ -58,6 +57,8 @@ export interface AporteDB {
   origem_aporte: Origin;
   origem_registro: "manual" | "planilha";
   created_at?: string;
+  valor_usd?: number | null;
+  cotacao_usd_brl?: number | null;
 }
 
 /**
