@@ -126,12 +126,12 @@ const ImportCsvModal: React.FC<ImportCsvModalProps> = ({
         <div className="space-y-4 py-4">
           {/* Seletor de modo de upload */}
           <div className="flex space-x-2 rounded-lg border p-2">
-            <p className="text-sm">
+            <p className="text-sm text-center">
               <a 
                 href="https://docs.google.com/spreadsheets/d/1RAn8MWD7ckz_-c0pjRB36GWtDk_yHcY1vOOXP-sr29o/edit?usp=sharing"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-bitcoin text-center hover:text-bitcoin/90 underline"
+                className="text-bitcoin hover:text-bitcoin/90 underline"
               >
               Clique aqui para acessar uma planilha de exemplo
               </a>
