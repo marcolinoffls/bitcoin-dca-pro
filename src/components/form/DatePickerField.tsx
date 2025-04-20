@@ -89,7 +89,7 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange })
 
   // Atualiza a data ao confirmar no picker customizado
   const handleCustomPickerConfirm = () => {
-    const newDate = new Date(selectedDay, selectedMonth - 1,selectedYear);
+    const newDate = new Date(selectedYear, selectedMonth - 1, selectedDay);
     setTempDate(newDate);
     onDateChange(newDate);
     setShowCustomPicker(false);
@@ -140,7 +140,7 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange })
                   onClick={() => setShowCustomPicker(true)}
                   className="w-full mb-2"
                 >
-                  Selecionar Ano/Mês/Dia
+                  Selecionar Dia/Mês/Ano
                 </Button>
               </div>
               <div className="flex justify-center mt-1.2">
@@ -157,19 +157,19 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange })
             {showCustomPicker && (
               <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
                 <div className="bg-white rounded-lg p-4 shadow-lg flex flex-col items-center">
-                  <div className="flex gap-2 mb-4">
-                    <select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))}>
-                      {years.map(y => <option key={y} value={y}>{y}</option>)}
-                    </select>
-                    <select value={selectedMonth} onChange={e => setSelectedMonth(Number(e.target.value))}>
-                      {months.map(m => <option key={m} value={m}>{m.toString().padStart(2, '0')}</option>)}
-                    </select>
+                  <div className="flex gap-2 mb-4">                    
                     <select value={selectedDay} onChange={e => setSelectedDay(Number(e.target.value))}>
                       {days.map(d => <option key={d} value={d}>{d.toString().padStart(2, '0')}</option>)}
                     </select>
+                    <select value={selectedMonth} onChange={e => setSelectedMonth(Number(e.target.value))}>
+                      {months.map(m => <option key={m} value={m}>{m.toString().padStart(2, '0')}</option>)}  
+                    </select>
+                    <select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))}>
+                      {years.map(y => <option key={y} value={y}>{y}</option>)}
+                    </select>
                   </div>
                   <Button onClick={handleCustomPickerConfirm} className="mb-2 w-full">
-                    Atualizar Data e Hora
+                    Atualizar Data
                   </Button>
                   <Button variant="outline" onClick={() => setShowCustomPicker(false)} className="w-full">
                     Cancelar
