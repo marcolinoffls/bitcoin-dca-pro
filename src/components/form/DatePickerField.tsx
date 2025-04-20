@@ -138,7 +138,7 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange })
                   type="button"
                   variant="outline"
                   onClick={() => setShowCustomPicker(true)}
-                  className="w-full rounded-lg mb-2 ml-[20px] mr-[20px]"
+                  className="w-full mb-2"
                 >
                   Selecionar Ano/Mês/Dia
                 </Button>
@@ -168,8 +168,8 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange })
                       {days.map(d => <option key={d} value={d}>{d.toString().padStart(2, '0')}</option>)}
                     </select>
                   </div>
-                  <Button onClick={handleCustomPickerConfirm} className="mb-2 w-full">
-                    Atualizar Data e Hora
+                  <Button onClick={handleCustomPickerConfirm} className="mb-2 w-full bg-bitcoin hover:bg-bitcoin/90 text-white">
+                    Atualizar Data
                   </Button>
                   <Button variant="outline" onClick={() => setShowCustomPicker(false)} className="w-full">
                     Cancelar
