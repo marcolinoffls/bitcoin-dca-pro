@@ -4,7 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { BitcoinEntry, CurrentRate, Origin, AporteDB } from '@/types';
 import { fetchCurrentBitcoinRate } from '@/services/bitcoinService';
-import { fetchUsdBrlRate } from '@/services/bitcoinService';
 import { 
   fetchBitcoinEntries, 
   updateBitcoinEntry, 
@@ -110,62 +109,48 @@ export const useBitcoinEntries = () => {
    */
   const addEntry = async (entry: Partial<BitcoinEntry>) => {
     if (!user) return;
-  
+    
     const { date, amountInvested, btcAmount, exchangeRate, currency, origin } = entry;
-  
+    
     if (!date || amountInvested === undefined || btcAmount === undefined || 
         !currency || !origin) {
       throw new Error("Dados incompletos para criar aporte");
     }
-  
+    
     // Garantir que a data é válida antes de enviar
     if (!(date instanceof Date) || isNaN(date.getTime())) {
       console.error('Data inválida para criação:', date);
       throw new Error('Data inválida fornecida');
     }
-  
+    
     // Se a cotação não foi fornecida, calcula automaticamente
     let finalRate = exchangeRate;
     if (finalRate === undefined || finalRate <= 0) {
       finalRate = calculateExchangeRate(amountInvested, btcAmount);
       console.log('Cotação calculada automaticamente:', finalRate);
     }
-  
-    // Buscar cotação USD/BRL na data do aporte
-    const aporteDateStr = date.toISOString().split('T')[0];
-    const usdBrlRate = await fetchUsdBrlRateOnDate(aporteDateStr);
-  
-    // Calcular valores em USD
-    const valor_usd = currency === 'BRL'
-      ? amountInvested / usdBrlRate
-      : amountInvested;
-  
-    const cotacao_usd_brl = currency === 'BRL'
-      ? finalRate / usdBrlRate
-      : finalRate;
-  
+    
     // Criando objeto que corresponde ao tipo esperado pela tabela do Supabase
     const newEntry: AporteDB = {
       user_id: user.id,
-      data_aporte: aporteDateStr,
+      data_aporte: date.toISOString().split('T')[0],
       valor_investido: amountInvested,
       bitcoin: btcAmount,
       cotacao: finalRate,
       moeda: currency,
       cotacao_moeda: currency,
       origem_aporte: origin,
-      origem_registro: 'manual',
-      valor_usd,
-      cotacao_usd_brl
+      origem_registro: 'manual'
     };
-  
-    // Envie como array!
-    const { error } = await supabase.from('aportes').insert([newEntry]);
-  
+    
+    const { error } = await supabase.from('aportes').insert(newEntry);
+    
     if (error) throw error;
-  
+
+    // Atualiza lista após inserção
     await queryClient.invalidateQueries({ queryKey: ['entries'] });
   };
+
   /**
    * Atualiza um aporte existente
    */

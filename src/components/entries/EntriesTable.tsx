@@ -174,54 +174,45 @@ export const EntriesTable: React.FC<EntriesTableProps> = ({
         <TableBody>
           {entries.map((entry) => {
             // Usar o valor apropriado baseado na moeda de visualização
-            // Para USD, use o valor salvo no banco (valor_usd), para BRL use o valor investido original
-            let investedValue = currencyView === 'USD' && entry.valor_usd
-              ? entry.valor_usd
+            let investedValue = currencyView === 'USD' && entry.valorUsd 
+              ? entry.valorUsd 
               : entry.amountInvested;
-        
+            
             // Usar a cotação apropriada baseada na moeda de visualização
-            // Para USD, use a cotação salva no banco (cotacao_usd_brl), para BRL use a cotação original
-            let entryRateInViewCurrency = currencyView === 'USD' && entry.cotacao_usd_brl
-              ? entry.cotacao_usd_brl
+            let entryRateInViewCurrency = currencyView === 'USD'
+              ? (entry.valorUsd && entry.btcAmount) 
+                ? entry.valorUsd / entry.btcAmount 
+                : entry.exchangeRate
               : entry.exchangeRate;
-        
+            
             // Calcular a variação percentual usando a cotação atual
             const currentRateValue = currencyView === 'USD' ? currentRate.usd : currentRate.brl;
             const percentChange = ((currentRateValue - entryRateInViewCurrency) / entryRateInViewCurrency) * 100;
-        
-            // Calcular o valor atual do aporte
+            
+            // Calcular o valor atual
             const currentValue = entry.btcAmount * currentRateValue;
-        
+            
             return (
               <TableRow key={entry.id}>
-                {/* Data do aporte */}
                 <TableCell className={cn(isMobile ? "text-xs py-2" : "", getColumnClasses('date'))}>
                   {format(entry.date, 'dd/MM/yyyy', { locale: ptBR })}
                   {entry.registrationSource === 'planilha' && (
                     <span className="ml-1 text-xs text-yellow-600">●</span>
                   )}
                 </TableCell>
-        
-                {/* Valor investido */}
+                
                 <TableCell className={cn(isMobile ? "text-xs py-2" : "", getColumnClasses('amountInvested'))}>
-                  {currencyView === 'USD'
-                    ? (entry.valor_usd ? `$ ${formatNumber(entry.valor_usd)}` : '-')
-                    : `R$ ${formatNumber(entry.amountInvested)}`}
+                  {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(investedValue)}
                 </TableCell>
-        
-                {/* Quantidade de Bitcoin */}
+                
                 <TableCell className={cn(isMobile ? "text-xs py-2" : "", getColumnClasses('btcAmount'))}>
                   {formatBitcoinAmount(entry.btcAmount)}
                 </TableCell>
-        
-                {/* Cotação */}
+                
                 <TableCell className={cn(isMobile ? "text-xs py-2" : "", getColumnClasses('exchangeRate'))}>
-                  {currencyView === 'USD'
-                    ? (entry.cotacao_usd_brl ? `$ ${formatNumber(entry.cotacao_usd_brl)}` : '-')
-                    : `R$ ${formatNumber(entry.exchangeRate)}`}
+                  {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(entryRateInViewCurrency)}
                 </TableCell>
-        
-                {/* Variação percentual */}
+                
                 <TableCell className={cn(isMobile ? "text-xs py-2" : "", getColumnClasses('percentChange'))}>
                   <div className="flex items-center">
                     {percentChange > 0 ? (
@@ -234,8 +225,7 @@ export const EntriesTable: React.FC<EntriesTableProps> = ({
                     </span>
                   </div>
                 </TableCell>
-        
-                {/* Valor atual */}
+                
                 <TableCell className={cn(isMobile ? "text-xs py-2" : "", getColumnClasses('currentValue'))}>
                   <div className={percentChange > 0 ? 'text-green-500' : 'text-red-500'}>
                     {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(currentValue)}
@@ -244,8 +234,7 @@ export const EntriesTable: React.FC<EntriesTableProps> = ({
                     </div>
                   </div>
                 </TableCell>
-        
-                {/* Ações */}
+                
                 <TableCell className={`text-right ${isMobile ? "text-xs py-2" : ""}`}>
                   <div className="flex justify-end">
                     <Button
@@ -268,25 +257,25 @@ export const EntriesTable: React.FC<EntriesTableProps> = ({
               </TableRow>
             );
           })}
-        
+          
           {/* Linha de totais */}
           <TableRow className="bg-gray-100/80 font-semibold border-t-2">
             <TableCell className={cn(isMobile ? "text-xs py-2" : "", getColumnClasses('date'))}>
               TOTAIS
             </TableCell>
-        
+            
             <TableCell className={cn(isMobile ? "text-xs py-2" : "", getColumnClasses('amountInvested'))}>
               {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(totals.totalInvested)}
             </TableCell>
-        
+            
             <TableCell className={cn(isMobile ? "text-xs py-2" : "", getColumnClasses('btcAmount'))}>
               {formatBitcoinAmount(totals.totalBtc)}
             </TableCell>
-        
+            
             <TableCell className={cn(isMobile ? "text-xs py-2" : "", getColumnClasses('exchangeRate'))}>
               {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(totals.avgPrice)}
             </TableCell>
-        
+            
             <TableCell className={cn(isMobile ? "text-xs py-2" : "", getColumnClasses('percentChange'))}>
               <div className="flex items-center">
                 {totals.percentChange > 0 ? (
@@ -299,7 +288,7 @@ export const EntriesTable: React.FC<EntriesTableProps> = ({
                 </span>
               </div>
             </TableCell>
-        
+            
             <TableCell className={cn(isMobile ? "text-xs py-2" : "", getColumnClasses('currentValue'))}>
               <div className={totals.percentChange > 0 ? 'text-green-500' : 'text-red-500'}>
                 {currencyView === 'USD' ? '$' : 'R$'} {formatNumber(totals.currentValue)}
@@ -308,7 +297,7 @@ export const EntriesTable: React.FC<EntriesTableProps> = ({
                 </div>
               </div>
             </TableCell>
-        
+            
             <TableCell></TableCell>
           </TableRow>
         </TableBody>

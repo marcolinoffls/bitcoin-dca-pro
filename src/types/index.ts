@@ -1,4 +1,3 @@
-
 /**
  * Interface para cotação atual do Bitcoin
  */
