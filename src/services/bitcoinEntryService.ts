@@ -1,3 +1,4 @@
+
 /**
  * Fornece as funções para interagir com os aportes de Bitcoin no Supabase
  * 

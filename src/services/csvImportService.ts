@@ -450,7 +450,7 @@ export const processFinalEntries = async (entries: ImportedEntry[], currency: 'B
         console.log(`Aporte importado com sucesso: ${entry.date} - ${entry.amount} ${currency} - ${entry.btc} BTC`);
       } catch (error) {
         console.error(`Erro ao importar aporte: ${error}`);
-        throw new Error(`Falha ao importar aporte de ${entry.date}: ${error}`);
+        throw new Error(`Falha ao importar aporte de ${entry.date}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
       }
     }
     
