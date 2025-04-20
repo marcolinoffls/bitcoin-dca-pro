@@ -131,7 +131,7 @@ const ImportCsvModal: React.FC<ImportCsvModalProps> = ({
                 href="https://docs.google.com/spreadsheets/d/1RAn8MWD7ckz_-c0pjRB36GWtDk_yHcY1vOOXP-sr29o/edit?usp=sharing"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-bitcoin hover:text-bitcoin/90 underline"
+                className="text-bitcoin text-center hover:text-bitcoin/90 underline"
               >
               Clique aqui para acessar uma planilha de exemplo
               </a>
