@@ -1,77 +1,71 @@
 
-/**
- * Campo visual de seleção da origem do aporte (Corretora ou P2P).
- * Usado tanto no registro quanto na edição. Controla o valor salvo no Supabase.
- */
 import React from 'react';
 import { Label } from '@/components/ui/label';
-import { Building, Users, Table } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Origin } from '@/types';
 
 interface OriginSelectorProps {
   origin: Origin;
   onOriginChange: (origin: Origin) => void;
+  disabled?: boolean;
 }
 
-const OriginSelector: React.FC<OriginSelectorProps> = ({ origin, onOriginChange }) => {
-  // Função para normalizar a origem caso seja "exchange" (compatibilidade)
-  const handleOriginChange = (newOrigin: Origin) => {
-    onOriginChange(newOrigin);
-  };
-
+const OriginSelector: React.FC<OriginSelectorProps> = ({ 
+  origin, 
+  onOriginChange,
+  disabled = false
+}) => {
   return (
-    <div className="flex flex-col space-y-3 mt-6">
-      <Label htmlFor="origin">Origem do aporte</Label>
-      <div className="flex flex-wrap space-x-1 rounded-xl bg-muted p-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          type="button"
-          onClick={() => handleOriginChange('corretora')}
-          className={cn(
-            'flex-1 text-xs font-normal gap-1 rounded-xl',
-            (origin === 'corretora' || origin === 'exchange') && 'bg-bitcoin text-white hover:bg-bitcoin/90'
-          )}
-        >
-          <Building className="h-4 w-4" />
-          Corretora
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          type="button"
-          onClick={() => handleOriginChange('p2p')}
-          className={cn(
-            'flex-1 text-xs font-normal gap-1 rounded-xl',
-            origin === 'p2p' && 'bg-bitcoin text-white hover:bg-bitcoin/90'
-          )}
-        >
-          <Users className="h-4 w-4" />
-          P2P
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          type="button"
-          onClick={() => handleOriginChange('planilha')}
-          className={cn(
-            'flex-1 text-xs font-normal gap-1 rounded-xl',
-            origin === 'planilha' && 'bg-bitcoin text-white hover:bg-bitcoin/90'
-          )}
-        >
-          <Table className="h-4 w-4" />
-          Planilha
-        </Button>
-      </div>
-      
-      {/* Mensagem de informação se origin for "exchange" */}
-      {origin === 'exchange' && (
-        <p className="text-xs text-muted-foreground mt-1">
-          Nota: "exchange" é mapeado para "corretora" na interface.
-        </p>
-      )}
+    <div className="flex flex-col space-y-1.5">
+      <Label htmlFor="originSelector">Origem</Label>
+      <RadioGroup
+        id="originSelector"
+        value={origin}
+        onValueChange={(value: Origin) => onOriginChange(value)}
+        className="flex gap-6"
+      >
+        <div className="flex items-center space-x-2">
+          <RadioGroupItem 
+            id="corretora" 
+            value="corretora" 
+            disabled={disabled}
+          />
+          <Label 
+            htmlFor="corretora" 
+            className={`font-normal ${disabled ? 'text-muted-foreground' : ''}`}
+          >
+            Corretora
+          </Label>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <RadioGroupItem 
+            id="p2p" 
+            value="p2p" 
+            disabled={disabled}
+          />
+          <Label 
+            htmlFor="p2p" 
+            className={`font-normal ${disabled ? 'text-muted-foreground' : ''}`}
+          >
+            P2P
+          </Label>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <RadioGroupItem 
+            id="planilha" 
+            value="planilha" 
+            disabled={disabled}
+          />
+          <Label 
+            htmlFor="planilha" 
+            className={`font-normal ${disabled ? 'text-muted-foreground' : ''}`}
+          >
+            Planilha
+          </Label>
+        </div>
+      </RadioGroup>
     </div>
   );
 };

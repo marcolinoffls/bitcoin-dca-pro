@@ -1,3 +1,4 @@
+
 /**
  * Fornece as funções para interagir com os aportes de Bitcoin no Supabase
  * 
@@ -5,6 +6,8 @@
  * - Adicionado suporte ao cálculo e armazenamento do valor em USD
  * - Implementada lógica para registro da cotação USD/BRL
  * - Removido tipo "exchange" das origens permitidas
+ * - Implementada busca da cotação USD/BRL histórica da data do aporte
+ * - Adicionado cálculo e armazenamento da cotação BTC/USD
  */
 
 import { BitcoinEntry, CurrentRate, Origin, AporteDB } from '@/types';
@@ -37,6 +40,105 @@ const calculateExchangeRate = (amountInvested: number, btcAmount: number): numbe
 };
 
 /**
+ * Busca a cotação histórica USD/BRL para uma data específica
+ * @param date Data do aporte (formato Date)
+ * @returns Cotação USD/BRL da data ou null em caso de erro
+ */
+const fetchHistoricalUsdBrlRate = async (date: Date): Promise<number | null> => {
+  try {
+    // Formata a data para o formato esperado pela API (YYYYMMDD)
+    const formattedDate = date.toISOString().split('T')[0].replace(/-/g, '');
+    
+    // Buscar cotação na AwesomeAPI
+    const response = await fetch(`https://economia.awesomeapi.com.br/json/daily/USD-BRL/1?start_date=${formattedDate}&end_date=${formattedDate}`);
+    
+    if (!response.ok) {
+      console.warn(`API responded with status: ${response.status} for date ${formattedDate}`);
+      // Tenta usar API alternativa em caso de falha
+      return fetchAlternativeUsdBrlRate(date);
+    }
+    
+    const data = await response.json();
+    
+    if (Array.isArray(data) && data.length > 0) {
+      // Pega o valor de fechamento (bid) da cotação na data
+      const rate = parseFloat(data[0].bid);
+      console.log(`Cotação USD/BRL para ${date.toISOString().split('T')[0]}: ${rate}`);
+      return rate;
+    } else {
+      console.warn(`Nenhuma cotação encontrada para a data ${formattedDate}`);
+      // Tenta usar API alternativa em caso de falha
+      return fetchAlternativeUsdBrlRate(date);
+    }
+  } catch (error) {
+    console.error("Erro ao buscar cotação histórica USD/BRL:", error);
+    // Tenta usar API alternativa em caso de erro
+    return fetchAlternativeUsdBrlRate(date);
+  }
+};
+
+/**
+ * API alternativa para buscar cotação USD/BRL caso a principal falhe
+ * @param date Data do aporte
+ * @returns Cotação USD/BRL ou null em caso de erro
+ */
+const fetchAlternativeUsdBrlRate = async (date: Date): Promise<number | null> => {
+  try {
+    const dateString = date.toISOString().split('T')[0];
+    
+    // Usar ExchangeRate.host como alternativa
+    const response = await fetch(`https://api.exchangerate.host/${dateString}?base=USD&symbols=BRL`);
+    
+    if (!response.ok) {
+      console.error(`API alternativa respondeu com status: ${response.status}`);
+      // Se ambas as APIs falharem, tenta obter a cotação atual como último recurso
+      return fetchCurrentUsdBrlRate();
+    }
+    
+    const data = await response.json();
+    
+    if (data && data.rates && data.rates.BRL) {
+      const rate = data.rates.BRL;
+      console.log(`Cotação alternativa USD/BRL para ${dateString}: ${rate}`);
+      return rate;
+    } else {
+      console.error(`Formato inválido de resposta da API alternativa para data ${dateString}`);
+      // Se ambas as APIs falharem, tenta obter a cotação atual como último recurso
+      return fetchCurrentUsdBrlRate();
+    }
+  } catch (error) {
+    console.error("Erro ao buscar cotação alternativa USD/BRL:", error);
+    // Se ambas as APIs falharem, tenta obter a cotação atual como último recurso
+    return fetchCurrentUsdBrlRate();
+  }
+};
+
+/**
+ * Busca a cotação atual de USD/BRL como último recurso
+ * @returns Cotação atual ou valor padrão em caso de erro
+ */
+const fetchCurrentUsdBrlRate = async (): Promise<number> => {
+  try {
+    // Buscar cotações atuais do Bitcoin
+    const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,brl');
+    const data = await response.json();
+    
+    if (data.bitcoin && data.bitcoin.usd && data.bitcoin.brl) {
+      // Calcular cotação USD/BRL a partir da relação entre BTC/BRL e BTC/USD
+      const rate = data.bitcoin.brl / data.bitcoin.usd;
+      console.log('Usando cotação atual USD/BRL (último recurso):', rate);
+      return rate;
+    }
+  } catch (error) {
+    console.error("Erro ao buscar cotação atual USD/BRL:", error);
+  }
+  
+  // Valor padrão aproximado em caso de falha completa
+  console.warn("Usando valor padrão para cotação USD/BRL (5.0)");
+  return 5.0;
+};
+
+/**
  * Fetches all bitcoin entries from the database
  */
 export const fetchBitcoinEntries = async () => {
@@ -66,6 +168,7 @@ export const fetchBitcoinEntries = async () => {
       registrationSource: entry.origem_registro as 'manual' | 'planilha',
       valorUsd: entry.valor_usd || undefined,
       cotacaoUsdBrl: entry.cotacao_usd_brl || undefined,
+      cotacaoUsd: entry.cotacao_usd || undefined
     };
   }) || [];
   
@@ -97,32 +200,34 @@ export const createBitcoinEntry = async (
     console.log('Cotação calculada automaticamente:', finalRate);
   }
   
-  // Calcular valor em USD se a moeda for BRL
+  // Calcular valor em USD e cotação USD/BRL se a moeda for BRL
   let valorUsd = null;
   let cotacaoUsdBrl = null;
+  let cotacaoUsd = null;
   
   try {
-    // Buscar cotações atuais
-    const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,brl');
-    const data = await response.json();
-    
-    if (data.bitcoin && data.bitcoin.usd && data.bitcoin.brl) {
-      if (currency === 'BRL') {
-        // Calcular e salvar cotação USD/BRL
-        cotacaoUsdBrl = data.bitcoin.brl / data.bitcoin.usd;
+    if (currency === 'BRL') {
+      // Buscar a cotação histórica USD/BRL para a data do aporte
+      cotacaoUsdBrl = await fetchHistoricalUsdBrlRate(date);
+      
+      if (cotacaoUsdBrl) {
         // Calcular valor em USD
         valorUsd = amountInvested / cotacaoUsdBrl;
+        // Calcular cotação BTC/USD
+        cotacaoUsd = valorUsd / btcAmount;
         
-        console.log('Valores calculados:', {
+        console.log('Valores calculados para data histórica:', {
+          data: date.toISOString().split('T')[0],
           cotacaoUsdBrl,
           valorUsd,
-          btcUsdRate: valorUsd / btcAmount
+          cotacaoUsd
         });
-      } else {
-        // Se já está em USD, mantém o mesmo valor
-        valorUsd = amountInvested;
-        cotacaoUsdBrl = 1;
       }
+    } else {
+      // Se já está em USD, mantém o mesmo valor e define cotação USD/BRL como 1
+      valorUsd = amountInvested;
+      cotacaoUsdBrl = 1;
+      cotacaoUsd = finalRate; // A cotação em USD é a mesma já fornecida
     }
   } catch (error) {
     console.error('Erro ao buscar cotação USD/BRL:', error);
@@ -142,7 +247,8 @@ export const createBitcoinEntry = async (
     origem_aporte: origin,
     origem_registro: 'manual',
     valor_usd: valorUsd,
-    cotacao_usd_brl: cotacaoUsdBrl
+    cotacao_usd_brl: cotacaoUsdBrl,
+    cotacao_usd: cotacaoUsd
   };
 
   const { error } = await supabase
@@ -161,7 +267,8 @@ export const createBitcoinEntry = async (
     origin,
     registrationSource: 'manual' as const,
     valorUsd,
-    cotacaoUsdBrl
+    cotacaoUsdBrl,
+    cotacaoUsd
   };
 };
 
@@ -190,28 +297,34 @@ export const updateBitcoinEntry = async (
     console.log('Cotação calculada automaticamente para atualização:', finalRate);
   }
   
-  // Calcular valor em USD se a moeda for BRL
+  // Calcular valor em USD e cotação USD/BRL se a moeda for BRL
   let valorUsd = null;
   let cotacaoUsdBrl = null;
+  let cotacaoUsd = null;
   
   try {
-    const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,brl');
-    const data = await response.json();
-    
-    if (data.bitcoin && data.bitcoin.usd && data.bitcoin.brl) {
-      if (currency === 'BRL') {
-        cotacaoUsdBrl = data.bitcoin.brl / data.bitcoin.usd;
+    if (currency === 'BRL') {
+      // Buscar a cotação histórica USD/BRL para a data do aporte
+      cotacaoUsdBrl = await fetchHistoricalUsdBrlRate(date);
+      
+      if (cotacaoUsdBrl) {
+        // Calcular valor em USD
         valorUsd = amountInvested / cotacaoUsdBrl;
+        // Calcular cotação BTC/USD
+        cotacaoUsd = valorUsd / btcAmount;
         
-        console.log('Valores calculados para atualização:', {
+        console.log('Valores calculados para atualização (data histórica):', {
+          data: date.toISOString().split('T')[0],
           cotacaoUsdBrl,
           valorUsd,
-          btcUsdRate: valorUsd / btcAmount
+          cotacaoUsd
         });
-      } else {
-        valorUsd = amountInvested;
-        cotacaoUsdBrl = 1;
       }
+    } else {
+      // Se já está em USD, mantém o mesmo valor e define cotação USD/BRL como 1
+      valorUsd = amountInvested;
+      cotacaoUsdBrl = 1;
+      cotacaoUsd = finalRate; // A cotação em USD é a mesma já fornecida
     }
   } catch (error) {
     console.error('Erro ao buscar cotação USD/BRL para atualização:', error);
@@ -226,7 +339,8 @@ export const updateBitcoinEntry = async (
     cotacao_moeda: currency,
     origem_aporte: origin,
     valor_usd: valorUsd,
-    cotacao_usd_brl: cotacaoUsdBrl
+    cotacao_usd_brl: cotacaoUsdBrl,
+    cotacao_usd: cotacaoUsd
   };
 
   const { error } = await supabase

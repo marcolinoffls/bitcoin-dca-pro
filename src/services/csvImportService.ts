@@ -1,4 +1,3 @@
-
 import {
   validateCsvFile,
   sanitizeCsvData,
@@ -404,4 +403,106 @@ export const sendSecureCSVToWebhook = async (
         : 'Erro desconhecido ao enviar arquivo para processamento'
     };
   }
+};
+
+/**
+ * Processa aportes finais e os envia para o supabase
+ * @param entries Entradas de aporte processadas
+ * @param currency Moeda (BRL ou USD)
+ * @returns True se todos os aportes foram importados com sucesso
+ */
+export const processFinalEntries = async (entries: ImportedEntry[], currency: 'BRL' | 'USD'): Promise<boolean> => {
+  if (!entries.length) {
+    console.error('Nenhum aporte para processar');
+    return false;
+  }
+
+  try {
+    // Inserir cada entrada no Supabase
+    for (const entry of entries) {
+      const entryDate = parseLocalDate(entry.date);
+      console.log(`Processando aporte com data ${entry.date} -> ${entryDate}`);
+
+      if (isNaN(entryDate.getTime())) {
+        console.error(`Data inválida: ${entry.date}`);
+        continue;
+      }
+
+      try {
+        // Buscar o ID do usuário atual da sessão
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          throw new Error('Usuário não autenticado');
+        }
+
+        // Criar aporte no Supabase usando o serviço centralizado
+        await createBitcoinEntry(
+          user.id,
+          entry.amount,
+          entry.btc,
+          entry.price,
+          currency,
+          entryDate,
+          entry.origin
+        );
+        
+        console.log(`Aporte importado com sucesso: ${entry.date} - ${entry.amount} ${currency} - ${entry.btc} BTC`);
+      } catch (error) {
+        console.error(`Erro ao importar aporte: ${error}`);
+        throw new Error(`Falha ao importar aporte de ${entry.date}: ${error}`);
+      }
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Erro ao processar aportes:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+    throw new Error(`Falha ao processar aportes: ${errorMessage}`);
+  }
+};
+
+/**
+ * Função auxiliar para converter data local para timestamp
+ * @param dateStr Data local no formato 'DD/MM/YYYY'
+ * @returns Timestamp correspondente
+ */
+const parseLocalDate = (dateStr: string): Date => {
+  const [day, month, year] = dateStr.split('/').map(Number);
+  return new Date(year, month - 1, day);
+};
+
+/**
+ * Função auxiliar para criar uma entrada no Supabase
+ * @param userId ID do usuário
+ * @param amount Valor investido
+ * @param btc Bitcoin investido
+ * @param price Cotação
+ * @param currency Moeda
+ * @param date Date da entrada
+ * @param origin Origem da entrada
+ */
+const createBitcoinEntry = async (
+  userId: string,
+  amount: number,
+  btc: number,
+  price: number,
+  currency: 'BRL' | 'USD',
+  date: Date,
+  origin: Origin
+) => {
+  await supabase
+    .from('aportes')
+    .insert({
+      data_aporte: date.toISOString(),
+      moeda: currency,
+      valor_investido: amount,
+      bitcoin: btc,
+      cotacao: price,
+      cotacao_moeda: currency,
+      origem_aporte: origin,
+      origem_registro: 'planilha',
+      user_id: userId,
+      created_at: new Date().toISOString()
+    });
 };

@@ -1,3 +1,4 @@
+
 /**
  * Interface para cotação atual do Bitcoin
  */
@@ -29,6 +30,7 @@ export interface BitcoinEntry {
   registrationSource: "manual" | "planilha";
   valorUsd?: number;           // Valor em USD calculado no momento do registro
   cotacaoUsdBrl?: number;      // Cotação USD/BRL usada na conversão
+  cotacaoUsd?: number;         // Cotação BTC/USD calculada (valor_usd / quantidade_btc)
 }
 
 /**
@@ -60,6 +62,7 @@ export interface AporteDB {
   created_at?: string;
   valor_usd?: number | null;
   cotacao_usd_brl?: number | null;
+  cotacao_usd?: number | null;
 }
 
 /**
