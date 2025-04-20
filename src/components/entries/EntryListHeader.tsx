@@ -74,7 +74,7 @@ const EntryListHeader: React.FC<EntryListHeaderProps> = ({
           className="flex items-center gap-2"
         >
           <FileUp size={16} />
-          {!isMobile && <span>Importar CSV</span>}
+          {!isMobile && <span>Importar Planilha</span>}
         </Button>
         
         <ColumnVisibilityControl 
