@@ -1,4 +1,3 @@
-
 import {
   validateCsvFile,
   sanitizeCsvData,
@@ -12,6 +11,109 @@ import {
 import { BitcoinEntry, Origin, AporteDB, CsvAporte, ImportedEntry } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import Papa from 'papaparse';
+
+/**
+ * Formata uma data para o formato YYYYMMDD (para API AwesomeAPI)
+ * @param date Data a ser formatada ou string no formato YYYY-MM-DD
+ * @returns String no formato YYYYMMDD
+ */
+const formatDateForAwesomeAPI = (date: Date | string): string => {
+  let dateObj: Date;
+  
+  if (typeof date === 'string') {
+    dateObj = new Date(date + 'T00:00:00');
+  } else {
+    dateObj = date;
+  }
+  
+  const year = dateObj.getFullYear();
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const day = String(dateObj.getDate()).padStart(2, '0');
+  return `${year}${month}${day}`;
+};
+
+/**
+ * Formata uma data para o formato YYYY-MM-DD (para API ExchangeRate.host)
+ * @param date Data a ser formatada ou string no formato YYYY-MM-DD
+ * @returns String no formato YYYY-MM-DD
+ */
+const formatDateForExchangeRateAPI = (date: Date | string): string => {
+  if (typeof date === 'string') {
+    return date;
+  }
+  return date.toISOString().split('T')[0];
+};
+
+/**
+ * Obtém a cotação histórica USD/BRL para uma data específica
+ * Tenta múltiplas APIs com fallback
+ * @param date Data para obter a cotação (Date ou string YYYY-MM-DD)
+ * @returns Cotação USD/BRL para a data especificada
+ */
+const getHistoricalUsdBrlRate = async (date: Date | string): Promise<number> => {
+  try {
+    // Primeiro tenta a AwesomeAPI
+    const formattedDate = formatDateForAwesomeAPI(date);
+    console.log(`Buscando cotação USD/BRL via AwesomeAPI para a data: ${formattedDate}`);
+    
+    const awesomeApiUrl = `https://economia.awesomeapi.com.br/json/daily/USD-BRL/1?start_date=${formattedDate}&end_date=${formattedDate}`;
+    const awesomeApiResponse = await fetch(awesomeApiUrl);
+    
+    if (awesomeApiResponse.ok) {
+      const awesomeApiData = await awesomeApiResponse.json();
+      
+      if (Array.isArray(awesomeApiData) && awesomeApiData.length > 0) {
+        const rate = parseFloat(awesomeApiData[0].bid);
+        if (!isNaN(rate) && rate > 0) {
+          console.log(`Cotação USD/BRL obtida via AwesomeAPI: ${rate}`);
+          return rate;
+        }
+      }
+    }
+    
+    // Se falhar, tenta a ExchangeRate.host
+    const exchangeRateDate = formatDateForExchangeRateAPI(date);
+    console.log(`Buscando cotação USD/BRL via ExchangeRate.host para a data: ${exchangeRateDate}`);
+    
+    const exchangeRateUrl = `https://api.exchangerate.host/${exchangeRateDate}?base=USD&symbols=BRL`;
+    const exchangeRateResponse = await fetch(exchangeRateUrl);
+    
+    if (exchangeRateResponse.ok) {
+      const exchangeRateData = await exchangeRateResponse.json();
+      
+      if (exchangeRateData.rates && exchangeRateData.rates.BRL) {
+        const rate = parseFloat(exchangeRateData.rates.BRL);
+        if (!isNaN(rate) && rate > 0) {
+          console.log(`Cotação USD/BRL obtida via ExchangeRate.host: ${rate}`);
+          return rate;
+        }
+      }
+    }
+    
+    // Se ambas as APIs falharem, usa o CoinGecko como último recurso
+    console.log('Buscando cotação USD/BRL via CoinGecko como fallback');
+    const coinGeckoUrl = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,brl';
+    const coinGeckoResponse = await fetch(coinGeckoUrl);
+    
+    if (coinGeckoResponse.ok) {
+      const coinGeckoData = await coinGeckoResponse.json();
+      
+      if (coinGeckoData.bitcoin && coinGeckoData.bitcoin.usd && coinGeckoData.bitcoin.brl) {
+        const rate = coinGeckoData.bitcoin.brl / coinGeckoData.bitcoin.usd;
+        console.log(`Cotação USD/BRL obtida via CoinGecko: ${rate}`);
+        return rate;
+      }
+    }
+    
+    // Se todas as tentativas falharem, loga o erro e retorna um valor padrão
+    throw new Error("Não foi possível obter a cotação USD/BRL para a data especificada");
+    
+  } catch (error) {
+    console.error('Erro ao obter cotação histórica USD/BRL:', error);
+    // Retorna um valor padrão em caso de erro (5.0 é um fallback razoável para USD/BRL)
+    return 5.0;
+  }
+};
 
 /**
  * Processa o arquivo CSV e retorna um array com os dados formatados
@@ -221,8 +323,8 @@ export const saveImportedEntries = async (entries: ImportedEntry[]) => {
     // Log seguro do ID do usuário (mostra apenas parte inicial)
     console.log(`Usuário autenticado: ${userId.substring(0, 6)}...`);
     
-    // Preparar entradas para o Supabase
-    const preparedEntries = entries.map(entry => {
+    // Preparar entradas para o Supabase com dados de cotação USD/BRL
+    const preparedEntries = await Promise.all(entries.map(async entry => {
       // Formatar a data para o formato esperado pelo Supabase (YYYY-MM-DD)
       const dateStr = typeof entry.date === 'string' ? entry.date : ''; 
       
@@ -230,6 +332,27 @@ export const saveImportedEntries = async (entries: ImportedEntry[]) => {
       let priceValue = Number(entry.price) || 0;
       if (priceValue <= 0 && entry.amount && entry.btc) {
         priceValue = Number(entry.amount) / Number(entry.btc);
+      }
+      
+      // Obter cotação histórica USD/BRL e calcular valor em USD
+      let cotacaoUsdBrl = null;
+      let valorUsd = null;
+      
+      try {
+        // Buscar cotação histórica USD/BRL para a data do aporte
+        cotacaoUsdBrl = await getHistoricalUsdBrlRate(dateStr);
+        console.log(`Cotação USD/BRL para ${dateStr}: ${cotacaoUsdBrl}`);
+        
+        // Calcular valor em USD
+        valorUsd = Number(entry.amount) / cotacaoUsdBrl;
+        
+        console.log('Valores USD calculados para aporte importado:', {
+          data: dateStr,
+          cotacaoUsdBrl,
+          valorUsd
+        });
+      } catch (error) {
+        console.error('Erro ao obter cotação USD/BRL para importação CSV:', error);
       }
       
       return {
@@ -242,9 +365,11 @@ export const saveImportedEntries = async (entries: ImportedEntry[]) => {
         origem_aporte: entry.origin,
         origem_registro: 'planilha',
         user_id: userId,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        valor_usd: valorUsd,
+        cotacao_usd_brl: cotacaoUsdBrl
       };
-    });
+    }));
     
     // Log seguro: apenas metadados, sem expor valores financeiros
     console.log('Enviando dados para o Supabase:', {
@@ -385,15 +510,21 @@ export const sendSecureCSVToWebhook = async (
       method: 'POST',
       headers,
       body: formData,
-      // Remover timeout que não existe no tipo RequestInit
     });
     
     // Validar resposta do webhook usando função importada
     const result = await validateWebhookResponse(response);
     
+    if (result && typeof result === 'object' && 'message' in result) {
+      return { 
+        success: true, 
+        message: result.message || 'Arquivo enviado com sucesso! Você receberá um email quando o processamento for concluído.' 
+      };
+    }
+    
     return { 
       success: true, 
-      message: result?.message || 'Arquivo enviado com sucesso! Você receberá um email quando o processamento for concluído.' 
+      message: 'Arquivo enviado com sucesso! Você receberá um email quando o processamento for concluído.' 
     };
   } catch (error) {
     console.error('Erro ao enviar CSV para processamento externo:', error);
