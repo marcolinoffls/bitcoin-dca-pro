@@ -87,7 +87,7 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
               className="h-full w-full object-contain"
             />
           </div>
-          <CardTitle className="text-sm font-medium text-gray-500">Cotação atual do Bitcoin</CardTitle>
+          <CardTitle className="text-base font-semibold text-gray-500">COTAÇÃO ATUAL DO BITCOIN</CardTitle>
         </div>
       </CardHeader>
       <CardContent className="p-3 pt-0">
