@@ -21,14 +21,14 @@ export type Origin = "corretora" | "p2p" | "planilha";
 export interface BitcoinEntry {
   id: string;
   date: Date;
-  amountInvested: number;
-  btcAmount: number;
-  exchangeRate: number;
+  amountInvested: number;       // Valor investido na moeda original (BRL ou USD)
+  btcAmount: number;            // Quantidade de Bitcoin
+  exchangeRate: number;         // Cotação na moeda original
   currency: "BRL" | "USD";
   origin: Origin;
   registrationSource: "manual" | "planilha";
-  valorUsd?: number;        // Valor em USD calculado no momento do registro
-  cotacaoUsdBrl?: number;   // Cotação USD/BRL usada na conversão
+  valorUsd?: number;           // Valor em USD calculado no momento do registro
+  cotacaoUsdBrl?: number;      // Cotação USD/BRL usada na conversão
 }
 
 /**

@@ -1,4 +1,3 @@
-
 /**
  * Componente que exibe os aportes em formato de tabela
  * com suporte a ordenação e visibilidade de colunas
@@ -174,29 +173,19 @@ export const EntriesTable: React.FC<EntriesTableProps> = ({
         </TableHeader>
         <TableBody>
           {entries.map((entry) => {
-            // Calcula os valores para exibição
-            let investedValue = entry.amountInvested;
+            // Usar o valor apropriado baseado na moeda de visualização
+            let investedValue = currencyView === 'USD' && entry.valorUsd 
+              ? entry.valorUsd 
+              : entry.amountInvested;
             
-            // Converter valores se a moeda de exibição for diferente da moeda do aporte
-            if (entry.currency !== currencyView) {
-              if (entry.currency === 'USD' && currencyView === 'BRL') {
-                investedValue = entry.amountInvested * currentRate.brl / currentRate.usd;
-              } else if (entry.currency === 'BRL' && currencyView === 'USD') {
-                investedValue = entry.amountInvested * currentRate.usd / currentRate.brl;
-              }
-            }
+            // Usar a cotação apropriada baseada na moeda de visualização
+            let entryRateInViewCurrency = currencyView === 'USD'
+              ? (entry.valorUsd && entry.btcAmount) 
+                ? entry.valorUsd / entry.btcAmount 
+                : entry.exchangeRate
+              : entry.exchangeRate;
             
-            // Calcular a cotação na moeda de visualização atual
-            let entryRateInViewCurrency = entry.exchangeRate;
-            if (entry.currency !== currencyView) {
-              if (entry.currency === 'USD' && currencyView === 'BRL') {
-                entryRateInViewCurrency = entry.exchangeRate * currentRate.brl / currentRate.usd;
-              } else if (entry.currency === 'BRL' && currencyView === 'USD') {
-                entryRateInViewCurrency = entry.exchangeRate * currentRate.usd / currentRate.brl;
-              }
-            }
-            
-            // Calcular a variação percentual
+            // Calcular a variação percentual usando a cotação atual
             const currentRateValue = currencyView === 'USD' ? currentRate.usd : currentRate.brl;
             const percentChange = ((currentRateValue - entryRateInViewCurrency) / entryRateInViewCurrency) * 100;
             
