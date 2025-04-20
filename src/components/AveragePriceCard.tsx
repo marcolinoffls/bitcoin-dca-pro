@@ -91,8 +91,8 @@ const AveragePriceCard: React.FC<AveragePriceCardProps> = ({
               className="h-full w-full object-contain"
             />
           </div>
-          <CardTitle className="text-sm font-medium text-gray-500">
-            Preço Médio
+          <CardTitle className="text-xl font-medium text-gray-500">
+            PREÇO MÉDIO
           </CardTitle>
         </div>
       </CardHeader>
