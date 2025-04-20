@@ -1,4 +1,3 @@
-
 /**
  * Componente EntryEditForm
  *
@@ -28,7 +27,7 @@
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { BitcoinEntry, CurrentRate, Origin } from '@/types';
+import { BitcoinEntry, CurrentRate } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { formatNumber } from '@/lib/utils';

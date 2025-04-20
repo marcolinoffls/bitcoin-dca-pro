@@ -1,4 +1,3 @@
-
 /**
  * Componente que exibe os aportes em formato de tabela
  * com suporte a ordenação e visibilidade de colunas
@@ -181,12 +180,10 @@ export const EntriesTable: React.FC<EntriesTableProps> = ({
             
             // Usar a cotação apropriada baseada na moeda de visualização
             let entryRateInViewCurrency = currencyView === 'USD'
-              ? (entry.cotacaoUsd) 
-                ? entry.cotacaoUsd  // Usar cotação BTC/USD salva
-                : (entry.valorUsd && entry.btcAmount) 
-                  ? entry.valorUsd / entry.btcAmount // Cálculo de fallback
-                  : entry.exchangeRate // Último recurso
-              : entry.exchangeRate; // Usar cotação BRL padrão
+              ? (entry.valorUsd && entry.btcAmount) 
+                ? entry.valorUsd / entry.btcAmount 
+                : entry.exchangeRate
+              : entry.exchangeRate;
             
             // Calcular a variação percentual usando a cotação atual
             const currentRateValue = currencyView === 'USD' ? currentRate.usd : currentRate.brl;
