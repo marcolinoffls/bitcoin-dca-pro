@@ -176,7 +176,7 @@ const ImportCsvModal: React.FC<ImportCsvModalProps> = ({
           {/* Barra de progresso */}
           {isLoading && (
             <div className="w-full space-y-2">
-              <Progress value={uploadProgress} className="h-2" />
+              <Progress value={uploadProgress} className="h-2 bg-muted" indicatorClassName="bg-bitcoin"/>
               <p className="text-xs text-center text-muted-foreground">
                 {uploadProgress < 100 ? 'Processando arquivo...' : 'Concluído!'}
               </p>
