@@ -147,6 +147,9 @@ export const useBitcoinEntries = () => {
     
     if (error) throw error;
 
+    await queryClient.invalidateQueries({ queryKey: ['entries'] });
+  };
+
   /**
    * Atualiza um aporte existente
    */
