@@ -38,9 +38,9 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange })
 
   // Estado para o picker customizado
   const [showCustomPicker, setShowCustomPicker] = useState(false);
-  const [selectedDay, setSelectedDay] = useState(date.getDate());
-  const [selectedMonth, setSelectedMonth] = useState(date.getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(date.getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(date.getMonth() + 1);
+  const [selectedDay, setSelectedDay] = useState(date.getDate());
 
   // Atualiza o estado tempDate quando a prop date mudar
   useEffect(() => {
@@ -89,7 +89,7 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange })
 
   // Atualiza a data ao confirmar no picker customizado
   const handleCustomPickerConfirm = () => {
-    const newDate = new Date(selectedYear, selectedMonth - 1, selectedDay);
+    const newDate = new Date(selectedDay, selectedMonth - 1,selectedYear);
     setTempDate(newDate);
     onDateChange(newDate);
     setShowCustomPicker(false);
@@ -140,7 +140,7 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange })
                   onClick={() => setShowCustomPicker(true)}
                   className="w-full mb-2"
                 >
-                  Selecionar Dia/Mês/Ano
+                  Selecionar Ano/Mês/Dia
                 </Button>
               </div>
               <div className="flex justify-center mt-1.2">
@@ -169,7 +169,7 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange })
                     </select>
                   </div>
                   <Button onClick={handleCustomPickerConfirm} className="mb-2 w-full">
-                    Atualizar aata
+                    Atualizar Data e Hora
                   </Button>
                   <Button variant="outline" onClick={() => setShowCustomPicker(false)} className="w-full">
                     Cancelar
