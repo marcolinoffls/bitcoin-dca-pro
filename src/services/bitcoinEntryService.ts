@@ -166,9 +166,9 @@ export const fetchBitcoinEntries = async () => {
       currency: entry.moeda as 'BRL' | 'USD',
       origin: entry.origem_aporte as Origin,
       registrationSource: entry.origem_registro as 'manual' | 'planilha',
-      valorUsd: entry.valor_usd || undefined,
-      cotacaoUsdBrl: entry.cotacao_usd_brl || undefined,
-      cotacaoUsd: entry.cotacao_usd || undefined
+      valorUsd: entry.valor_usd ? Number(entry.valor_usd) : undefined,
+      cotacaoUsdBrl: entry.cotacao_usd_brl ? Number(entry.cotacao_usd_brl) : undefined,
+      cotacaoUsd: entry.cotacao_usd ? Number(entry.cotacao_usd) : undefined
     };
   }) || [];
   

@@ -539,7 +539,7 @@ const createBitcoinEntry = async (
 };
 
 /**
- * Função para buscar a cotação histórica USD/BRL
+ * Busca a cotação histórica USD/BRL para uma data específica
  * @param date Data para a qual buscar a cotação
  * @returns Cotação USD/BRL ou null em caso de erro
  */
