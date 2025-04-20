@@ -34,7 +34,7 @@ const ConfigButton = ({ onClick }: ConfigButtonProps) => {
             variant="ghost" 
             size="icon" 
             onClick={onClick}
-            className="h-10 w-10 rounded-full hover:bg-muted"
+            className="h-15 w-15 rounded-full hover:bg-muted"
             aria-label="Configurações"
           >
             <Menu className="h-12 w-12 text-muted-foreground" />
