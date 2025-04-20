@@ -124,8 +124,8 @@ const ImportCsvModal: React.FC<ImportCsvModalProps> = ({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* Seletor de modo de upload */}
-          <div className="flex space-x-2 rounded-lg border p-2">
+          {/* Link da planilha de exemplo */}
+          <div className="flex justify-center space-x-2 rounded-lg border p-2">
             <p className="text-sm text-center">
               <a 
                 href="https://docs.google.com/spreadsheets/d/1RAn8MWD7ckz_-c0pjRB36GWtDk_yHcY1vOOXP-sr29o/edit?usp=sharing"
