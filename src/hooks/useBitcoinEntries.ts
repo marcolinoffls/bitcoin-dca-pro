@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { BitcoinEntry, CurrentRate, Origin, AporteDB } from '@/types';
 import { fetchCurrentBitcoinRate } from '@/services/bitcoinService';
-import { fetchUsdBrlRateOnDate } from '@/services/exchangeRateService'; // ajuste o caminho se necessário
+import { fetchUsdBrlRate } from '@/services/bitcoinService';
 import { 
   fetchBitcoinEntries, 
   updateBitcoinEntry, 

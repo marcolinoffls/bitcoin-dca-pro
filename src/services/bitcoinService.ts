@@ -128,6 +128,29 @@ export const calculatePercentageChange = (buyRate: number, currentRate: number):
 };
 
 /**
+ * Busca a cotação USD/BRL usando a CoinGecko (baseada no preço do Bitcoin)
+ * @returns Cotação USD/BRL (quantos BRL valem 1 USD)
+ */
+export const fetchUsdBrlRate = async (): Promise<number> => {
+  try {
+    const response = await fetch(
+      "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,brl"
+    );
+    if (!response.ok) throw new Error(`API responded with status: ${response.status}`);
+    const data = await response.json();
+    if (!data.bitcoin || typeof data.bitcoin.usd !== 'number' || typeof data.bitcoin.brl !== 'number') {
+      throw new Error("Invalid data structure received from API");
+    }
+    // USD/BRL = preço em BRL dividido pelo preço em USD
+    return data.bitcoin.brl / data.bitcoin.usd;
+  } catch (error) {
+    console.error("Error fetching USD/BRL rate:", error);
+    // Retorna 0 em caso de erro
+    return 0;
+  }
+};
+
+/**
  * Calcula o preço médio de compra ponderado pelo valor investido
  * 
  * A fórmula aplicada é:

@@ -10,6 +10,7 @@
 import { BitcoinEntry, CurrentRate, Origin, AporteDB } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
+import { fetchUsdBrlRate } from '@/services/bitcoinService';
 
 /**
  * Converte string de data para objeto Date, forçando o fuso horário local
