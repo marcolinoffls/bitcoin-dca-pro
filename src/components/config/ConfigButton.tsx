@@ -12,7 +12,7 @@
  */
 
 import React from 'react';
-import { Settings } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -37,7 +37,7 @@ const ConfigButton = ({ onClick }: ConfigButtonProps) => {
             className="h-8 w-8 rounded-full hover:bg-muted"
             aria-label="Configurações"
           >
-            <Settings className="h-5 w-5 text-muted-foreground" />
+            <Menu className="h-5 w-5 text-muted-foreground" />
           </Button>
         </TooltipTrigger>
         <TooltipContent>
