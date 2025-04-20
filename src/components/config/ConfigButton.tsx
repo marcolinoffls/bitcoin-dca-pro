@@ -31,7 +31,7 @@ const ConfigButton = ({ onClick }: ConfigButtonProps) => {
       <Tooltip>
         <TooltipTrigger asChild>
           <Button 
-            variant="Menu"
+            variant="ghost" 
             size="icon" 
             onClick={onClick}
             className="h-8 w-8 rounded-full hover:bg-muted"
