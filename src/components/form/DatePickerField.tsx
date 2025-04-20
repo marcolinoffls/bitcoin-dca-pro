@@ -104,6 +104,25 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange })
                 locale={ptBR}
                 className="rounded-md border-0 shadow-none pointer-events-auto [&_.rdp-day:focus]:ring-0 [&_.rdp-day:focus]:outline-none"
               />
+              // Adicione um botão para abrir o picker customizado
+            <Button onClick={() => setShowCustomPicker(true)}>
+              {date ? format(date, "dd/MM/yyyy", { locale: ptBR }) : "Selecione uma data"}
+            </Button>
+            
+            {showCustomPicker && (
+              <div className="picker-modal">
+                <select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))}>
+                  {/* opções de ano */}
+                </select>
+                <select value={selectedMonth} onChange={e => setSelectedMonth(Number(e.target.value))}>
+                  {/* opções de mês */}
+                </select>
+                <select value={selectedDay} onChange={e => setSelectedDay(Number(e.target.value))}>
+                  {/* opções de dia */}
+                </select>
+                <Button onClick={handleConfirmPicker}>Atualizar Data</Button>
+              </div>
+            )}
               <div className="flex justify-center mt-1.2">
                 <Button 
                   type="button" 
