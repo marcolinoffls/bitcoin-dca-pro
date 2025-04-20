@@ -168,8 +168,8 @@ const DatePickerField: React.FC<DatePickerFieldProps> = ({ date, onDateChange })
                       {days.map(d => <option key={d} value={d}>{d.toString().padStart(2, '0')}</option>)}
                     </select>
                   </div>
-                  <Button onClick={handleCustomPickerConfirm} className="mb-2 w-full bg-bitcoin hover:bg-bitcoin/90 text-white ">
-                    Atualizar Data
+                  <Button onClick={handleCustomPickerConfirm} className="mb-2 w-full rounded-lg bg-bitcoin hover:bg-bitcoin/90 text-white">
+                    Atualizar data
                   </Button>
                   <Button variant="outline" onClick={() => setShowCustomPicker(false)} className="w-full">
                     Cancelar
