@@ -129,7 +129,7 @@ const ImportCsvModal: React.FC<ImportCsvModalProps> = ({
           </div>
 
           {/* Descrição do modo selecionado */}
-          <div className="px-1 text-sm text-muted-foreground">
+          <div className="px-1 justify-center text-sm text-muted-foreground">
             {uploadMode === 'local' ? (
               "Os dados serão importados diretamente para sua conta."
             ) : (
