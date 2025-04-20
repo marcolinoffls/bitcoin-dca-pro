@@ -51,19 +51,6 @@ const OriginSelector: React.FC<OriginSelectorProps> = ({ origin, onOriginChange 
           <Users className="h-4 w-4" />
           P2P
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          type="button"
-          onClick={() => handleOriginChange('planilha')}
-          className={cn(
-            'flex-1 text-xs font-normal gap-1 rounded-xl',
-            origin === 'planilha' && 'bg-bitcoin text-white hover:bg-bitcoin/90'
-          )}
-        >
-          <Table className="h-4 w-4" />
-          Planilha
-        </Button>
       </div>
       
       {/* Mensagem de informação se origin for "exchange" */}
