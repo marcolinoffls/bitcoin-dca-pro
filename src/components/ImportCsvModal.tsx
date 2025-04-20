@@ -157,9 +157,9 @@ const ImportCsvModal: React.FC<ImportCsvModalProps> = ({
               </p>
             </div>
             <Button
-              variant="outline"
+              variant="default"  // Usando "default"
               disabled={isLoading}
-              className="relative"
+              className="relative bg-bitcoin hover:bg-bitcoin/90 text-white"
               onClick={() => document.getElementById('csvFile')?.click()}
             >
               {isLoading ? 'Processando...' : 'Selecionar arquivo'}
