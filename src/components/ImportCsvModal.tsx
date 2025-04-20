@@ -126,15 +126,6 @@ const ImportCsvModal: React.FC<ImportCsvModalProps> = ({
         <div className="space-y-4 py-4">
           {/* Seletor de modo de upload */}
           <div className="flex space-x-2 rounded-lg border p-2">
-            <Button
-              variant={uploadMode === 'local' ? "default" : "outline"}
-              size="sm"
-              className="flex-1"
-              onClick={() => setUploadMode('local')}
-            >
-              <FileUp className="h-4 w-4 mr-2" />
-              Importar Localmente
-            </Button>
           </div>
 
           {/* Descrição do modo selecionado */}
