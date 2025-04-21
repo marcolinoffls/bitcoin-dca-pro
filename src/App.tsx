@@ -1,45 +1,86 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+// src/App.tsx
+
+import { useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+// Context providers and UI utilities
+import { AuthProvider } from "./hooks/useAuth";
+import RequireAuth from "./components/RequireAuth";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster as ReactToaster } from "@/components/ui/toaster";
+import { Toaster as SonnerToaster } from "@/components/ui/sonner";
+
+// Page components
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import SetPassword from "./pages/SetPassword";
+import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import { useState } from "react";
-import { AuthProvider } from "./hooks/useAuth";
-import RequireAuth from "./components/RequireAuth";
-import "./styles/globals.css";  // Importação dos estilos globais
+
+import "./styles/globals.css";  // estilos globais da aplicação
 
 const App = () => {
-  // Create a client and put it in state to avoid re-creating it on every render
-  const [queryClient] = useState(() => new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: 5 * 60 * 1000, // 5 minutes
-        refetchOnWindowFocus: false,
-      },
-    },
-  }));
+  // Cria um QueryClient apenas uma vez para todo o ciclo de vida do app
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            // Define o tempo que os dados ficam em cache antes de ficarem "stale"
+            staleTime: 5 * 60 * 1000, // 5 minutos
+            refetchOnWindowFocus: false, // não refaz chamadas ao focar a janela
+          },
+        },
+      })
+  );
 
   return (
+    // Provedor do React Query para caching e gerenciamento de chamadas assíncronas
     <QueryClientProvider client={queryClient}>
+      {/* Provedor de autenticação Supabase */}
       <AuthProvider>
+        {/* Provedor de tooltips para toda a UI */}
         <TooltipProvider>
-          <Toaster />
-          <Sonner />
+          {/* Toasters de notificações visuais */}
+          <ReactToaster />
+          <SonnerToaster />
+
+          {/* Configuração de rotas */}
           <BrowserRouter>
             <Routes>
-              <Route path="/auth" element={<Auth />} />
+              {/*
+                Rota para todos os fluxos de autenticação:
+                - /auth           → página de login / cadastro
+                - /auth/callback  → callback OAuth (Google, etc.)
+                Qualquer rota sob /auth será renderizada pelo componente Auth.
+              */}
+              <Route path="/auth/*" element={<Auth />} />
+
+              {/*
+                Rotas de redefinição e confirmação de senha avulsas,
+                caso queira ter páginas dedicadas fora do fluxo principal de Auth.
+              */}
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/set-password" element={<SetPassword />} />
-              <Route path="/" element={
-                <RequireAuth>
-                  <Index />
-                </RequireAuth>
-              } />
+
+              {/*
+                Rota protegida:
+                - "/" somente acessível quando o usuário estiver autenticado.
+                - RequireAuth faz o redirect para /auth se não houver sessão.
+              */}
+              <Route
+                path="/"
+                element={
+                  <RequireAuth>
+                    <Index />
+                  </RequireAuth>
+                }
+              />
+
+              {/*
+                Qualquer outra rota não mapeada cai aqui (404).
+              */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
