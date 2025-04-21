@@ -107,7 +107,8 @@ export const fetchBitcoinEntries = async () => {
 };
 
 /**
- * Creates a new bitcoin entry in the database
+ * Cria um novo aporte manual de Bitcoin com cálculo automático do valor em USD
+ * e da cotação USD/BRL com base na data do aporte.
  */
 export const createBitcoinEntry = async (
   userId: string,
@@ -118,60 +119,31 @@ export const createBitcoinEntry = async (
   date: Date,
   origin: Origin
 ) => {
-  // Validar se a data é válida
+  // Valida a data recebida
   if (!(date instanceof Date) || isNaN(date.getTime())) {
-    console.error('Data inválida para criação:', date);
     throw new Error('Data inválida fornecida para criação');
   }
-  
-  // Se a cotação não foi fornecida, calcula automaticamente
-  let finalRate = exchangeRate;
-  if (finalRate === undefined || finalRate <= 0) {
-    finalRate = calculateExchangeRate(amountInvested, btcAmount);
-    console.log('Cotação calculada automaticamente:', finalRate);
-  }
-  
-  // Calcular valor em USD se a moeda for BRL
+
+  // Calcula a cotação se não foi informada
+  const finalRate = exchangeRate && exchangeRate > 0
+    ? exchangeRate
+    : calculateExchangeRate(amountInvested, btcAmount);
+
   let valorUsd = null;
   let cotacaoUsdBrl = null;
-  
-  try {
-    if (currency === 'BRL') {
-      // Buscar cotação USD/BRL histórica
-      cotacaoUsdBrl = await fetchUsdBrlRate(date);
-      
-      if (cotacaoUsdBrl) {
-        // Calcular valor em USD
-        valorUsd = amountInvested / cotacaoUsdBrl;
-        
-        console.log('Valores calculados:', {
-          cotacaoUsdBrl,
-          valorUsd,
-          btcUsdRate: valorUsd / btcAmount
-        });
-      } else {
-        // Fallback: Buscar cotações atuais
-        const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,brl');
-        const data = await response.json();
-        
-        if (data.bitcoin && data.bitcoin.usd && data.bitcoin.brl) {
-          cotacaoUsdBrl = data.bitcoin.brl / data.bitcoin.usd;
-          valorUsd = amountInvested / cotacaoUsdBrl;
-        }
-      }
-    } else {
-      // Se já está em USD, mantém o mesmo valor
-      valorUsd = amountInvested;
-      cotacaoUsdBrl = 1;
-    }
-  } catch (error) {
-    console.error('Erro ao buscar/calcular valores em USD:', error);
+
+  // Para aportes em BRL, buscar a cotação histórica USD/BRL
+  if (currency === 'BRL') {
+    cotacaoUsdBrl = await fetchUsdBrlRate(date);
+    if (cotacaoUsdBrl) valorUsd = amountInvested / cotacaoUsdBrl;
+  } else {
+    // Se aporte já for em USD
+    valorUsd = amountInvested;
+    cotacaoUsdBrl = 1;
   }
 
-  const newEntryId = uuidv4();
-  
   const newEntry: AporteDB = {
-    id: newEntryId,
+    id: uuidv4(),
     user_id: userId,
     data_aporte: date.toISOString().split('T')[0],
     valor_investido: amountInvested,
@@ -185,28 +157,21 @@ export const createBitcoinEntry = async (
     cotacao_usd_brl: cotacaoUsdBrl
   };
 
-  const { error } = await supabase
-    .from('aportes')
-    .insert(newEntry);
-
+  // Envia para o Supabase
+  const { error } = await supabase.from('aportes').insert(newEntry);
   if (error) throw error;
 
   return {
-    id: newEntryId,
+    ...newEntry,
     date,
-    amountInvested,
-    btcAmount,
     exchangeRate: finalRate,
-    currency,
-    origin,
-    registrationSource: 'manual' as const,
-    valorUsd,
-    cotacaoUsdBrl
+    registrationSource: 'manual' as const
   };
 };
 
 /**
- * Updates an existing bitcoin entry in the database
+ * Atualiza um aporte de Bitcoin existente no Supabase
+ * com cálculo opcional da cotação e campos USD.
  */
 export const updateBitcoinEntry = async (
   entryId: string,
@@ -217,54 +182,25 @@ export const updateBitcoinEntry = async (
   date: Date,
   origin: Origin
 ) => {
-  // Garantir que a data é válida
+  // Valida a data
   if (!(date instanceof Date) || isNaN(date.getTime())) {
-    console.error('Data inválida para atualização:', date);
     throw new Error('Data inválida fornecida');
   }
-  
-  // Se a cotação não foi fornecida, calcula automaticamente
-  let finalRate = exchangeRate;
-  if (finalRate === undefined || finalRate <= 0) {
-    finalRate = calculateExchangeRate(amountInvested, btcAmount);
-    console.log('Cotação calculada automaticamente para atualização:', finalRate);
-  }
-  
-  // Calcular valor em USD se a moeda for BRL
+
+  // Calcula cotação se não fornecida
+  const finalRate = exchangeRate && exchangeRate > 0
+    ? exchangeRate
+    : calculateExchangeRate(amountInvested, btcAmount);
+
   let valorUsd = null;
   let cotacaoUsdBrl = null;
-  
-  try {
-    if (currency === 'BRL') {
-      // Buscar cotação USD/BRL histórica
-      cotacaoUsdBrl = await fetchUsdBrlRate(date);
-      
-      if (cotacaoUsdBrl) {
-        // Calcular valor em USD
-        valorUsd = amountInvested / cotacaoUsdBrl;
-        
-        console.log('Valores calculados para atualização:', {
-          cotacaoUsdBrl,
-          valorUsd,
-          btcUsdRate: valorUsd / btcAmount
-        });
-      } else {
-        // Fallback: Buscar cotações atuais
-        const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,brl');
-        const data = await response.json();
-        
-        if (data.bitcoin && data.bitcoin.usd && data.bitcoin.brl) {
-          cotacaoUsdBrl = data.bitcoin.brl / data.bitcoin.usd;
-          valorUsd = amountInvested / cotacaoUsdBrl;
-        }
-      }
-    } else {
-      // Se já está em USD, mantém o mesmo valor
-      valorUsd = amountInvested;
-      cotacaoUsdBrl = 1;
-    }
-  } catch (error) {
-    console.error('Erro ao buscar/calcular valores em USD para atualização:', error);
+
+  if (currency === 'BRL') {
+    cotacaoUsdBrl = await fetchUsdBrlRate(date);
+    if (cotacaoUsdBrl) valorUsd = amountInvested / cotacaoUsdBrl;
+  } else {
+    valorUsd = amountInvested;
+    cotacaoUsdBrl = 1;
   }
 
   const updateData = {
@@ -284,10 +220,7 @@ export const updateBitcoinEntry = async (
     .update(updateData)
     .eq('id', entryId);
 
-  if (error) {
-    console.error('Erro ao atualizar o aporte no Supabase:', error);
-    throw error;
-  }
+  if (error) throw error;
 };
 
 /**
