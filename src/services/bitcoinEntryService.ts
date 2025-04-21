@@ -43,24 +43,24 @@ const calculateExchangeRate = (amountInvested: number, btcAmount: number): numbe
  */
 const fetchUsdBrlRate = async (date: Date): Promise<number | null> => {
   try {
-    // Formata a data para YYYY-MM-DD
     const dateStr = date.toISOString().split('T')[0];
-    console.log('Data formatada para consulta na API:', dateStr);
+    console.log('[fetchUsdBrlRate] Data formatada para consulta:', dateStr);
 
-    // Busca cotação histórica
-    const response = await fetch(`https://api.exchangerate.host/${dateStr}?base=USD&symbols=BRL`);
+    const url = `https://api.exchangerate.host/${dateStr}?base=USD&symbols=BRL`;
+    const response = await fetch(url);
     const data = await response.json();
-    console.log('Resposta da API exchangerate.host:', data);
 
-    if (data.rates && data.rates.BRL) {
-      console.log(`Cotação USD/BRL obtida para ${dateStr}:`, data.rates.BRL);
+    console.log('[fetchUsdBrlRate] Resposta completa da API:', data);
+
+    if (data?.rates?.BRL) {
+      console.log(`[fetchUsdBrlRate] Cotação encontrada para ${dateStr}:`, data.rates.BRL);
       return data.rates.BRL;
     }
 
-    console.error('Erro ao buscar cotação USD/BRL: formato de resposta inválido', data);
+    console.error('[fetchUsdBrlRate] Erro ao buscar cotação USD/BRL: formato de resposta inválido', data);
     return null;
   } catch (error) {
-    console.error('Erro ao buscar cotação USD/BRL:', error);
+    console.error('[fetchUsdBrlRate] Erro ao buscar cotação USD/BRL:', error);
     return null;
   }
 };
