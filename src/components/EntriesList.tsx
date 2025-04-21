@@ -66,7 +66,8 @@ const EntriesList: React.FC<EntriesListProps> = ({
     { id: 'btcAmount', label: 'Bitcoin/Satoshis', visible: true },
     { id: 'exchangeRate', label: 'Cotação', visible: true },
     { id: 'percentChange', label: 'Variação', visible: true },
-    { id: 'currentValue', label: 'Valor Atual', visible: true }
+    { id: 'currentValue', label: 'Valor Atual', visible: true },
+    { id: 'origin', label: 'Origem', visible: true }
   ]);
   const [sortState, setSortState] = useState<SortState>({
     column: null,
