@@ -164,9 +164,11 @@ const normalizeData = (rawData: any[]): CsvAporte[] => {
       'bitget', 'coinext', 'ripio'
     ];
     
-    // Se origin for uma corretora conhecida, normaliza para 'corretora'
+    // Normalizações específicas
     if (knownExchanges.includes(origin)) {
       origin = 'corretora';
+    } else if (origin.includes('p2p satisfaction')) {
+      origin = 'p2p';
     }
     
     // Atribuir o valor padrão 'corretora' se estiver vazio ou não reconhecido
