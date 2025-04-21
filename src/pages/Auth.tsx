@@ -32,18 +32,16 @@ const Auth = () => {
 
   // Recupera sessão do Supabase após redirecionamento OAuth (Google)
   useEffect(() => {
-    if (isCallback) {
-      const recoverSessionFromCallback = async () => {
-        const { data, error } = await supabase.auth.getSession();
-        if (error || !data.session) {
-          navigate('/auth');
-          return;
-        }
+    if (!isCallback) return;
+    (async () => {
+      const { data, error } = await supabase.auth.getSession();
+      if (error || !data.session) {
+        navigate('/auth');
+      } else {
         navigate('/');
-      };
-      recoverSessionFromCallback();
-    }
-  }, [isCallback]);
+      }
+    })();
+  }, [isCallback, navigate]);
 
   // Mostra spinner de carregamento enquanto o estado de autenticação está sendo carregado
   if (loading) {
