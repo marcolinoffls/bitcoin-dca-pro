@@ -37,7 +37,7 @@ const ConfigButton = ({ onClick }: ConfigButtonProps) => {
             className="h-10 w-10 rounded-full hover:bg-muted"
             aria-label="Configurações"
           >
-            <Menu className="h-15 w-15 text-muted-foreground" />
+            <Menu className="h-12 w-8 text-muted-foreground" />
           </Button>
         </TooltipTrigger>
         <TooltipContent>
