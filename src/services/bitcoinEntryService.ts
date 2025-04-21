@@ -318,7 +318,7 @@ export const atualizarEntradasRetroativas = async () => {
   const { data: entries, error } = await supabase
     .from('aportes')
     .select('id, data_aporte, valor_investido, bitcoin, valor_usd, cotacao_usd_brl, moeda')
-    .is('valor_usd', null)
+    .or('valor_usd.is.null,cotacao_usd_brl.is.null') // Corrigido aqui
     .eq('moeda', 'BRL');
 
   if (error) {
@@ -330,8 +330,7 @@ export const atualizarEntradasRetroativas = async () => {
     try {
       const date = new Date(`${entry.data_aporte}T00:00:00`);
       const cotacaoUsdBrl = await fetchUsdBrlRate(date);
-
-      if (!cotacaoUsdBrl) continue;
+      if (!cotacaoUsdBrl || entry.bitcoin <= 0) continue;
 
       const valorUsd = entry.valor_investido / cotacaoUsdBrl;
 
@@ -353,4 +352,3 @@ export const atualizarEntradasRetroativas = async () => {
     }
   }
 };
-
