@@ -184,7 +184,7 @@ const EmailResetForm = () => {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={isSubmitting}
-          className={validationError && email ? "border-red-300" : ""}
+          className={`text-sm ${validationError && email ? 'border-red-300' : ''}`}
         />
       </div>
       
@@ -197,7 +197,7 @@ const EmailResetForm = () => {
           value={confirmEmail}
           onChange={(e) => setConfirmEmail(e.target.value)}
           disabled={isSubmitting}
-          className={validationError && confirmEmail ? "border-red-300" : ""}
+          className={`text-sm ${validationError && confirmEmail ? "border-red-300" : ""}`}
         />
       </div>
 
