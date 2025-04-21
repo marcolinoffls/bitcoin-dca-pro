@@ -1,4 +1,3 @@
-
 /**
  * Tipos relacionados à funcionalidade da tabela de aportes
  */
@@ -10,7 +9,8 @@ export type SortableColumn =
   | 'btcAmount'
   | 'exchangeRate'
   | 'percentChange'
-  | 'currentValue';
+  | 'currentValue'
+  | 'origin';
 
 // Direção da ordenação
 export type SortDirection = 'asc' | 'desc';
@@ -35,5 +35,6 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'btcAmount', label: 'Bitcoin/Satoshis', visible: true },
   { id: 'exchangeRate', label: 'Cotação', visible: true },
   { id: 'percentChange', label: 'Variação', visible: true },
-  { id: 'currentValue', label: 'Valor Atual', visible: true }
+  { id: 'currentValue', label: 'Valor Atual', visible: true },
+  { id: 'origin', label: 'Origem', visible: true }
 ];

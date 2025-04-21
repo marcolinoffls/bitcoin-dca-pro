@@ -12,6 +12,7 @@ import { formatNumber } from '@/lib/utils';
 import { BitcoinEntry } from '@/types';
 import { ColumnConfig, SortState } from '@/types/table';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 interface EntriesTableProps {
   entries: BitcoinEntry[];
@@ -82,6 +83,24 @@ export const EntriesTable: React.FC<EntriesTableProps> = ({
         "opacity-100 max-w-[1000px]": isVisible,
         "opacity-0 max-w-0 overflow-hidden p-0 m-0": !isVisible
       }
+    );
+  };
+
+  /**
+   * Renderiza o badge de origem do aporte com cor específica
+   * @param origin Origem do aporte (p2p ou corretora)
+   */
+  const renderOriginBadge = (origin: string) => {
+    const isP2p = origin === 'p2p';
+    return (
+      <Badge
+        variant="outline"
+        className={`${
+          isP2p ? 'bg-[#F2FCE2] text-black' : 'bg-[#D3E4FD] text-black'
+        } text-xs font-normal`}
+      >
+        {origin}
+      </Badge>
     );
   };
 
@@ -168,6 +187,19 @@ export const EntriesTable: React.FC<EntriesTableProps> = ({
               </div>
             </TableHead>
             
+            <TableHead 
+              className={cn(
+                `${isMobile ? "text-xs" : ""} ${onSort ? 'cursor-pointer' : ''}`,
+                getColumnClasses('origin')
+              )}
+              onClick={() => onSort && onSort('origin')}
+            >
+              <div className="flex items-center">
+                Origem
+                {renderSortIcon('origin')}
+              </div>
+            </TableHead>
+            
             <TableHead className={`text-right ${isMobile ? "text-xs" : ""}`}>Ações</TableHead>
           </TableRow>
         </TableHeader>
@@ -233,6 +265,10 @@ export const EntriesTable: React.FC<EntriesTableProps> = ({
                       {percentChange > 0 ? '+' : ''}{formatNumber(currentValue - investedValue)}
                     </div>
                   </div>
+                </TableCell>
+                
+                <TableCell className={cn(isMobile ? "text-xs py-2" : "", getColumnClasses('origin'))}>
+                  {renderOriginBadge(entry.origin)}
                 </TableCell>
                 
                 <TableCell className={`text-right ${isMobile ? "text-xs py-2" : ""}`}>
