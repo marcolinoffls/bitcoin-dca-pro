@@ -1,6 +1,6 @@
 
 /**
- * Componente AveragePriceCard
+ * Componente Preço médio
  * 
  * Responsável por exibir o card com preço médio de compra de Bitcoin
  * Este componente mostra:
@@ -84,7 +84,7 @@ const AveragePriceCard: React.FC<AveragePriceCardProps> = ({
     <Card className="rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-200 h-[220px]">
       <CardHeader className="flex flex-row items-center justify-between pb-1 p-4">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center">
             <img 
               src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/cotacao2.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvY290YWNhbzIucG5nIiwiaWF0IjoxNzQ0NDk1NjY4LCJleHAiOjE3NzYwMzE2Njh9.f41oc6Aw4_fncoJYnVG0j2fJ0SNpz_hnUxEjtVICI84" 
               alt="Preço Médio"
