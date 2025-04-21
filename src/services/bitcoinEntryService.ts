@@ -43,24 +43,25 @@ const calculateExchangeRate = (amountInvested: number, btcAmount: number): numbe
  */
 const fetchUsdBrlRate = async (date: Date): Promise<number | null> => {
   try {
-    const dateStr = date.toISOString().split('T')[0];
-    const [year, month, day] = dateStr.split('-');
+    const dateStr = `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1)
+      .toString()
+      .padStart(2, '0')}-${date.getFullYear()}`;
 
-    const response = await fetch(`https://open.er-api.com/v6/history/USD/${year}-${month}-${day}`);
+    const response = await fetch(`https://api.coingecko.com/api/v3/exchange_rates`);
     const data = await response.json();
 
-    console.log('[fetchUsdBrlRate] Resposta da API open.er-api.com:', data);
-
-    const rate = data?.rates?.BRL;
-    if (rate) {
-      console.log(`Cotação USD/BRL para ${dateStr}:`, rate);
+    if (data?.rates?.brl?.value && data?.rates?.usd?.value) {
+      const brl = data.rates.brl.value;
+      const usd = data.rates.usd.value;
+      const rate = brl / usd;
+      console.log(`Cotação USD/BRL estimada via CoinGecko: ${rate}`);
       return rate;
     }
 
-    console.error('[fetchUsdBrlRate] Cotação BRL não encontrada na resposta:', data);
+    console.error('Formato inesperado de resposta CoinGecko', data);
     return null;
-  } catch (error) {
-    console.error('[fetchUsdBrlRate] Erro ao buscar cotação USD/BRL:', error);
+  } catch (err) {
+    console.error('[fetchUsdBrlRate] Erro ao buscar cotação USD/BRL na CoinGecko:', err);
     return null;
   }
 };
