@@ -1,29 +1,19 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 
-/**
- * Página de autenticação
- * 
- * Este componente gerencia:
- * 1. Login com email/senha
- * 2. Cadastro de novos usuários
- * 3. Redefinição de senha
- * 4. Login social com Google
- */
+// Componente de autenticação que lida com login, cadastro, redefinição de senha e login com Google
 const Auth = () => {
+  // Estados e hooks customizados
   const { user, loading, signIn, signUp, resetPassword } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -35,40 +25,27 @@ const Auth = () => {
   const [passwordError, setPasswordError] = useState('');
   const [resetSent, setResetSent] = useState(false);
   const [resetRequested, setResetRequested] = useState(false);
-
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
-
   const isCallback = location.pathname === '/auth/callback';
 
+  // Recupera sessão do Supabase após redirecionamento OAuth (Google)
   useEffect(() => {
-    const recoverSessionFromCallback = async () => {
-      const { data, error } = await supabase.auth.getSession();
-      if (error || !data.session) {
-        console.error("Falha ao recuperar sessão pós-login social:", error);
-        navigate('/auth');
-        return;
-      }
-      navigate('/');
-    };
-
     if (isCallback) {
+      const recoverSessionFromCallback = async () => {
+        const { data, error } = await supabase.auth.getSession();
+        if (error || !data.session) {
+          navigate('/auth');
+          return;
+        }
+        navigate('/');
+      };
       recoverSessionFromCallback();
     }
   }, [isCallback]);
 
-  // 👇 Aqui sim você pode fazer o `return` dentro do componente
-  if (isCallback) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-sm text-muted-foreground">
-          Conectando com sua conta Google...
-        </p>
-      </div>
-    );
-  }
-
+  // Mostra spinner de carregamento enquanto o estado de autenticação está sendo carregado
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -77,13 +54,11 @@ const Auth = () => {
     );
   }
 
+  // Redireciona usuário logado para a página original ou homepage
   if (user) {
     const from = location.state?.from?.pathname || "/";
     return <Navigate to={from} replace />;
   }
-
-  // ...continua com o restante do código
-
   const validatePassword = () => {
     if (activeTab === 'register') {
       if (password.length < 6) {
