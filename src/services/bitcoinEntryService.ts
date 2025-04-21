@@ -36,31 +36,36 @@ const calculateExchangeRate = (amountInvested: number, btcAmount: number): numbe
   return amountInvested / btcAmount;
 };
 
-/**
- * Busca cotação USD/BRL para uma data específica via exchangerate.host
- * @param date Data para buscar a cotação
- * @returns Taxa de câmbio ou null em caso de erro
- */
-const fetchUsdBrlRate = async (date: Date): Promise<number | null> => {
-  try {
-    const dateStr = date.toISOString().split('T')[0]; // yyyy-mm-dd
-    const [year, month, day] = dateStr.split('-');
-    const formatted = `${year}${month}${day}`; // yyyymmdd
+// Cache local para evitar requisições repetidas
+const cotacaoCache: Record<string, number> = {};
 
-    const url = `https://economia.awesomeapi.com.br/json/daily/USD-BRL/?start_date=${formatted}&end_date=${formatted}`;
-    const response = await fetch(url);
+/**
+ * Busca cotação USD/BRL para uma data específica via AwesomeAPI
+ * @param date Data do aporte
+ * @returns Cotação USD/BRL ou null se não encontrada
+ */
+export const fetchUsdBrlRate = async (date: Date): Promise<number | null> => {
+  const isoDate = date.toISOString().split('T')[0]; // YYYY-MM-DD
+  const [year, month, day] = isoDate.split('-');
+  const formatted = `${year}${month}${day}`; // YYYYMMDD
+
+  // Verifica se já está em cache
+  if (cotacaoCache[formatted]) {
+    return cotacaoCache[formatted];
+  }
+
+  try {
+    const response = await fetch(`https://economia.awesomeapi.com.br/json/daily/USD-BRL/?start_date=${formatted}&end_date=${formatted}&limit=1`);
     const data = await response.json();
 
     if (Array.isArray(data) && data.length > 0 && data[0].bid) {
-      const rate = parseFloat(data[0].bid);
-      console.log(`Cotação USD/BRL via AwesomeAPI para ${dateStr}: ${rate}`);
-      return rate;
+      const cotacao = parseFloat(data[0].bid);
+      cotacaoCache[formatted] = cotacao;
+      return cotacao;
     }
 
-    console.error('Formato inválido da resposta da AwesomeAPI:', data);
     return null;
-  } catch (err) {
-    console.error('[fetchUsdBrlRate] Erro ao buscar cotação USD/BRL via AwesomeAPI:', err);
+  } catch {
     return null;
   }
 };
