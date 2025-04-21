@@ -17,6 +17,7 @@ import ResetPassword from "./pages/ResetPassword";
 import SetPassword from "./pages/SetPassword";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import Dashboard from "./pages/Dashboard";
 
 import "./styles/globals.css";  // estilos globais da aplicação
 
@@ -73,6 +74,16 @@ const App = () => {
                 element={
                   <RequireAuth>
                     <Index />
+                  </RequireAuth>
+                }
+              />
+
+              {/* Nova rota do dashboard */}
+              <Route
+                path="/dashboard"
+                element={
+                  <RequireAuth>
+                    <Dashboard />
                   </RequireAuth>
                 }
               />
