@@ -80,7 +80,7 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 p-3">
         <div className="flex items-center gap-3">
           {/* Novo ícone para o card de cotação */}
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center">
             <img 
               src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/cotacao4.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvY290YWNhbzQucG5nIiwiaWF0IjoxNzQ0NDk2Nzk0LCJleHAiOjE3NzYwMzI3OTR9.JE043OJwu41fPHcWgkmh15Hoytznv-MAiEhyF1xvWvM" 
               alt="Cotação Bitcoin"
