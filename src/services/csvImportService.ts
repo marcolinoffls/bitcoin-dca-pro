@@ -161,7 +161,7 @@ const normalizeData = (rawData: any[]): CsvAporte[] => {
     if (!origin || (origin !== 'p2p' && origin !== 'corretora' && origin !== 'exchange' && origin !== 'planilha')) {
       origin = 'exchange'; // Valor padrão é corretora/exchange
     } else if (origin === 'corretora') {
-      origin = 'exchange'; // Normalizar 'corretora' para 'exchange'
+      origin = 'corretora'; // Normalizar 'corretora' para 'exchange'
     }
     
     // Formatar a data para o formato esperado (YYYY-MM-DD)
