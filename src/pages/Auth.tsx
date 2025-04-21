@@ -29,36 +29,42 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false); // Estado para controlar carregamento do botão Google
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState('login');
   const [passwordError, setPasswordError] = useState('');
   const [resetSent, setResetSent] = useState(false);
   const [resetRequested, setResetRequested] = useState(false);
+
   const location = useLocation();
-  const { toast } = useToast(); // Hook para notificações
   const navigate = useNavigate();
+  const { toast } = useToast();
+
   const isCallback = location.pathname === '/auth/callback';
-  
+
   useEffect(() => {
     const recoverSessionFromCallback = async () => {
       const { data, error } = await supabase.auth.getSession();
       if (error || !data.session) {
         console.error("Falha ao recuperar sessão pós-login social:", error);
-        navigate('/auth'); // redireciona de volta se falhar
+        navigate('/auth');
         return;
       }
-      navigate('/'); // redireciona pro app
+      navigate('/');
     };
-  
+
     if (isCallback) {
       recoverSessionFromCallback();
     }
   }, [isCallback]);
 
+  // 👇 Aqui sim você pode fazer o `return` dentro do componente
+  if (isCallback) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <p className="text-sm text-muted-foreground">Conectando com sua conta Google...</p>
+        <p className="text-sm text-muted-foreground">
+          Conectando com sua conta Google...
+        </p>
       </div>
     );
   }
@@ -75,6 +81,8 @@ const Auth = () => {
     const from = location.state?.from?.pathname || "/";
     return <Navigate to={from} replace />;
   }
+
+  // ...continua com o restante do código
 
   const validatePassword = () => {
     if (activeTab === 'register') {
