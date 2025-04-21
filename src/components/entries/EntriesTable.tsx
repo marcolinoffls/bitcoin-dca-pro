@@ -86,7 +86,7 @@ export const EntriesTable: React.FC<EntriesTableProps> = ({
   };
 
   return (
-    <div className="overflow-hidden"> {/* Contêiner para evitar quebra de layout durante animações */}
+    <div className="overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow>
