@@ -310,3 +310,47 @@ export const deleteAllSpreadsheetEntries = async () => {
     throw error;
   }
 };
+
+/**
+ * Atualiza os campos valor_usd e cotacao_usd_brl para entradas retroativas com valores nulos
+ */
+export const atualizarEntradasRetroativas = async () => {
+  const { data: entries, error } = await supabase
+    .from('aportes')
+    .select('id, data_aporte, valor_investido, bitcoin, valor_usd, cotacao_usd_brl, moeda')
+    .is('valor_usd', null)
+    .eq('moeda', 'BRL');
+
+  if (error) {
+    console.error('Erro ao buscar aportes retroativos:', error);
+    return;
+  }
+
+  for (const entry of entries) {
+    try {
+      const date = new Date(`${entry.data_aporte}T00:00:00`);
+      const cotacaoUsdBrl = await fetchUsdBrlRate(date);
+
+      if (!cotacaoUsdBrl) continue;
+
+      const valorUsd = entry.valor_investido / cotacaoUsdBrl;
+
+      const { error: updateError } = await supabase
+        .from('aportes')
+        .update({
+          valor_usd: valorUsd,
+          cotacao_usd_brl: cotacaoUsdBrl,
+        })
+        .eq('id', entry.id);
+
+      if (updateError) {
+        console.error(`Erro ao atualizar aporte ${entry.id}:`, updateError);
+      } else {
+        console.log(`Aporte ${entry.id} atualizado com valor_usd: ${valorUsd} e cotacao_usd_brl: ${cotacaoUsdBrl}`);
+      }
+    } catch (err) {
+      console.error(`Erro ao processar aporte ${entry.id}:`, err);
+    }
+  }
+};
+

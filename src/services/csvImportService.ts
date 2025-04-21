@@ -12,6 +12,7 @@ import {
 import { BitcoinEntry, Origin, AporteDB, CsvAporte, ImportedEntry } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import Papa from 'papaparse';
+import { atualizarEntradasRetroativas } from '@/services/bitcoinEntryService';
 
 /**
  * Processa o arquivo CSV e retorna um array com os dados formatados
@@ -325,6 +326,9 @@ export const importCSV = async (file: File): Promise<{ success: boolean; message
     // Salvar entradas processadas
     await saveImportedEntries(sanitizedEntries);
     
+    // Após salvar, atualizar os campos USD com base nas datas retroativas
+    await atualizarEntradasRetroativas();
+    
     // Log seguro de conclusão
     console.log(`Importação finalizada com sucesso: ${sanitizedEntries.length} registros`);
     
@@ -332,6 +336,7 @@ export const importCSV = async (file: File): Promise<{ success: boolean; message
       success: true, 
       message: `${sanitizedEntries.length} aportes importados com sucesso.` 
     };
+
   } catch (error) {
     // Log seguro de erro - apenas mensagem, sem detalhes técnicos completos
     console.error('Erro na importação de CSV:', 
