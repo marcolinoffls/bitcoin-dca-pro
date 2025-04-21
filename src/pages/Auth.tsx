@@ -26,7 +26,6 @@ const Auth = () => {
   const [passwordError, setPasswordError]     = useState('');
   const [resetSent, setResetSent]             = useState(false);
   const [resetRequested, setResetRequested]   = useState(false);
-
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -36,21 +35,24 @@ const Auth = () => {
 // dentro do seu componente Auth, mantendo TODO o resto igual ao seu original
   useEffect(() => {
     if (!isCallback) return
-  
+
     ;(async () => {
+      // processa o ?code=… e persiste o token
       const { data, error } = await supabase.auth.getSessionFromUrl({
         storeSession: true
       })
-  
+
       if (error || !data.session) {
+        // volta pro login se falhar
         navigate('/auth', { replace: true })
       } else {
-        // força recarregar a app pra seu contexto de auth atualizar
+        // força um reload completo na home
+        // assim o AuthProvider (useAuthSession) já encontra o user logado
         window.location.replace('/')
       }
     })()
   }, [isCallback, navigate])
-  
+
     // Mostra spinner de carregamento enquanto o estado de autenticação está sendo carregado
   if (loading) {
     return (
