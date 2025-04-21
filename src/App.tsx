@@ -56,7 +56,6 @@ const App = () => {
                 Qualquer rota sob /auth será renderizada pelo componente Auth.
               */}
               <Route path="/auth/*" element={<Auth />} />
-
               {/*
                 Rotas de redefinição e confirmação de senha avulsas,
                 caso queira ter páginas dedicadas fora do fluxo principal de Auth.
