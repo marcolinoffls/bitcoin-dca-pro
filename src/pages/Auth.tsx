@@ -33,23 +33,25 @@ const Auth = () => {
   const isCallback = location.pathname === '/auth/callback';
 
   // Recupera sessão do Supabase após redirecionamento OAuth (Google)
+// dentro do seu componente Auth, mantendo TODO o resto igual ao seu original
   useEffect(() => {
-    if (!isCallback) return;
-
-    (async () => {
-      // linha alterada: usa getSessionFromUrl para processar o callback do OAuth
+    if (!isCallback) return
+  
+    ;(async () => {
       const { data, error } = await supabase.auth.getSessionFromUrl({
         storeSession: true
-      });
-
+      })
+  
       if (error || !data.session) {
-        navigate('/auth', { replace: true });
+        navigate('/auth', { replace: true })
       } else {
-        navigate('/', { replace: true });
+        // força recarregar a app pra seu contexto de auth atualizar
+        window.location.replace('/')
       }
-    })();
-  }, [isCallback, navigate]);
-  // Mostra spinner de carregamento enquanto o estado de autenticação está sendo carregado
+    })()
+  }, [isCallback, navigate])
+  
+    // Mostra spinner de carregamento enquanto o estado de autenticação está sendo carregado
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
