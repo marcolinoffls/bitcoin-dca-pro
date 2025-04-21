@@ -1,48 +1,70 @@
+// src/pages/Auth.tsx
+
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
+
+import { 
+  Button, 
+  Input, 
+  Label, 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader 
+} from '@/components/ui';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
-// Componente de autenticação que lida com login, cadastro, redefinição de senha e login com Google
 const Auth = () => {
-  // Estados e hooks customizados
+  // --------------------------------------------------------
+  // 1) Estados e hooks
+  // --------------------------------------------------------
   const { user, loading, signIn, signUp, resetPassword } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const { toast } = useToast();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const [email, setEmail]               = useState('');
+  const [password, setPassword]         = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [activeTab, setActiveTab]       = useState<'login'|'register'>('login');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [activeTab, setActiveTab] = useState('login');
   const [passwordError, setPasswordError] = useState('');
-  const [resetSent, setResetSent] = useState(false);
   const [resetRequested, setResetRequested] = useState(false);
-  const location = useLocation();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const isCallback = location.pathname === '/auth/callback';
+  const [resetSent, setResetSent]           = useState(false);
 
-  // Recupera sessão do Supabase após redirecionamento OAuth (Google)
+  // detecta se estamos na rota de callback OAuth
+  const isCallback = location.pathname.endsWith('/auth/callback');
+
+  // --------------------------------------------------------
+  // 2) Fluxo de callback (Google OAuth via Supabase v2)
+  // --------------------------------------------------------
   useEffect(() => {
     if (!isCallback) return;
+
     (async () => {
-      const { data, error } = await supabase.auth.getSession();
-      if (error || !data.session) {
-        navigate('/auth');
+      // Extrai code/token da URL, armazena sessão no client
+      const { data, error } = await supabase.auth.getSessionFromUrl({
+        storeSession: true
+      });
+
+      if (error) {
+        console.error('Erro no callback OAuth:', error.message);
+        // retorna ao login em caso de falha
+        navigate('/auth', { replace: true });
       } else {
-        navigate('/');
+        // sucesso: redireciona para home
+        navigate('/', { replace: true });
       }
     })();
   }, [isCallback, navigate]);
-
   // Mostra spinner de carregamento enquanto o estado de autenticação está sendo carregado
   if (loading) {
     return (
