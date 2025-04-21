@@ -25,7 +25,7 @@ const EmailResetCard = () => {
 
   return (
     <Card className="overflow-hidden">
-      <CardHeader className="bg-background pb-2">
+      <CardHeader className="bg-background pb-2 space-y-1">
         <CardTitle className="text-base flex items-center gap-2">
           <Mail className="h-4 w-4 text-muted-foreground" />
           Alterar Email
