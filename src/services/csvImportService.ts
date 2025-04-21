@@ -154,28 +154,27 @@ const normalizeData = (rawData: any[]): CsvAporte[] => {
     let rateStr = rateColumn ? String(rateColumn[1]) : '';
     rateStr = rateStr.replace(/R\$|\s+/g, '').replace(',', '.');
     
-    // Extrair origem (OPCIONAL - p2p ou corretora)
+    // Extrair origem (OPCIONAL)
     let origin = originColumn ? String(originColumn[1]).trim().toLowerCase() : '';
     
-    // Lista de corretoras conhecidas
+    // Lista de corretoras conhecidas (todos em lowercase)
     const knownExchanges = [
       'binance', 'coinbase', 'okx', 'crypto.com',
       'mercado bitcoin', 'foxbit', 'novadax',
       'bitget', 'coinext', 'ripio'
     ];
     
-    // Normalizações específicas
-    if (knownExchanges.includes(origin)) {
-      origin = 'corretora';
-    } else if (origin.includes('p2p satisfaction')) {
+    // Regras específicas primeiro
+    if (origin.includes('p2p satisfaction')) {
       origin = 'p2p';
+    } else if (knownExchanges.includes(origin)) {
+      origin = 'corretora';
     }
     
-    // Atribuir o valor padrão 'corretora' se estiver vazio ou não reconhecido
+    // Fallback para valores vazios ou não reconhecidos
     if (!origin || (origin !== 'p2p' && origin !== 'corretora' && origin !== 'planilha')) {
       origin = 'corretora';
     }
-
     // Formatar a data para o formato esperado (YYYY-MM-DD)
     const formattedDate = parseCsvDate(dateStr);
     
