@@ -7,9 +7,12 @@
  * 3. Detecção de mudanças no estado de autenticação
  * 4. Fornecimento do estado de autenticação para o restante da aplicação
  */
+// src/hooks/useAuth.ts
 
 import { createContext, useContext, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
+
 import { useAuthSession } from './useAuthSession';
 import { useSignIn } from './useSignIn';
 import { useSignUp } from './useSignUp';
@@ -17,33 +20,41 @@ import { useSignOut } from './useSignOut';
 import { usePasswordReset } from './usePasswordReset';
 
 type AuthContextType = {
+  /** sessão supabase */
   session: Session | null;
+  /** usuário logado */
   user: User | null;
+  /** indicador de carregamento */
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
-  recoverSessionFromCallback: () => Promise<User | null>; // novo
 
+  /** login com email/senha */
+  signIn: (email: string, password: string) => Promise<void>;
+  /** cadastro com email/senha */
+  signUp: (email: string, password: string) => Promise<void>;
+  /** logout */
+  signOut: () => Promise<void>;
+  /** enviar link de reset de senha */
+  resetPassword: (email: string) => Promise<void>;
+  /** recupera sessão após callback OAuth (Google, etc.) */
+  recoverSessionFromCallback: () => Promise<User | null>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // Compor os hooks individuais
+  // hooks individuais
   const { session, user, loading } = useAuthSession();
   const { signIn } = useSignIn();
   const { signUp } = useSignUp();
   const { signOut } = useSignOut();
   const { resetPassword } = usePasswordReset();
 
-    // ✅ ADICIONE AQUI:
-  const recoverSessionFromCallback = async () => {
+  // recuperar sessão pós-OAuth
+  const recoverSessionFromCallback = async (): Promise<User | null> => {
     const { data, error } = await supabase.auth.getSession();
 
     if (error || !data.session) {
-      console.error("Falha ao recuperar sessão pós-login social:", error);
+      console.error('Falha ao recuperar sessão pós-login social:', error);
       return null;
     }
 
@@ -51,24 +62,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      session, 
-      user, 
-      loading, 
-      signIn, 
-      signUp, 
-      signOut,
-      resetPassword,
-      recoverSessionFromCallback 
-    }}>
+    <AuthContext.Provider
+      value={{
+        session,
+        user,
+        loading,
+        signIn,
+        signUp,
+        signOut,
+        resetPassword,
+        recoverSessionFromCallback,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
 
-export const useAuth = () => {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
