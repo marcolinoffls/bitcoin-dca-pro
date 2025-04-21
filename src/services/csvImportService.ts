@@ -157,13 +157,11 @@ const normalizeData = (rawData: any[]): CsvAporte[] => {
     // Extrair origem (OPCIONAL - p2p ou corretora)
     let origin = originColumn ? String(originColumn[1]).trim().toLowerCase() : '';
     
-    // Atribuir o valor padrão 'exchange' (corretora) se estiver vazio ou não reconhecido
-    if (!origin || (origin !== 'p2p' && origin !== 'corretora' && origin !== 'exchange' && origin !== 'planilha')) {
-      origin = 'exchange'; // Valor padrão é corretora/exchange
-    } else if (origin === 'corretora') {
-      origin = 'corretora'; // Normalizar 'corretora' para 'exchange'
+    // Atribuir o valor padrão 'corretora' se estiver vazio ou não reconhecido
+    if (!origin || (origin !== 'p2p' && origin !== 'corretora' && origin !== 'planilha')) {
+      origin = 'corretora'; // Valor padrão é corretora
     }
-    
+
     // Formatar a data para o formato esperado (YYYY-MM-DD)
     const formattedDate = parseCsvDate(dateStr);
     
