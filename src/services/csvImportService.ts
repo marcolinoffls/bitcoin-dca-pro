@@ -375,10 +375,10 @@ export const sendSecureCSVToWebhook = async (
     formData.append('timestamp', timestamp);
     
     // Gerar assinatura HMAC para segurança
-    const signature = generateHmacSignature(userId, timestamp);
+    const signature = await generateHmacSignature(userId, timestamp);
     
     // Preparar headers seguros
-    const headers = prepareSecureHeaders(signature, timestamp);
+    const headers = prepareSecureHeaders(userId, timestamp, signature);
     
     // Enviar para o webhook usando a URL importada
     const response = await fetch(WEBHOOK_URL, {
@@ -389,11 +389,11 @@ export const sendSecureCSVToWebhook = async (
     });
     
     // Validar resposta do webhook usando função importada
-    const result = await validateWebhookResponse(response);
+    await validateWebhookResponse(response);
     
     return { 
       success: true, 
-      message: result?.message || 'Arquivo enviado com sucesso! Você receberá um email quando o processamento for concluído.' 
+      message: 'Arquivo enviado com sucesso! Você receberá um email quando o processamento for concluído.' 
     };
   } catch (error) {
     console.error('Erro ao enviar CSV para processamento externo:', error);

@@ -84,7 +84,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
   const [exchangeRate, setExchangeRate] = useState(entry.exchangeRate);
   const [exchangeRateDisplay, setExchangeRateDisplay] = useState(formatNumber(entry.exchangeRate));
   const [currency, setCurrency] = useState<'BRL' | 'USD'>(entry.currency);
-  const [origin, setOrigin] = useState<Origin>(entry.origin || 'corretora');
+  const [origin, setOrigin] = useState<"corretora" | "p2p" | "planilha">(entry.origin || 'corretora');
   const [formError, setFormError] = useState<string | null>(null);
   const [rateInfoMessage, setRateInfoMessage] = useState<string | null>(null);
   const [isExchangeRateCalculated, setIsExchangeRateCalculated] = useState<boolean>(false);
@@ -149,7 +149,7 @@ const EntryEditForm: React.FC<EntryEditFormProps> = ({
     }
   };
 
-  const handleOriginChange = (newOrigin: Origin) => {
+  const handleOriginChange = (newOrigin: "corretora" | "p2p" | "planilha") => {
     setOrigin(newOrigin);
   };
 

@@ -11,10 +11,10 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
-    flowType: 'pkce',
+    flowType: 'pkce',  // Necessário para OAuth com servidores externos
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: false,  // agora o app quem controla o fluxo
+    detectSessionInUrl: true,  // Permite que o Supabase detecte automaticamente códigos na URL
     storage: localStorage,
   }
 });

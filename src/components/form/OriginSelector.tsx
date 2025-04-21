@@ -32,7 +32,7 @@ const OriginSelector: React.FC<OriginSelectorProps> = ({ origin, onOriginChange 
           onClick={() => handleOriginChange('corretora')}
           className={cn(
             'flex-1 text-xs font-normal gap-1 rounded-xl',
-            (origin === 'corretora' || origin === 'exchange') && 'bg-bitcoin text-white hover:bg-bitcoin/90'
+            (origin === 'corretora') && 'bg-bitcoin text-white hover:bg-bitcoin/90'
           )}
         >
           <Building className="h-4 w-4" />
@@ -53,12 +53,7 @@ const OriginSelector: React.FC<OriginSelectorProps> = ({ origin, onOriginChange 
         </Button>
       </div>
       
-      {/* Mensagem de informação se origin for "exchange" */}
-      {origin === 'exchange' && (
-        <p className="text-xs text-muted-foreground mt-1">
-          Nota: "exchange" é mapeado para "corretora" na interface.
-        </p>
-      )}
+      {/* Mensagem removida pois não há mais compatibilidade com "exchange" */}
     </div>
   );
 };

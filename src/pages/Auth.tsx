@@ -37,18 +37,30 @@ const Auth = () => {
     if (!isCallback) return
 
     ;(async () => {
-      // processa o ?code=… e persiste o token
-      const { data, error } = await supabase.auth.getSessionFromUrl({
-        storeSession: true
-      })
+      try {
+        // Processa o código de autorização usando o método correto na API atual
+        console.log('Processando callback OAuth com código de autorização...');
+        
+        // O método exchangeCodeForSession troca o código por uma sessão
+        const { data, error } = await supabase.auth.exchangeCodeForSession(
+          // Extrai o código da URL (ex: ?code=abc123)
+          new URL(window.location.href).searchParams.get('code') || ''
+        );
 
-      if (error || !data.session) {
-        // volta pro login se falhar
-        navigate('/auth', { replace: true })
-      } else {
-        // força um reload completo na home
-        // assim o AuthProvider (useAuthSession) já encontra o user logado
-        window.location.replace('/')
+        if (error || !data.session) {
+          console.error('Erro ao processar código de autorização:', error);
+          // Volta para o login se falhar
+          navigate('/auth', { replace: true });
+          return;
+        }
+        
+        console.log('Autenticação OAuth bem-sucedida!');
+        // Força um reload completo na home
+        // Assim o AuthProvider (useAuthSession) já encontra o user logado
+        window.location.replace('/');
+      } catch (e) {
+        console.error('Exceção ao processar callback OAuth:', e);
+        navigate('/auth', { replace: true });
       }
     })()
   }, [isCallback, navigate])
@@ -113,7 +125,7 @@ const Auth = () => {
       
       // Define URL de redirecionamento específica para completar a autenticação
       // Usa URL absoluta para garantir que o redirecionamento funcione corretamente
-      const redirectUrl = `${window.location.origin}/auth/callback`; // Redireciona de volta para a página de autenticação
+      const redirectUrl = `${window.location.origin}/auth/callback`;
       
       console.log('URL de redirecionamento:', redirectUrl);
       
@@ -121,10 +133,12 @@ const Auth = () => {
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
+          // Usamos flowType: 'pkce' para maior segurança (o padrão no cliente)
+          // isso requer a troca do código por sessão no callback
           queryParams: {
-            // Parâmetros opcionais para personalizar a tela de consentimento do Google
-            // access_type: 'offline', // Solicita refresh token
-            // prompt: 'consent', // Sempre mostra a tela de consentimento
+            // Parâmetros opcionais para personalizar a tela de consentimento
+            access_type: 'offline', // Solicita refresh token para poder renovar sessão
+            prompt: 'consent', // Sempre mostrar tela de consentimento (útil para testar)
           }
         },
       });
@@ -147,9 +161,7 @@ const Auth = () => {
         title: "Erro no login com Google",
         description: error.message || "Não foi possível conectar com o Google. Tente novamente.",
       });
-    } finally {
-      // O estado de carregamento será resetado após o redirecionamento, 
-      // mas é importante resetar em caso de erro
+      // Reseta estado de carregamento em caso de erro
       setIsGoogleLoading(false);
     }
   };
