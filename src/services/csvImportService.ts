@@ -256,7 +256,9 @@ export const saveImportedEntries = async (entries: ImportedEntry[]) => {
         origem_aporte: entry.origin,
         origem_registro: 'planilha',
         user_id: userId,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        valor_usd: null,
+        cotacao_usd_brl: null
       };
     });
     
