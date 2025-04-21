@@ -3,7 +3,7 @@
  * Botão de configuração que abre a sidebar
  * 
  * O que ele faz:
- * - Exibe um ícone de engrenagem no canto superior esquerdo
+ * - Exibe um ícone no canto superior esquerdo
  * - Ao ser clicado, abre a barra lateral de configurações
  * - Possui tooltip para melhor usabilidade
  * 
@@ -37,7 +37,7 @@ const ConfigButton = ({ onClick }: ConfigButtonProps) => {
             className="h-10 w-10 rounded-full hover:bg-muted"
             aria-label="Configurações"
           >
-            <Menu className="h-12 w-8 text-muted-foreground" />
+            <Menu className="h-12 w-12 text-muted-foreground" />
           </Button>
         </TooltipTrigger>
         <TooltipContent>
