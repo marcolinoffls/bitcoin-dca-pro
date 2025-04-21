@@ -40,35 +40,82 @@ const calculateExchangeRate = (amountInvested: number, btcAmount: number): numbe
 const cotacaoCache: Record<string, number> = {};
 
 /**
- * Busca cotação USD/BRL para uma data específica via AwesomeAPI
- * @param date Data do aporte
- * @returns Cotação USD/BRL ou null se não encontrada
+ * Busca a cotação USD/BRL para uma data específica via AwesomeAPI.
+ * Estratégia:
+ * 1. Busca cotação no dia
+ * 2. Se não houver, tenta média entre dia anterior e posterior
+ * 3. Se apenas uma estiver disponível, usa ela
+ * 4. Se ambas falharem, tenta novamente o dia posterior como último recurso
  */
 export const fetchUsdBrlRate = async (date: Date): Promise<number | null> => {
-  const isoDate = date.toISOString().split('T')[0]; // YYYY-MM-DD
-  const [year, month, day] = isoDate.split('-');
-  const formatted = `${year}${month}${day}`; // YYYYMMDD
+  const toApiDate = (d: Date) => {
+    const [year, month, day] = d.toISOString().split('T')[0].split('-');
+    return `${year}${month}${day}`; // YYYYMMDD
+  };
 
-  // Verifica se já está em cache
-  if (cotacaoCache[formatted]) {
-    return cotacaoCache[formatted];
-  }
+  const baseDateStr = toApiDate(date);
+  if (cotacaoCache[baseDateStr]) return cotacaoCache[baseDateStr];
 
-  try {
-    const response = await fetch(`https://economia.awesomeapi.com.br/json/daily/USD-BRL/?start_date=${formatted}&end_date=${formatted}&limit=1`);
-    const data = await response.json();
-
-    if (Array.isArray(data) && data.length > 0 && data[0].bid) {
-      const cotacao = parseFloat(data[0].bid);
-      cotacaoCache[formatted] = cotacao;
-      return cotacao;
+  const fetchRate = async (d: string): Promise<number | null> => {
+    try {
+      const url = `https://economia.awesomeapi.com.br/json/daily/USD-BRL/?start_date=${d}&end_date=${d}&limit=1`;
+      const res = await fetch(url);
+      const json = await res.json();
+      if (Array.isArray(json) && json.length > 0 && json[0].bid) {
+        return parseFloat(json[0].bid);
+      }
+    } catch {
+      // falha silenciosa
     }
+    return null;
+  };
 
-    return null;
-  } catch {
-    return null;
+  // 1. Tenta data exata
+  const exactRate = await fetchRate(baseDateStr);
+  if (exactRate) {
+    cotacaoCache[baseDateStr] = exactRate;
+    return exactRate;
   }
+
+  // 2. Tenta anterior e posterior
+  const prevDate = new Date(date);
+  prevDate.setDate(prevDate.getDate() - 1);
+  const nextDate = new Date(date);
+  nextDate.setDate(nextDate.getDate() + 1);
+
+  const [prevRate, nextRate] = await Promise.all([
+    fetchRate(toApiDate(prevDate)),
+    fetchRate(toApiDate(nextDate))
+  ]);
+
+  if (prevRate && nextRate) {
+    const average = (prevRate + nextRate) / 2;
+    cotacaoCache[baseDateStr] = average;
+    return average;
+  }
+
+  if (prevRate) {
+    cotacaoCache[baseDateStr] = prevRate;
+    return prevRate;
+  }
+
+  if (nextRate) {
+    cotacaoCache[baseDateStr] = nextRate;
+    return nextRate;
+  }
+
+  // 3. Tenta o próximo dia novamente
+  const fallbackDate = new Date(nextDate);
+  fallbackDate.setDate(fallbackDate.getDate() + 1);
+  const fallbackRate = await fetchRate(toApiDate(fallbackDate));
+  if (fallbackRate) {
+    cotacaoCache[baseDateStr] = fallbackRate;
+    return fallbackRate;
+  }
+
+  return null;
 };
+
 
 /**
  * Fetches all bitcoin entries from the database
