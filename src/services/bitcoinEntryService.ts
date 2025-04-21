@@ -44,20 +44,20 @@ const calculateExchangeRate = (amountInvested: number, btcAmount: number): numbe
 const fetchUsdBrlRate = async (date: Date): Promise<number | null> => {
   try {
     const dateStr = date.toISOString().split('T')[0];
-    console.log('[fetchUsdBrlRate] Data formatada para consulta:', dateStr);
+    const [year, month, day] = dateStr.split('-');
 
-    const url = `https://api.exchangerate.host/${dateStr}?base=USD&symbols=BRL`;
-    const response = await fetch(url);
+    const response = await fetch(`https://open.er-api.com/v6/history/USD/${year}-${month}-${day}`);
     const data = await response.json();
 
-    console.log('[fetchUsdBrlRate] Resposta completa da API:', data);
+    console.log('[fetchUsdBrlRate] Resposta da API open.er-api.com:', data);
 
-    if (data?.rates?.BRL) {
-      console.log(`[fetchUsdBrlRate] Cotação encontrada para ${dateStr}:`, data.rates.BRL);
-      return data.rates.BRL;
+    const rate = data?.rates?.BRL;
+    if (rate) {
+      console.log(`Cotação USD/BRL para ${dateStr}:`, rate);
+      return rate;
     }
 
-    console.error('[fetchUsdBrlRate] Erro ao buscar cotação USD/BRL: formato de resposta inválido', data);
+    console.error('[fetchUsdBrlRate] Cotação BRL não encontrada na resposta:', data);
     return null;
   } catch (error) {
     console.error('[fetchUsdBrlRate] Erro ao buscar cotação USD/BRL:', error);
