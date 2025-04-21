@@ -79,7 +79,7 @@ const BitcoinTotalCard: React.FC<BitcoinTotalCardProps> = ({
       <CardContent className="p-5">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 flex-shrink-0">
+            <div className="h-8 w-8 flex-shrink-0">
               <img 
                 src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/bitcoin.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvYml0Y29pbi5wbmciLCJpYXQiOjE3NDQ0OTI3ODgsImV4cCI6MTc3NjAyODc4OH0.lrqzizN8_y_ZR8PExIB_XH6xBoqeG0OvxlwMbv0TtF0" 
                 alt="Bitcoin"
