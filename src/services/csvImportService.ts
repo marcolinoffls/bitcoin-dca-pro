@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import Papa from 'papaparse';
 import { atualizarEntradasRetroativas } from '@/services/bitcoinEntryService';
 
+
 /**
  * Processa o arquivo CSV e retorna um array com os dados formatados
  * @param file Arquivo CSV a ser processado
@@ -276,6 +277,7 @@ export const saveImportedEntries = async (entries: ImportedEntry[]) => {
     await atualizarEntradasRetroativas();
     
     return { success: true, count: preparedEntries.length };
+
   } catch (error) {
     // Log seguro para erros genéricos
     console.error('Erro ao processar aportes');
@@ -349,6 +351,64 @@ export const importCSV = async (file: File): Promise<{ success: boolean; message
       message: error instanceof Error ? 
         error.message : 
         'Erro desconhecido ao importar CSV.' 
+    };
+  }
+};
+
+/**
+ * Envia o arquivo CSV para processamento seguro via webhook externo
+ * @param file Arquivo CSV a ser enviado
+ * @param userId ID do usuário atual
+ * @param userEmail Email do usuário atual
+ * @returns Objeto com status de sucesso e mensagem
+ */
+export const sendSecureCSVToWebhook = async (
+  file: File, 
+  userId: string, 
+  userEmail: string
+): Promise<{ success: boolean; message: string }> => {
+  try {
+    // Verificar arquivo usando as funções de segurança importadas
+    validateCsvFile(file);
+    
+    // Criar FormData para envio
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('userId', userId);
+    formData.append('userEmail', userEmail);
+    
+    // Gerar timestamp para segurança usando a função importada
+    const timestamp = generateTimestamp();
+    formData.append('timestamp', timestamp);
+    
+    // Gerar assinatura HMAC para segurança
+    const signature = await generateHmacSignature(userId, timestamp);
+    
+    // Preparar headers seguros
+    const headers = prepareSecureHeaders(userId, timestamp, signature);
+    
+    // Enviar para o webhook usando a URL importada
+    const response = await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers,
+      body: formData,
+      // Remover timeout que não existe no tipo RequestInit
+    });
+    
+    // Validar resposta do webhook usando função importada
+    await validateWebhookResponse(response);
+    
+    return { 
+      success: true, 
+      message: 'Arquivo enviado com sucesso! Você receberá um email quando o processamento for concluído.' 
+    };
+  } catch (error) {
+    console.error('Erro ao enviar CSV para processamento externo:', error);
+    return { 
+      success: false, 
+      message: error instanceof Error 
+        ? `Erro: ${error.message}`
+        : 'Erro desconhecido ao enviar arquivo para processamento'
     };
   }
 };
