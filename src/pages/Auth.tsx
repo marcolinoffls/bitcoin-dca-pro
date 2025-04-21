@@ -11,6 +11,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 /**
  * Página de autenticação
@@ -35,6 +37,31 @@ const Auth = () => {
   const [resetRequested, setResetRequested] = useState(false);
   const location = useLocation();
   const { toast } = useToast(); // Hook para notificações
+  const navigate = useNavigate();
+  const isCallback = location.pathname === '/auth/callback';
+  
+  useEffect(() => {
+    const recoverSessionFromCallback = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      if (error || !data.session) {
+        console.error("Falha ao recuperar sessão pós-login social:", error);
+        navigate('/auth'); // redireciona de volta se falhar
+        return;
+      }
+      navigate('/'); // redireciona pro app
+    };
+  
+    if (isCallback) {
+      recoverSessionFromCallback();
+    }
+  }, [isCallback]);
+
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p className="text-sm text-muted-foreground">Conectando com sua conta Google...</p>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

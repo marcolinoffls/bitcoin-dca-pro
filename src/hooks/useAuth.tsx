@@ -24,6 +24,8 @@ type AuthContextType = {
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  recoverSessionFromCallback: () => Promise<User | null>; // novo
+
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -36,6 +38,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { signOut } = useSignOut();
   const { resetPassword } = usePasswordReset();
 
+    // ✅ ADICIONE AQUI:
+  const recoverSessionFromCallback = async () => {
+    const { data, error } = await supabase.auth.getSession();
+
+    if (error || !data.session) {
+      console.error("Falha ao recuperar sessão pós-login social:", error);
+      return null;
+    }
+
+    return data.session.user;
+  };
+
   return (
     <AuthContext.Provider value={{ 
       session, 
@@ -44,7 +58,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn, 
       signUp, 
       signOut,
-      resetPassword
+      resetPassword,
+      recoverSessionFromCallback 
     }}>
       {children}
     </AuthContext.Provider>

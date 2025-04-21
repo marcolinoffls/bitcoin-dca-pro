@@ -60,7 +60,7 @@ const SidebarConfig = ({ open, onOpenChange }: SidebarConfigProps) => {
             <h3 className="text-sm font-medium text-muted-foreground">Aplicativo</h3>
             <Separator />
             <div className="py-4 text-sm text-muted-foreground text-center">
-              Mais configurações serão adicionadas em breve.
+              Mais configurações serão adicionadas em breve. v1
             </div>
           </div>
         </div>
