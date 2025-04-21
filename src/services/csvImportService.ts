@@ -82,6 +82,21 @@ export const processCSV = (file: File): Promise<CsvAporte[]> => {
 };
 
 /**
+ * Converte data no formato DD/MM/YYYY para YYYY-MM-DD
+ * Se inválida, retorna a data atual
+ */
+const parseCsvDate = (raw: string): string => {
+  const parts = raw.trim().split('/');
+  if (parts.length !== 3) return new Date().toISOString().split('T')[0];
+
+  const [day, month, year] = parts;
+  const formatted = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  
+  const parsedDate = new Date(`${formatted}T00:00:00`);
+  return isNaN(parsedDate.getTime()) ? new Date().toISOString().split('T')[0] : formatted;
+};
+
+/**
  * Normaliza os dados do CSV para um formato padrão, independente do formato original
  * Trata campos opcionais (cotação e origem) aplicando valores padrões quando necessário
  */
@@ -150,10 +165,7 @@ const normalizeData = (rawData: any[]): CsvAporte[] => {
     }
     
     // Formatar a data para o formato esperado (YYYY-MM-DD)
-    const dateParts = dateStr.split('/');
-    const formattedDate = dateParts.length === 3 
-      ? `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}` 
-      : new Date().toISOString().split('T')[0];
+    const formattedDate = parseCsvDate(dateStr);
     
     // Conversão para valores numéricos
     const amount = parseFloat(valueStr) || 0;
