@@ -214,7 +214,7 @@ const validateData = (data: CsvAporte[]): CsvAporte[] => {
     // Verificar data válida
     const date = new Date(item.date);
     if (isNaN(date.getTime())) {
-      throw new Error(`Data inválida: ${item.date}`);
+      throw new Error('Data inválida fornecida no CSV.');
     }
     
     // Verificação final de dados
@@ -244,7 +244,7 @@ export const saveImportedEntries = async (entries: ImportedEntry[]) => {
     
     const userId = user.user.id;
     // Log seguro do ID do usuário (mostra apenas parte inicial)
-    console.log(`Usuário autenticado: ${userId.substring(0, 6)}...`);
+    console.debug('Usuário autenticado');
     
     // Preparar entradas para o Supabase
     const preparedEntries = entries.map(entry => {
@@ -428,7 +428,7 @@ export const sendSecureCSVToWebhook = async (
       message: 'Arquivo enviado com sucesso! Você receberá um email quando o processamento for concluído.' 
     };
   } catch (error) {
-    console.error('Erro ao enviar CSV para processamento externo:', error);
+    console.error('Erro ao enviar CSV para processamento externo');
     return { 
       success: false, 
       message: error instanceof Error 
