@@ -314,6 +314,14 @@ Você Recebe: 18.959 sats`;
             <DialogDescription>
               Cole a mensagem de confirmação recebida do Satsfaction P2P abaixo.
             </DialogDescription>
+            <Alert variant="default" className="mt-4 bg-yellow-50 border-yellow-300 text-yellow-800 text-sm">
+              <AlertCircle className="h-4 w-4 mr-2" />
+              <AlertDescription>
+                O <strong>Bitcoin DCA PRO</strong> não possui qualquer ligação com a plataforma <strong>Satsfaction</strong>.
+                Esta funcionalidade existe apenas para facilitar a importação de dados a partir de mensagens recebidas por usuários.
+              </AlertDescription>
+            </Alert>
+                      
           </DialogHeader>
 
           <div className="py-4">
