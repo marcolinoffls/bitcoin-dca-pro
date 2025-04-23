@@ -310,9 +310,9 @@ Você Recebe: 18.959 sats`;
       <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className="sm:max-w-[500px] rounded-xl">
           <DialogHeader>
-            <DialogTitle>Importar do Satisfaction (P2P)</DialogTitle>
+            <DialogTitle>Importar do Satsfaction (P2P)</DialogTitle>
             <DialogDescription>
-              Cole a mensagem de confirmação recebida do Satisfaction P2P abaixo.
+              Cole a mensagem de confirmação recebida do Satsfaction P2P abaixo.
             </DialogDescription>
           </DialogHeader>
 
