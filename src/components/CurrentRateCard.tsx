@@ -2,12 +2,11 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CurrentRate, PriceVariation } from '@/types';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Triangle } from 'lucide-react';
+import { RefreshCw, Triangle, BarChart3 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatNumber } from '@/lib/utils';
-import { BarChart3 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface CurrentRateCardProps {
   currentRate: CurrentRate;
@@ -21,11 +20,6 @@ interface CurrentRateCardProps {
  * 
  * Mostra o preço atual em USD e BRL, além das variações percentuais
  * em diferentes períodos (24h, 7d, 30, 1 ano)
- * 
- * @param currentRate Objeto com as cotações atuais
- * @param priceVariation Objeto com as variações percentuais
- * @param isLoading Estado de carregamento
- * @param onRefresh Função para atualizar os dados
  */
 const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
   currentRate,
@@ -33,12 +27,10 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
   isLoading,
   onRefresh,
 }) => {
-  // Definindo valores seguros para exibição
   const usdRate = currentRate?.usd || 0;
   const brlRate = currentRate?.brl || 0;
   const timestamp = currentRate?.timestamp || new Date();
 
-  // Componente para exibir cada período de variação
   const PriceVariationItem = ({ 
     label, 
     value, 
@@ -48,7 +40,6 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
     value: number; 
     className?: string;
   }) => {
-    // Determine if the variation is positive or negative
     const isPositive = value >= 0;
     
     return (
@@ -80,7 +71,6 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
     <Card className="rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-200 h-[220px]">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 p-3">
         <div className="flex items-center gap-3">
-          {/* Ícone e título existentes */}
           <div className="flex h-8 w-8 shrink-0 items-center justify-center">
             <img 
               src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/cotacao4.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvY290YWNhbzQucG5nIiwiaWF0IjoxNzQ0NDk2Nzk0LCJleHAiOjE3NzYwMzI3OTR9.JE043OJwu41fPHcWgkmh15Hoytznv-MAiEhyF1xvWvM" 
@@ -91,20 +81,37 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
           <CardTitle className="text-base font-semibold text-gray-500">COTAÇÃO ATUAL DO BITCOIN</CardTitle>
         </div>
         
-        {/* Novo botão de dashboard */}
-        <Link 
-          to="/dashboard"
-          className="ml-2"
-        >
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-full hover:bg-muted"
-            aria-label="Ver Dashboard"
-          >
-            <BarChart3 className="h-5 w-5 text-muted-foreground" />
-          </Button>
-        </Link>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full hover:bg-muted"
+              aria-label="Ver Dashboard"
+            >
+              <BarChart3 className="h-5 w-5 text-muted-foreground" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80">
+            <div className="grid gap-4">
+              <div className="space-y-2">
+                <h4 className="font-medium leading-none">Dashboard</h4>
+                <p className="text-sm text-muted-foreground">
+                  Funcionalidade em desenvolvimento. Estará disponível em versões futuras do bitcoin DCA PRO.
+                </p>
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-20"
+                >
+                  Fechar
+                </Button>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
       </CardHeader>
       <CardContent className="p-3 pt-0">
         <div className="grid gap-3 grid-cols-2">
@@ -125,7 +132,6 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
           </div>
         </div>
         
-        {/* Bloco de variação de preços com novo estilo */}
         {priceVariation && (
           <div className="mt-2 mb-1">
             <div className="bg-gray-100 p-2 rounded-lg flex flex-wrap justify-between gap-2">
