@@ -7,7 +7,7 @@
  * e é possível fechá-lo com o botão "Fechar".
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CurrentRate, PriceVariation } from '@/types';
 import { Button } from '@/components/ui/button';
