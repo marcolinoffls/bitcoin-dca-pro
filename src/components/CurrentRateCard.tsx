@@ -1,3 +1,12 @@
+/**
+ * Componente que exibe o card de cotação atual do Bitcoin
+ * 
+ * Mostra o preço atual em USD e BRL, além das variações percentuais
+ * em diferentes períodos (24h, 7d, 30 dias, 1 ano)
+ * Agora o botão de dashboard abre um Popover com aviso,
+ * e é possível fechá-lo com o botão "Fechar".
+ */
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CurrentRate, PriceVariation } from '@/types';
@@ -6,7 +15,11 @@ import { RefreshCw, Triangle, BarChart3 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatNumber } from '@/lib/utils';
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { 
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface CurrentRateCardProps {
   currentRate: CurrentRate;
@@ -15,12 +28,6 @@ interface CurrentRateCardProps {
   onRefresh: () => void;
 }
 
-/**
- * Componente que exibe o card de cotação atual do Bitcoin
- * 
- * Mostra o preço atual em USD e BRL, além das variações percentuais
- * em diferentes períodos (24h, 7d, 30, 1 ano)
- */
 const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
   currentRate,
   priceVariation,
@@ -81,7 +88,8 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
           <CardTitle className="text-base font-semibold text-gray-500">COTAÇÃO ATUAL DO BITCOIN</CardTitle>
         </div>
         
-        <Popover>
+        {/* Botão do dashboard com popover controlado por estado */}
+        <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
           <PopoverTrigger asChild>
             <Button
               variant="ghost"
@@ -105,6 +113,7 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
                   variant="outline"
                   size="sm"
                   className="w-20"
+                  onClick={() => setIsPopoverOpen(false)} // Fecha o popover
                 >
                   Fechar
                 </Button>
