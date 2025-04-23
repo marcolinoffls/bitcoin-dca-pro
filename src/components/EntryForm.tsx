@@ -279,7 +279,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
                   onClick={openSatisfactionModal}
                 >
                   <Upload className="h-4 w-4" />
-                  Importar do Satisfaction (P2P)
+                  Importar do Satsfaction (P2P)
                 </Button>
                 
                 <FormActions 
