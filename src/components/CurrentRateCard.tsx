@@ -1,3 +1,4 @@
+
 /**
  * Componente que exibe o card de cotação atual do Bitcoin
  * 
@@ -34,6 +35,9 @@ const CurrentRateCard: React.FC<CurrentRateCardProps> = ({
   isLoading,
   onRefresh,
 }) => {
+  // Define o estado para controlar a abertura/fechamento do popover
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  
   const usdRate = currentRate?.usd || 0;
   const brlRate = currentRate?.brl || 0;
   const timestamp = currentRate?.timestamp || new Date();
