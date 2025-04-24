@@ -1,0 +1,38 @@
+
+# Domínio para o Bitcoin DCA Pro
+# Substitua example.com pelo seu domínio real
+example.com {
+    # Encaminha todo o tráfego para o serviço app na porta 3000
+    reverse_proxy app:3000
+    
+    # Configuração de TLS automática
+    # Caddy gerencia certificados HTTPS automaticamente
+    tls {
+        # Email para notificações Let's Encrypt (substitua pelo seu email)
+        email seu-email@example.com
+    }
+    
+    # Compressão de conteúdo
+    encode gzip zstd
+    
+    # Logs
+    log {
+        output file /var/log/caddy/access.log
+    }
+    
+    # Cabeçalhos de segurança
+    header {
+        # Previne clickjacking
+        X-Frame-Options "SAMEORIGIN"
+        # Previne MIME sniffing
+        X-Content-Type-Options "nosniff"
+        # XSS Protection
+        X-XSS-Protection "1; mode=block"
+        # Política de segurança de conteúdo
+        Content-Security-Policy "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline';"
+        # Referrer Policy
+        Referrer-Policy "strict-origin-when-cross-origin"
+        # Remove Server header
+        -Server
+    }
+}

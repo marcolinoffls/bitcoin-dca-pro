@@ -1,0 +1,47 @@
+
+version: '3.8'
+
+services:
+  # Serviço principal do Bitcoin DCA Pro
+  app:
+    container_name: bitcoin-dca-pro
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    # Porta interna - não exposta diretamente à internet
+    expose:
+      - "3000"
+    environment:
+      - NODE_ENV=production
+      # Adicione outras variáveis de ambiente necessárias aqui
+      # - DATABASE_URL=
+      # - SUPABASE_URL=
+      # - SUPABASE_KEY=
+    networks:
+      - app-network
+      
+  # Serviço de proxy reverso (Caddy)
+  caddy:
+    image: caddy:2
+    container_name: caddy-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - app-network
+    depends_on:
+      - app
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:
