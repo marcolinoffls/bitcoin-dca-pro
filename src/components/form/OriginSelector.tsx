@@ -1,6 +1,6 @@
 
 /**
- * Campo visual de seleção da origem do aporte (Corretora, P2P ou Ajuste).
+ * Campo visual de seleção da origem do aporte (Corretora, P2P).
  * Usado tanto no registro quanto na edição. Controla o valor salvo no Supabase.
  */
 import React from 'react';
