@@ -131,7 +131,7 @@ const ModalAjuste: React.FC<ModalAjusteProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md rounded-2xl px-6 h-[650px]">
+      <DialogContent className="sm:max-w-md rounded-2xl px-6 h-[450px]">
         <DialogHeader>
           <DialogTitle>
             {mode === 'manual' ? 'Ajustar Saldo' : 'Definir Saldo Total'}
@@ -193,7 +193,7 @@ const ModalAjuste: React.FC<ModalAjusteProps> = ({
                     id="newTotalBalance"
                     value={newTotalBalance}
                     onChange={(e) => setNewTotalBalance(e.target.value)}
-                    placeholder={displayUnit === 'SATS' ? "100000" : "0.001"}
+                    placeholder={displayUnit === 'SATS' ? "100000" : "0.0001"}
                     className="pl-12 rounded-xl"
                     type="text"
                     inputMode="decimal"
