@@ -199,11 +199,13 @@ const ModalAjuste: React.FC<ModalAjusteProps> = ({
                     inputMode="decimal"
                   />
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Saldo atual: {displayUnit === 'BTC' 
-                    ? `${currentBalance.toFixed(8)} BTC`
-                    : `${(currentBalance * 100000000).toFixed(0)} SATS`}
-                </p>
+                  <p className="text-sm text-muted-foreground min-h-[1.25rem]">
+                    {mode === 'total' && (
+                      displayUnit === 'BTC' 
+                        ? `Saldo atual: ${currentBalance.toFixed(8)} BTC`
+                        : `Saldo atual: ${(currentBalance * 100000000).toFixed(0)} SATS`
+                    )}
+                  </p>
               </div>
             )}
 
@@ -239,7 +241,7 @@ const ModalAjuste: React.FC<ModalAjusteProps> = ({
               </Button>
               <Button
                 type="submit"
-                className="flex-1 bg-purple-500 hover:bg-purple-600 text-white rounded-xl"
+                className="flex-1 bg-orange-500 hover:bg-orange-600 text-white rounded-xl"
               >
                 {mode === 'manual' ? 'Confirmar Ajuste' : 'Atualizar Saldo'}
               </Button>
