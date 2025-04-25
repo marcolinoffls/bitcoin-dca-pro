@@ -1,4 +1,3 @@
-
 /**
  * Componente principal que lista os aportes do usuário
  * 
@@ -15,7 +14,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
-import { BitcoinEntry, CurrentRate } from '@/types';
+import { BitcoinEntry, CurrentRate, Origin } from '@/types';
 import ImportCsvModal from './ImportCsvModal';
 import EntryModals from './entries/modals/EntryModals';
 import EntryListHeader from './entries/EntryListHeader';
@@ -45,7 +44,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
 
-  // Estados locais
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
@@ -53,13 +51,15 @@ const EntriesList: React.FC<EntriesListProps> = ({
   const [monthFilter, setMonthFilter] = useState<string | null>(null);
   const [originFilter, setOriginFilter] = useState<"planilha" | "corretora" | "p2p" | null>(null);
   const [registrationSourceFilter, setRegistrationSourceFilter] = useState<'manual' | 'planilha' | null>(null);
-  const [rowsToShow, setRowsToShow] = useState<number>(30);
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-    const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
-  const [isFilterActive, setIsFilterActive] = useState(false);
+  const [yearFilter, setYearFilter] = useState<string | null>(null);
   const [tempMonthFilter, setTempMonthFilter] = useState<string | null>(null);
+  const [tempYearFilter, setTempYearFilter] = useState<string | null>(null);
   const [tempOriginFilter, setTempOriginFilter] = useState<"planilha" | "corretora" | "p2p" | null>(null);
   const [tempRegistrationSourceFilter, setTempRegistrationSourceFilter] = useState<'manual' | 'planilha' | null>(null);
+  const [rowsToShow, setRowsToShow] = useState<number>(30);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
+  const [isFilterActive, setIsFilterActive] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState<ColumnConfig[]>([
     { id: 'date', label: 'Data', visible: true },
     { id: 'amountInvested', label: 'Valor Investido', visible: true },
@@ -74,7 +74,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
     direction: 'desc'
   });
 
-  // Handlers
   const handleEditClick = (id: string) => {
     setSelectedEntryId(id);
     onEdit(id);
@@ -107,6 +106,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
     setIsFilterPopoverOpen(open);
     if (open) {
       setTempMonthFilter(monthFilter);
+      setTempYearFilter(yearFilter);
       setTempOriginFilter(originFilter);
       setTempRegistrationSourceFilter(registrationSourceFilter);
     }
@@ -114,10 +114,12 @@ const EntriesList: React.FC<EntriesListProps> = ({
 
   const applyFilters = () => {
     setMonthFilter(tempMonthFilter);
-    setOriginFilter(tempOriginFilter);
+    setYearFilter(tempYearFilter);
+    setOriginFilter(tempOriginFilter as Origin | null);
     setRegistrationSourceFilter(tempRegistrationSourceFilter);
     setIsFilterActive(
       tempMonthFilter !== null || 
+      tempYearFilter !== null ||
       tempOriginFilter !== null || 
       tempRegistrationSourceFilter !== null
     );
@@ -126,9 +128,11 @@ const EntriesList: React.FC<EntriesListProps> = ({
 
   const clearFilters = () => {
     setMonthFilter(null);
+    setYearFilter(null);
     setOriginFilter(null);
     setRegistrationSourceFilter(null);
     setTempMonthFilter(null);
+    setTempYearFilter(null);
     setTempOriginFilter(null);
     setTempRegistrationSourceFilter(null);
     setIsFilterActive(false);
@@ -151,7 +155,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
     );
   };
 
-  // Memos
   const availableMonths = useMemo(() => {
     const months: {[key: string]: string} = {};
     entries.forEach(entry => {
@@ -165,9 +168,28 @@ const EntriesList: React.FC<EntriesListProps> = ({
     }));
   }, [entries]);
 
+  const availableYears = useMemo(() => {
+    if (!entries?.length) return [];
+    const years: {[key: string]: string} = {};
+    entries.forEach(entry => {
+      const year = format(entry.date, 'yyyy');
+      years[year] = year;
+    });
+    return Object.entries(years)
+      .map(([year]) => ({
+        value: year,
+        label: year
+      }))
+      .sort((a, b) => b.value.localeCompare(a.value));
+  }, [entries]);
+
   const filteredEntries = useMemo(() => {
     if (!entries) return [];
     return entries.filter(entry => {
+      if (yearFilter) {
+        const entryYear = format(entry.date, 'yyyy');
+        if (entryYear !== yearFilter) return false;
+      }
       if (monthFilter) {
         const entryMonth = format(entry.date, 'yyyy-MM');
         if (entryMonth !== monthFilter) return false;
@@ -176,7 +198,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
       if (registrationSourceFilter && entry.registrationSource !== registrationSourceFilter) return false;
       return true;
     });
-  }, [entries, monthFilter, originFilter, registrationSourceFilter]);
+  }, [entries, yearFilter, monthFilter, originFilter, registrationSourceFilter]);
 
   const sortedEntries = useMemo(() => {
     let result = [...filteredEntries];
@@ -267,10 +289,13 @@ const EntriesList: React.FC<EntriesListProps> = ({
             isFilterPopoverOpen={isFilterPopoverOpen}
             handleFilterPopoverOpenChange={handleFilterPopoverOpenChange}
             availableMonths={availableMonths}
+            availableYears={availableYears}
             tempMonthFilter={tempMonthFilter}
+            tempYearFilter={tempYearFilter}
             tempOriginFilter={tempOriginFilter}
             tempRegistrationSourceFilter={tempRegistrationSourceFilter}
             setTempMonthFilter={setTempMonthFilter}
+            setTempYearFilter={setTempYearFilter}
             setTempOriginFilter={setTempOriginFilter}
             setTempRegistrationSourceFilter={setTempRegistrationSourceFilter}
             applyFilters={applyFilters}
@@ -304,10 +329,13 @@ const EntriesList: React.FC<EntriesListProps> = ({
             isFilterPopoverOpen={isFilterPopoverOpen}
             handleFilterPopoverOpenChange={handleFilterPopoverOpenChange}
             availableMonths={availableMonths}
+            availableYears={availableYears}
             tempMonthFilter={tempMonthFilter}
+            tempYearFilter={tempYearFilter}
             tempOriginFilter={tempOriginFilter}
             tempRegistrationSourceFilter={tempRegistrationSourceFilter}
             setTempMonthFilter={setTempMonthFilter}
+            setTempYearFilter={setTempYearFilter}
             setTempOriginFilter={setTempOriginFilter}
             setTempRegistrationSourceFilter={setTempRegistrationSourceFilter}
             applyFilters={applyFilters}
@@ -341,10 +369,13 @@ const EntriesList: React.FC<EntriesListProps> = ({
             isFilterPopoverOpen={isFilterPopoverOpen}
             handleFilterPopoverOpenChange={handleFilterPopoverOpenChange}
             availableMonths={availableMonths}
+            availableYears={availableYears}
             tempMonthFilter={tempMonthFilter}
+            tempYearFilter={tempYearFilter}
             tempOriginFilter={tempOriginFilter}
             tempRegistrationSourceFilter={tempRegistrationSourceFilter}
             setTempMonthFilter={setTempMonthFilter}
+            setTempYearFilter={setTempYearFilter}
             setTempOriginFilter={setTempOriginFilter}
             setTempRegistrationSourceFilter={setTempRegistrationSourceFilter}
             applyFilters={applyFilters}

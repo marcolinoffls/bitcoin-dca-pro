@@ -7,42 +7,30 @@ import { ORIGIN_FILTER_OPTIONS, REGISTRATION_SOURCE_OPTIONS } from './constants'
 
 interface EntryFiltersProps {
   availableMonths: { value: string; label: string }[];
-  availableYears?: { value: string; label: string }[]; // Tornando opcional
-
+  availableYears?: { value: string; label: string }[];
   tempMonthFilter: string | null;
-  tempYearFilter?: string | null; // Tornando opcional
+  tempYearFilter: string | null;
   tempOriginFilter: Origin | null;
   tempRegistrationSourceFilter: 'manual' | 'planilha' | null;
-
   setTempMonthFilter: (value: string | null) => void;
-  setTempYearFilter?: (value: string | null) => void; // Tornando opcional
+  setTempYearFilter: (value: string | null) => void;
   setTempOriginFilter: (value: Origin | null) => void;
   setTempRegistrationSourceFilter: (value: 'manual' | 'planilha' | null) => void;
-
   applyFilters: () => void;
   clearFilters: () => void;
 }
 
-/**
- * Componente de filtros para a lista de aportes
- * 
- * Permite filtrar por ano, mês, origem e tipo de registro
- * Adicionado suporte a filtro por ano (opcional)
- */
 export const EntryFilters: React.FC<EntryFiltersProps> = ({
   availableMonths,
   availableYears = [], // Valor padrão vazio
-
   tempMonthFilter,
-  tempYearFilter = null, // Valor padrão null
+  tempYearFilter,
   tempOriginFilter,
   tempRegistrationSourceFilter,
-
   setTempMonthFilter,
-  setTempYearFilter = () => {}, // Função vazia como padrão
+  setTempYearFilter,
   setTempOriginFilter,
   setTempRegistrationSourceFilter,
-
   applyFilters,
   clearFilters,
 }) => {
@@ -50,26 +38,24 @@ export const EntryFilters: React.FC<EntryFiltersProps> = ({
     <div className="space-y-4">
       <h4 className="font-medium">Filtrar aportes</h4>
 
-      {/* Filtro por ANO - Renderiza apenas se availableYears for fornecido e tiver itens */}
-      {availableYears && availableYears.length > 0 && (
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Por ano</label>
-          <Select 
-            value={tempYearFilter || 'all'} 
-            onValueChange={(value) => setTempYearFilter && setTempYearFilter(value === 'all' ? null : value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Todos os anos" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os anos</SelectItem>
-              {availableYears.map(year => (
-                <SelectItem key={year.value} value={year.value}>{year.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
+      {/* Filtro por ANO */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Por ano</label>
+        <Select 
+          value={tempYearFilter || 'all'} 
+          onValueChange={(value) => setTempYearFilter(value === 'all' ? null : value)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Todos os anos" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os anos</SelectItem>
+            {availableYears.map(year => (
+              <SelectItem key={year.value} value={year.value}>{year.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Filtro por mês */}
       <div className="space-y-2">

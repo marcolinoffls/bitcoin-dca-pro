@@ -1,15 +1,13 @@
-
 /**
  * Componente de cabeçalho da lista de aportes com botões de ação
  */
 import React from 'react';
-import { FileUp } from 'lucide-react';
+import { FileUp, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CardTitle } from '@/components/ui/card';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import ColumnVisibilityControl from './ColumnVisibilityControl';
 import { EntryFilters } from './EntryFilters';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Filter } from 'lucide-react';
 import { ColumnConfig } from '@/types/table';
 import { Origin } from '@/types';
 
@@ -21,13 +19,13 @@ interface EntryListHeaderProps {
   isFilterPopoverOpen: boolean;
   handleFilterPopoverOpenChange: (open: boolean) => void;
   availableMonths: { value: string; label: string }[];
-  availableYears?: { value: string; label: string }[]; // Tornando opcional
+  availableYears?: { value: string; label: string }[];
   tempMonthFilter: string | null;
-  tempYearFilter?: string | null; // Tornando opcional
+  tempYearFilter: string | null;
   tempOriginFilter: Origin | null;
   tempRegistrationSourceFilter: "manual" | "planilha" | null;
   setTempMonthFilter: (value: string | null) => void;
-  setTempYearFilter?: (value: string | null) => void; // Tornando opcional
+  setTempYearFilter: (value: string | null) => void;
   setTempOriginFilter: (value: Origin | null) => void;
   setTempRegistrationSourceFilter: (value: "manual" | "planilha" | null) => void;
   applyFilters: () => void;
