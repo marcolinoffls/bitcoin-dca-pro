@@ -193,7 +193,7 @@ const ModalAjuste: React.FC<ModalAjusteProps> = ({
                     id="newTotalBalance"
                     value={newTotalBalance}
                     onChange={(e) => setNewTotalBalance(e.target.value)}
-                    placeholder={displayUnit === 'SATS' ? "100000" : "0.0001"}
+                    placeholder={displayUnit === 'SATS' ? "100000" : "0.045236255"}
                     className="pl-12 rounded-xl"
                     type="text"
                     inputMode="decimal"
@@ -241,7 +241,7 @@ const ModalAjuste: React.FC<ModalAjusteProps> = ({
                 type="submit"
                 className="flex-1 bg-purple-500 hover:bg-purple-600 text-white rounded-xl"
               >
-                {mode === 'manual' ? 'Confirmar Ajuste' : 'Atualizar Saldo Total'}
+                {mode === 'manual' ? 'Confirmar Ajuste' : 'Atualizar Saldo'}
               </Button>
             </div>
           </form>
