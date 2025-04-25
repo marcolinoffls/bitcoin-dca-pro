@@ -154,7 +154,7 @@ const ModalAjuste: React.FC<ModalAjusteProps> = ({
             <TabsTrigger value="total">Definir Saldo Total</TabsTrigger>
           </TabsList>
 
-          <form onSubmit={handleSubmit} className="space-y-4 py-4 overflow-y-auto max-h-[calc(100%-160px)]">
+          <form onSubmit={handleSubmit} className="space-y-4 py-4">
             <DatePickerField 
               date={date} 
               onDateChange={setDate}
