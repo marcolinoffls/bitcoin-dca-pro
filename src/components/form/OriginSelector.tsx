@@ -51,20 +51,6 @@ const OriginSelector: React.FC<OriginSelectorProps> = ({ origin, onOriginChange 
           <Users className="h-4 w-4" />
           P2P
         </Button>
-        {/* Adicionado botão para origem "ajuste" */}
-        <Button
-          variant="ghost"
-          size="sm"
-          type="button"
-          onClick={() => handleOriginChange('ajuste')}
-          className={cn(
-            'flex-1 text-xs font-normal gap-1 rounded-xl',
-            origin === 'ajuste' && 'bg-purple-500 text-white hover:bg-purple-600'
-          )}
-        >
-          <Wrench className="h-4 w-4" />
-          Ajuste
-        </Button>
       </div>
     </div>
   );
