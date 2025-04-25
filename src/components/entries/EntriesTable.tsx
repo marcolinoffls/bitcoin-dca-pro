@@ -91,17 +91,35 @@ export const EntriesTable: React.FC<EntriesTableProps> = ({
    * @param origin Origem do aporte (p2p ou corretora)
    */
   const renderOriginBadge = (origin: string) => {
-    const isP2p = origin === 'p2p';
-    return (
-      <Badge
-        variant="outline"
-        className={`${
-          isP2p ? 'bg-[#F2FCE2] text-black' : 'bg-[#D3E4FD] text-black'
-        } text-xs font-normal`}
-      >
-        {origin}
-      </Badge>
-    );
+    switch (origin) {
+      case 'ajuste':
+        return (
+          <Badge
+            variant="outline"
+            className="bg-purple-100 text-purple-600 hover:bg-purple-100 text-xs font-normal"
+          >
+            ajuste
+          </Badge>
+        );
+      case 'p2p':
+        return (
+          <Badge
+            variant="outline"
+            className="bg-[#F2FCE2] text-black text-xs font-normal"
+          >
+            p2p
+          </Badge>
+        );
+      default:
+        return (
+          <Badge
+            variant="outline"
+            className="bg-[#D3E4FD] text-black text-xs font-normal"
+          >
+            {origin}
+          </Badge>
+        );
+    }
   };
 
   return (

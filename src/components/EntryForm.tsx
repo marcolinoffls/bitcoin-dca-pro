@@ -2,22 +2,8 @@
  * Componente: EntryForm
  * 
  * Função: Formulário principal para registrar e editar aportes de Bitcoin.
- * - Se estiver em modo de edição (`editingEntry`), exibe os dados para editar.
- * - Caso contrário, exibe o formulário em branco para novo aporte.
  * 
- * Integrações:
- * - Usa lógica centralizada em `useEntryFormLogic` para controlar os estados e cálculos.
- * - Usa componentes reutilizáveis para cada parte do formulário.
- * 
- * Estilo:
- * - Preserva o layout original com sombra, borda, padding e ícone Bitcoin.
- * 
- * Atualização:
- * - Agora, ao cancelar a edição, o formulário principal é **resetado** e retorna ao modo original.
- * - Removido o botão "Usar cotação atual" para evitar inconsistências
- * - Campos de valor e quantidade de BTC são totalmente independentes
- * - Adicionado feedback visual e sonoro ao registrar um aporte com sucesso
- * - Implementado suporte a cotação opcional com cálculo automático
+ * Atualizado para incluir botão de ajuste de saldo ao lado do formulário principal
  */
 
 import React, { useEffect, useState } from 'react';
@@ -32,6 +18,7 @@ import FormActions from '@/components/form/FormActions';
 import { useEntryFormLogic } from '@/components/form/EntryFormLogic';
 import { useIsMobile } from '@/hooks/use-mobile';
 import SatisfactionImportModal from '@/components/form/SatisfactionImportModal';
+import ModalAjuste from '@/components/form/ModalAjuste';
 import { Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatNumber } from '@/lib/utils';
@@ -61,15 +48,16 @@ interface EntryFormProps {
   displayUnit?: 'BTC' | 'SATS';
 }
 
-const EntryForm: React.FC<EntryFormProps> = ({ 
-  onAddEntry, 
-  currentRate, 
-  editingEntry, 
+const EntryForm: React.FC<EntryFormProps> = ({
+  onAddEntry,
+  currentRate,
+  editingEntry,
   onCancelEdit,
   displayUnit = 'BTC'
 }) => {
   const isMobile = useIsMobile();
   const [isSatisfactionModalOpen, setIsSatisfactionModalOpen] = useState(false);
+  const [isAjusteModalOpen, setIsAjusteModalOpen] = useState(false);
   const [successToastOpen, setSuccessToastOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [rateInfoMessage, setRateInfoMessage] = useState<string | null>(null);
@@ -118,7 +106,6 @@ const EntryForm: React.FC<EntryFormProps> = ({
     setFormError(null);
     setRateInfoMessage(null);
     
-    // Validações iniciais dos campos obrigatórios
     const validationError = validateForm();
     if (validationError) {
       setFormError(validationError);
@@ -133,7 +120,6 @@ const EntryForm: React.FC<EntryFormProps> = ({
       parsedBtc = parsedBtc / 100000000;
     }
   
-    // Verificações finais de segurança
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
       setFormError("O valor investido é inválido");
       return;
@@ -144,14 +130,11 @@ const EntryForm: React.FC<EntryFormProps> = ({
       return;
     }
   
-    // Nova lógica simplificada para cotação
     if (!exchangeRateDisplay.trim() || parsedRate === 0) {
-      // Calcula automaticamente se não preenchido
       parsedRate = parsedAmount / parsedBtc;
       setRateInfoMessage("Cotação calculada automaticamente com base no valor investido e quantidade de bitcoin.");
     }
     
-    // Se chegou até aqui, está tudo ok para registrar o aporte
     onAddEntry(parsedAmount, parsedBtc, parsedRate, currency, date, origin);
     
     if (!editingEntry) {
@@ -204,19 +187,45 @@ const EntryForm: React.FC<EntryFormProps> = ({
     }
   };
 
+  const handleAjuste = (data: { date: Date; btcAmount: number; observacao?: string }) => {
+    const currentRateValue = currency === 'USD' ? currentRate.usd : currentRate.brl;
+    
+    onAddEntry(
+      Math.abs(data.btcAmount * currentRateValue),
+      data.btcAmount,
+      currentRateValue,
+      currency,
+      data.date,
+      'ajuste'
+    );
+  };
+
   return (
     <Card className="rounded-xl shadow-md hover:shadow-lg transition-all duration-200">
       <CardHeader className={isMobile ? 'pb-2' : 'pb-3'}>
-        <CardTitle className={`${isMobile ? 'text-lg' : 'text-xl'} flex items-center gap-2`}>
-          <div className="h-8 w-8">
-            <img 
-              src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/novo-aporte.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvbm92by1hcG9ydGUucG5nIiwiaWF0IjoxNzQ0NDk3MTY4LCJleHAiOjE3NzYwMzMxNjh9.gSYsPjL3OqW6iNLDHtvyuoYh6SBlJUm30UL16I4NPI8" 
-              alt="NOVO APORTE"
-              className="h-full w-full object-contain"
-            />
-          </div>
-          {editingEntry ? 'Editar Aporte' : 'Novo Aporte'}
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className={`${isMobile ? 'text-lg' : 'text-xl'} flex items-center gap-2`}>
+            <div className="h-8 w-8">
+              <img 
+                src="https://wccbdayxpucptynpxhew.supabase.co/storage/v1/object/sign/icones/novo-aporte.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzkxZmU5MzU4LWZjOTAtNDJhYi1hOWRlLTUwZmY4ZDJiNDYyNSJ9.eyJ1cmwiOiJpY29uZXMvbm92by1hcG9ydGUucG5nIiwiaWF0IjoxNzQ0NDk3MTY4LCJleHAiOjE3NzYwMzMxNjh9.gSYsPjL3OqW6iNLDHtvyuoYh6SBlJUm30UL16I4NPI8" 
+                alt="NOVO APORTE"
+                className="h-full w-full object-contain"
+              />
+            </div>
+            {editingEntry ? 'Editar Aporte' : 'Novo Aporte'}
+          </CardTitle>
+
+          {!editingEntry && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsAjusteModalOpen(true)}
+              className={`${isMobile ? 'text-sm h-8' : ''} text-purple-500 border-purple-500/30 hover:bg-purple-50`}
+            >
+              Ajustar Saldo
+            </Button>
+          )}
+        </div>
       </CardHeader>
 
       <CardContent className={isMobile ? 'pb-3' : ''}>
@@ -253,12 +262,10 @@ const EntryForm: React.FC<EntryFormProps> = ({
             isCalculated={isExchangeRateCalculated}
           />
 
-          {/* Exibe mensagem de informação sobre cotação calculada */}
           {rateInfoMessage && (
             <FormError message={rateInfoMessage} variant="warning" />
           )}
 
-          {/* Exibe mensagem de erro de validação */}
           {formError && (
             <FormError message={formError} variant="destructive" />
           )}
@@ -298,14 +305,21 @@ const EntryForm: React.FC<EntryFormProps> = ({
 
       <SatisfactionImportModal 
         isOpen={isSatisfactionModalOpen} 
-        onClose={closeSatisfactionModal} 
+        onClose={() => setIsSatisfactionModalOpen(false)}
         onDataExtracted={handleDataExtracted}
+      />
+
+      <ModalAjuste
+        isOpen={isAjusteModalOpen}
+        onClose={() => setIsAjusteModalOpen(false)}
+        onAjuste={handleAjuste}
+        displayUnit={displayUnit}
       />
 
       <SuccessToast
         message="Aporte registrado com sucesso!"
         isOpen={successToastOpen}
-        onClose={closeSuccessToast}
+        onClose={() => setSuccessToastOpen(false)}
         autoClose={true}
         autoCloseTime={3000}
         showBitcoin={true}
