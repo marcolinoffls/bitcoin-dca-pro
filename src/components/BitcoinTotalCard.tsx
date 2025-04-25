@@ -132,8 +132,9 @@ const BitcoinTotalCard: React.FC<BitcoinTotalCardProps> = ({
           <div className="flex flex-col">
             <p className="text-sm text-gray-400 mb-1">Portfólio</p>
                 <div className="relative">
-                  <p className={`text-2xl font-bold transition-all duration-300 ease-in-out ${hiddenClass}`}>
-                    <span className="text-base align-top mr-0.5">{currencySymbol}</span> {formatNumber(totalValueCurrent)}
+                  <p className={`text-2xl font-bold transition-all duration-300 ease-in-out flex items-baseline gap-1 ${hiddenClass}`}>
+                    <span className="text-base">{currencySymbol}</span>
+                    <span>{formatNumber(totalValueCurrent)}</span>
                   </p>
                   <p className={`text-2xl font-bold transition-all duration-300 ease-in-out ${dotsClass}`}>
                     ●●●●
