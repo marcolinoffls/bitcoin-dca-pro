@@ -227,7 +227,7 @@ const ModalAjuste: React.FC<ModalAjusteProps> = ({
               <FormError message={error} variant="destructive" />
             )}
 
-            <div className="flex justify-end gap-3 pt-2">
+            <div className="flex justify-end gap-3 pt-1">
               <Button
                 type="button"
                 variant="outline"
