@@ -131,7 +131,7 @@ const ModalAjuste: React.FC<ModalAjusteProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md rounded-2xl px-6">
+      <DialogContent className="sm:max-w-md rounded-2xl px-6 h-[650px]">
         <DialogHeader>
           <DialogTitle>
             {mode === 'manual' ? 'Ajustar Saldo' : 'Definir Saldo Total'}
@@ -154,7 +154,7 @@ const ModalAjuste: React.FC<ModalAjusteProps> = ({
             <TabsTrigger value="total">Definir Saldo Total</TabsTrigger>
           </TabsList>
 
-          <form onSubmit={handleSubmit} className="space-y-4 py-4">
+          <form onSubmit={handleSubmit} className="space-y-4 py-4 overflow-y-auto max-h-[calc(100%-160px)]">
             <DatePickerField 
               date={date} 
               onDateChange={setDate}
@@ -173,7 +173,7 @@ const ModalAjuste: React.FC<ModalAjusteProps> = ({
                     id="btcAmount"
                     value={btcAmount}
                     onChange={(e) => setBtcAmount(e.target.value)}
-                    placeholder={displayUnit === 'SATS' ? "-1000" : "-0.001"}
+                    placeholder={displayUnit === 'SATS' ? "-1000" : "-0.0001"}
                     className="pl-12 rounded-xl"
                     type="text"
                     inputMode="decimal"
