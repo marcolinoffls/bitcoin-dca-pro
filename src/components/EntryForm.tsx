@@ -1,4 +1,3 @@
-
 /**
  * Componente: EntryForm
  * 
@@ -26,6 +25,7 @@ import { formatNumber } from '@/lib/utils';
 import SuccessToast from '@/components/ui/success-toast';
 import { FormError } from '@/components/auth/FormError';
 import { useBitcoinEntries } from '@/hooks/useBitcoinEntries';
+import { Origin } from '@/types';
 
 interface EntryFormProps {
   onAddEntry: (
@@ -34,7 +34,7 @@ interface EntryFormProps {
     exchangeRate: number,
     currency: 'BRL' | 'USD',
     date: Date,
-    origin: 'corretora' | 'p2p' | 'planilha' | 'ajuste'
+    origin: Origin
   ) => void;
   currentRate: { usd: number; brl: number };
   editingEntry?: {
@@ -44,7 +44,7 @@ interface EntryFormProps {
     btcAmount: number;
     exchangeRate: number;
     currency: 'BRL' | 'USD';
-    origin?: 'corretora' | 'p2p' | 'planilha' | 'ajuste';
+    origin?: Origin;
   };
   onCancelEdit?: () => void;
   displayUnit?: 'BTC' | 'SATS';

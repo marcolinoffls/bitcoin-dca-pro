@@ -11,6 +11,7 @@ import { EntryFilters } from './EntryFilters';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Filter } from 'lucide-react';
 import { ColumnConfig } from '@/types/table';
+import { Origin } from '@/types';
 
 interface EntryListHeaderProps {
   isMobile: boolean;
@@ -20,11 +21,14 @@ interface EntryListHeaderProps {
   isFilterPopoverOpen: boolean;
   handleFilterPopoverOpenChange: (open: boolean) => void;
   availableMonths: { value: string; label: string }[];
+  availableYears?: { value: string; label: string }[]; // Tornando opcional
   tempMonthFilter: string | null;
-  tempOriginFilter: "planilha" | "corretora" | "p2p" | null;
+  tempYearFilter?: string | null; // Tornando opcional
+  tempOriginFilter: Origin | null;
   tempRegistrationSourceFilter: "manual" | "planilha" | null;
   setTempMonthFilter: (value: string | null) => void;
-  setTempOriginFilter: (value: "planilha" | "corretora" | "p2p" | null) => void;
+  setTempYearFilter?: (value: string | null) => void; // Tornando opcional
+  setTempOriginFilter: (value: Origin | null) => void;
   setTempRegistrationSourceFilter: (value: "manual" | "planilha" | null) => void;
   applyFilters: () => void;
   clearFilters: () => void;
@@ -40,10 +44,13 @@ const EntryListHeader: React.FC<EntryListHeaderProps> = ({
   isFilterPopoverOpen,
   handleFilterPopoverOpenChange,
   availableMonths,
+  availableYears,
   tempMonthFilter,
+  tempYearFilter,
   tempOriginFilter,
   tempRegistrationSourceFilter,
   setTempMonthFilter,
+  setTempYearFilter,
   setTempOriginFilter,
   setTempRegistrationSourceFilter,
   applyFilters,
@@ -99,10 +106,13 @@ const EntryListHeader: React.FC<EntryListHeaderProps> = ({
           <PopoverContent className="w-80 p-4">
             <EntryFilters
               availableMonths={availableMonths}
+              availableYears={availableYears}
               tempMonthFilter={tempMonthFilter}
+              tempYearFilter={tempYearFilter}
               tempOriginFilter={tempOriginFilter}
               tempRegistrationSourceFilter={tempRegistrationSourceFilter}
               setTempMonthFilter={setTempMonthFilter}
+              setTempYearFilter={setTempYearFilter}
               setTempOriginFilter={setTempOriginFilter}
               setTempRegistrationSourceFilter={setTempRegistrationSourceFilter}
               applyFilters={applyFilters}
