@@ -314,6 +314,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
         onClose={() => setIsAjusteModalOpen(false)}
         onAjuste={handleAjuste}
         displayUnit={displayUnit}
+        currentBalance={entries?.reduce((total, entry) => total + entry.btcAmount, 0) || 0}
       />
 
       <SuccessToast
