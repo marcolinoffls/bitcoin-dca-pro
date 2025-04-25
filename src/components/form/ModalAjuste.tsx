@@ -131,7 +131,7 @@ const ModalAjuste: React.FC<ModalAjusteProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md rounded-2xl px-6 h-[550px]">
+      <DialogContent className="sm:max-w-md rounded-2xl px-6 h-[520px]">
         <DialogHeader>
           <DialogTitle>
             {mode === 'manual' ? 'Ajustar Saldo' : 'Definir Saldo Total'}
