@@ -154,7 +154,7 @@ const ModalAjuste: React.FC<ModalAjusteProps> = ({
             <TabsTrigger value="total">Definir Saldo Total</TabsTrigger>
           </TabsList>
 
-          <form onSubmit={handleSubmit} className="space-y-4 py-4">
+          <form onSubmit={handleSubmit} className="space-y-4 py-2">
             <DatePickerField 
               date={date} 
               onDateChange={setDate}
@@ -216,7 +216,7 @@ const ModalAjuste: React.FC<ModalAjusteProps> = ({
                 value={observacao}
                 onChange={(e) => setObservacao(e.target.value)}
                 placeholder={mode === 'manual' 
-                  ? "Ex: Taxa de transferência, Saque para custódia fria..."
+                  ? "Ex: Taxa de transferência, Pagamento..."
                   : "Ex: Correção após conferência de saldo"}
                 className="rounded-xl resize-none"
                 rows={3}
