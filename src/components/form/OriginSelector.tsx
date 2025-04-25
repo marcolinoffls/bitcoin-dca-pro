@@ -5,7 +5,7 @@
  */
 import React from 'react';
 import { Label } from '@/components/ui/label';
-import { Building, Users, Table, Tool } from 'lucide-react';
+import { Building, Users, Wrench } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Origin } from '@/types';
@@ -62,7 +62,7 @@ const OriginSelector: React.FC<OriginSelectorProps> = ({ origin, onOriginChange 
             origin === 'ajuste' && 'bg-purple-500 text-white hover:bg-purple-600'
           )}
         >
-          <Tool className="h-4 w-4" />
+          <Wrench className="h-4 w-4" />
           Ajuste
         </Button>
       </div>

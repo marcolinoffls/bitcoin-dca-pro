@@ -14,3 +14,11 @@ export const REGISTRATION_SOURCE_OPTIONS = [
   { value: 'manual', label: 'Manual' },
   { value: 'planilha', label: 'Planilha' }
 ];
+
+// Opções para o número de linhas por página
+export const ROWS_PER_PAGE_OPTIONS = [
+  { value: '10', label: '10 linhas' },
+  { value: '25', label: '25 linhas' },
+  { value: '50', label: '50 linhas' },
+  { value: '100', label: '100 linhas' }
+];

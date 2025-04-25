@@ -44,7 +44,7 @@ interface EntryFormProps {
     btcAmount: number;
     exchangeRate: number;
     currency: 'BRL' | 'USD';
-    origin?: Origin;
+    origin: Origin;
   };
   onCancelEdit?: () => void;
   displayUnit?: 'BTC' | 'SATS';
@@ -64,7 +64,6 @@ const EntryForm: React.FC<EntryFormProps> = ({
   const [formError, setFormError] = useState<string | null>(null);
   const [rateInfoMessage, setRateInfoMessage] = useState<string | null>(null);
   
-  // Obter entradas de Bitcoin para cálculo do saldo atual
   const { entries = [] } = useBitcoinEntries();
 
   const {
@@ -205,7 +204,6 @@ const EntryForm: React.FC<EntryFormProps> = ({
     );
   };
 
-  // Calcula o saldo total atual de Bitcoin
   const currentBalance = entries.reduce((total, entry) => total + entry.btcAmount, 0);
 
   return (
