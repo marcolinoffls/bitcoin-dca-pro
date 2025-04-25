@@ -49,12 +49,12 @@ const EntriesList: React.FC<EntriesListProps> = ({
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
   const [viewCurrency, setViewCurrency] = useState<'BRL' | 'USD'>(selectedCurrency);
   const [monthFilter, setMonthFilter] = useState<string | null>(null);
-  const [originFilter, setOriginFilter] = useState<"planilha" | "corretora" | "p2p" | null>(null);
+  const [originFilter, setOriginFilter] = useState<Origin | null>(null);
   const [registrationSourceFilter, setRegistrationSourceFilter] = useState<'manual' | 'planilha' | null>(null);
   const [yearFilter, setYearFilter] = useState<string | null>(null);
   const [tempMonthFilter, setTempMonthFilter] = useState<string | null>(null);
   const [tempYearFilter, setTempYearFilter] = useState<string | null>(null);
-  const [tempOriginFilter, setTempOriginFilter] = useState<"planilha" | "corretora" | "p2p" | null>(null);
+  const [tempOriginFilter, setTempOriginFilter] = useState<Origin | null>(null);
   const [tempRegistrationSourceFilter, setTempRegistrationSourceFilter] = useState<'manual' | 'planilha' | null>(null);
   const [rowsToShow, setRowsToShow] = useState<number>(30);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -115,7 +115,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
   const applyFilters = () => {
     setMonthFilter(tempMonthFilter);
     setYearFilter(tempYearFilter);
-    setOriginFilter(tempOriginFilter as Origin | null);
+    setOriginFilter(tempOriginFilter);
     setRegistrationSourceFilter(tempRegistrationSourceFilter);
     setIsFilterActive(
       tempMonthFilter !== null || 
@@ -296,7 +296,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
             tempRegistrationSourceFilter={tempRegistrationSourceFilter}
             setTempMonthFilter={setTempMonthFilter}
             setTempYearFilter={setTempYearFilter}
-            setTempOriginFilter={setTempOriginFilter}
+            setTempOriginFilter={(value: Origin | null) => setTempOriginFilter(value)}
             setTempRegistrationSourceFilter={setTempRegistrationSourceFilter}
             applyFilters={applyFilters}
             clearFilters={clearFilters}
@@ -336,7 +336,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
             tempRegistrationSourceFilter={tempRegistrationSourceFilter}
             setTempMonthFilter={setTempMonthFilter}
             setTempYearFilter={setTempYearFilter}
-            setTempOriginFilter={setTempOriginFilter}
+            setTempOriginFilter={(value: Origin | null) => setTempOriginFilter(value)}
             setTempRegistrationSourceFilter={setTempRegistrationSourceFilter}
             applyFilters={applyFilters}
             clearFilters={clearFilters}
@@ -376,7 +376,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
             tempRegistrationSourceFilter={tempRegistrationSourceFilter}
             setTempMonthFilter={setTempMonthFilter}
             setTempYearFilter={setTempYearFilter}
-            setTempOriginFilter={setTempOriginFilter}
+            setTempOriginFilter={(value: Origin | null) => setTempOriginFilter(value)}
             setTempRegistrationSourceFilter={setTempRegistrationSourceFilter}
             applyFilters={applyFilters}
             clearFilters={clearFilters}

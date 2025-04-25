@@ -1,11 +1,11 @@
 
 /**
- * Campo visual de seleção da origem do aporte (Corretora ou P2P).
+ * Campo visual de seleção da origem do aporte (Corretora, P2P ou Ajuste).
  * Usado tanto no registro quanto na edição. Controla o valor salvo no Supabase.
  */
 import React from 'react';
 import { Label } from '@/components/ui/label';
-import { Building, Users, Table } from 'lucide-react';
+import { Building, Users, Table, Tool } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Origin } from '@/types';
@@ -51,9 +51,21 @@ const OriginSelector: React.FC<OriginSelectorProps> = ({ origin, onOriginChange 
           <Users className="h-4 w-4" />
           P2P
         </Button>
+        {/* Adicionado botão para origem "ajuste" */}
+        <Button
+          variant="ghost"
+          size="sm"
+          type="button"
+          onClick={() => handleOriginChange('ajuste')}
+          className={cn(
+            'flex-1 text-xs font-normal gap-1 rounded-xl',
+            origin === 'ajuste' && 'bg-purple-500 text-white hover:bg-purple-600'
+          )}
+        >
+          <Tool className="h-4 w-4" />
+          Ajuste
+        </Button>
       </div>
-      
-      {/* Mensagem removida pois não há mais compatibilidade com "exchange" */}
     </div>
   );
 };
