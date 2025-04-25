@@ -1,3 +1,4 @@
+
 /**
  * Interface para cotação atual do Bitcoin
  */
@@ -12,8 +13,9 @@ export interface CurrentRate {
  * - "corretora": Compra realizada em exchange centralizada
  * - "p2p": Compra peer-to-peer
  * - "planilha": Aportes importados de planilhas
+ * - "ajuste": Ajustes de saldo (saques, taxas, etc)
  */
-export type Origin = "corretora" | "p2p" | "planilha";
+export type Origin = "corretora" | "p2p" | "planilha" | "ajuste";
 
 /**
  * Interface principal para os registros de aportes no aplicativo

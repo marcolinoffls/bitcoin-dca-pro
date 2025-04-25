@@ -1,3 +1,4 @@
+
 /**
  * Componente: EntryForm
  * 
@@ -24,6 +25,7 @@ import { Button } from '@/components/ui/button';
 import { formatNumber } from '@/lib/utils';
 import SuccessToast from '@/components/ui/success-toast';
 import { FormError } from '@/components/auth/FormError';
+import { useBitcoinEntries } from '@/hooks/useBitcoinEntries';
 
 interface EntryFormProps {
   onAddEntry: (
@@ -32,7 +34,7 @@ interface EntryFormProps {
     exchangeRate: number,
     currency: 'BRL' | 'USD',
     date: Date,
-    origin: 'corretora' | 'p2p' | 'planilha'
+    origin: 'corretora' | 'p2p' | 'planilha' | 'ajuste'
   ) => void;
   currentRate: { usd: number; brl: number };
   editingEntry?: {
@@ -42,7 +44,7 @@ interface EntryFormProps {
     btcAmount: number;
     exchangeRate: number;
     currency: 'BRL' | 'USD';
-    origin?: 'corretora' | 'p2p' | 'planilha';
+    origin?: 'corretora' | 'p2p' | 'planilha' | 'ajuste';
   };
   onCancelEdit?: () => void;
   displayUnit?: 'BTC' | 'SATS';
@@ -61,6 +63,9 @@ const EntryForm: React.FC<EntryFormProps> = ({
   const [successToastOpen, setSuccessToastOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [rateInfoMessage, setRateInfoMessage] = useState<string | null>(null);
+  
+  // Obter entradas de Bitcoin para cálculo do saldo atual
+  const { entries = [] } = useBitcoinEntries();
 
   const {
     amountInvested,
@@ -200,6 +205,9 @@ const EntryForm: React.FC<EntryFormProps> = ({
     );
   };
 
+  // Calcula o saldo total atual de Bitcoin
+  const currentBalance = entries.reduce((total, entry) => total + entry.btcAmount, 0);
+
   return (
     <Card className="rounded-xl shadow-md hover:shadow-lg transition-all duration-200">
       <CardHeader className={isMobile ? 'pb-2' : 'pb-3'}>
@@ -314,7 +322,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
         onClose={() => setIsAjusteModalOpen(false)}
         onAjuste={handleAjuste}
         displayUnit={displayUnit}
-        currentBalance={entries?.reduce((total, entry) => total + entry.btcAmount, 0) || 0}
+        currentBalance={currentBalance}
       />
 
       <SuccessToast
