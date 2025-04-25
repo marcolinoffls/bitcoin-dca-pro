@@ -20,14 +20,15 @@
  * - Adicionado suporte a cotação opcional, com cálculo automático
  * - Corrigido tratamento da cotação como campo opcional
  * - Melhorada validação do formulário para suportar cotação opcional
+ * - Corrigida definição de Origin para incluir valor "ajuste"
  */
 
 import { useCallback, useEffect, useState } from 'react';
 import { formatNumber } from '@/lib/utils';
+import { Origin } from '@/types'; // Importação correta do tipo Origin
 
 type Currency = 'BRL' | 'USD';
 type DisplayUnit = 'BTC' | 'SATS';
-type Origin = 'corretora' | 'p2p' | 'planilha';
 
 interface CurrentRate {
   usd: number;

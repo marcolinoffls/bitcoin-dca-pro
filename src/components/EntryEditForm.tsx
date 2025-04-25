@@ -23,6 +23,7 @@
  * - Corrigido problema de timezone, forçando o horário local ao interpretar datas
  * - Corrigido problema de validação dos campos numéricos, aceitando vírgula ou ponto
  * - Adicionado suporte a cotação opcional com cálculo automático
+ * - Corrigido importação do tipo Origin
  */
 
 import React, { useState, useEffect } from 'react';
