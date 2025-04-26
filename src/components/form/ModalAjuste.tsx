@@ -149,9 +149,18 @@ const ModalAjuste: React.FC<ModalAjusteProps> = ({
           onValueChange={(value) => setMode(value as AdjustmentMode)}
           className="w-full"
         >
-          <TabsList className="grid w-full grid-cols-2 mb-4 rounded">
-            <TabsTrigger value="manual">Ajuste Manual</TabsTrigger>
-            <TabsTrigger value="total">Definir Saldo Total</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 mb-4 rounded-xl">
+            <TabsTrigger 
+              value="manual"
+              className="data-[state=active]:rounded-xl"
+            >
+              Ajuste Manual
+            <TabsTrigger 
+              value="total" 
+              className="data-[state=active]:rounded-xl"
+            >
+              Definir Saldo Total
+            </TabsTrigger>
           </TabsList>
 
           <form onSubmit={handleSubmit} className="space-y-4 py-2">
