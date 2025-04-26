@@ -115,7 +115,7 @@ const ImportCsvModal: React.FC<ImportCsvModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md rounded-2xl">
         <DialogHeader>
           <DialogTitle>Importar aportes via CSV</DialogTitle>
           <DialogDescription>
