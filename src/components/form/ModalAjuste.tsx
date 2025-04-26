@@ -252,7 +252,7 @@ const ModalAjuste: React.FC<ModalAjusteProps> = ({
               </Button>
               <Button
                 type="submit"
-                className="flex-1 bg-orange-500 hover:bg-orange-600 text-white rounded-xl"
+                className="flex-1 bg-bitcoin hover:bg-bitcoin text-white rounded-xl"
               >
                 {mode === 'manual' ? 'Confirmar Ajuste' : 'Atualizar Saldo'}
               </Button>
