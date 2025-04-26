@@ -18,6 +18,7 @@ import SetPassword from "./pages/SetPassword";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
+import AdminPage from "./pages/AdminPage";
 
 import "./styles/globals.css";  // estilos globais da aplicação
 
@@ -84,6 +85,16 @@ const App = () => {
                 element={
                   <RequireAuth>
                     <Dashboard />
+                  </RequireAuth>
+                }
+              />
+
+              {/* Nova rota administrativa */}
+              <Route
+                path="/admin"
+                element={
+                  <RequireAuth>
+                    <AdminPage />
                   </RequireAuth>
                 }
               />
