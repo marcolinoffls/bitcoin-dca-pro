@@ -158,7 +158,7 @@ const ModalAjuste: React.FC<ModalAjusteProps> = ({
             </TabsTrigger>
             <TabsTrigger 
               value="total" 
-              className="data-[state=active]:rounded-xl bg-bitcoin"
+              className="data-[state=active]:bg-bitcoin data-[state=active]:text-white data-[state=active]:rounded-xl"
             >
               Definir Saldo Total
             </TabsTrigger>
