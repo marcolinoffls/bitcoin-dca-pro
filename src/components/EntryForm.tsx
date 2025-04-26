@@ -226,7 +226,7 @@ const EntryForm: React.FC<EntryFormProps> = ({
               type="button"
               variant="outline"
               onClick={() => setIsAjusteModalOpen(true)}
-              className={`${isMobile ? 'text-sm h-8' : ''} text-purple-500 border-purple-500/30 hover:bg-purple-50`}
+              className={`${isMobile ? 'text-sm h-8' : ''} text-bitcoin-500 border-bitcoin hover:bg-bitcoin-50`}
             >
               Ajustar Saldo
             </Button>
