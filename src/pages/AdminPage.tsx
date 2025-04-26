@@ -24,13 +24,11 @@ export default function AdminPage() {
         return;
       }
 
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
+      const { data, error } = await supabase
+        .rpc('check_if_user_is_admin', { user_id: user.id });
 
-      if (error || !profile || profile.role !== 'admin') {
+      if (error || !data) {
+        console.error('Erro ao verificar permissão de admin:', error);
         navigate('/');
       }
     };

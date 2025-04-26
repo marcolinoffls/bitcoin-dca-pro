@@ -4,7 +4,7 @@
  * Mostra informações básicas de cada usuário sem expor dados sensíveis
  */
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale/pt-BR';
+import { ptBR } from 'date-fns/locale';
 import { AdminUserData } from '@/types/admin';
 import {
   Table,

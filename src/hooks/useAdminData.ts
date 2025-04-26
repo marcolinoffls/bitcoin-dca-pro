@@ -17,37 +17,21 @@ export function useAdminData() {
   const { data: users, isLoading: loadingUsers } = useQuery({
     queryKey: ['admin', 'users'],
     queryFn: async (): Promise<AdminUserData[]> => {
-      const { data: profiles, error } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          role,
-          users:auth.users(
-            email,
-            created_at,
-            last_sign_in_at
-          ),
-          aportes:aportes(count)
-        `);
-
-      if (error) {
-        console.error('Erro ao carregar usuários:', error);
+      // Primeiro, buscar todos os usuários com auth.users (email, created_at) usando RPC
+      const { data: usersData, error: usersError } = await supabase
+        .rpc('get_all_users_with_data');
+      
+      if (usersError) {
+        console.error('Erro ao carregar usuários:', usersError);
         toast({
           variant: 'destructive',
           title: 'Erro ao carregar dados',
           description: 'Não foi possível carregar a lista de usuários.'
         });
-        throw error;
+        throw usersError;
       }
 
-      return profiles.map(profile => ({
-        id: profile.id,
-        email: profile.users?.email || '',
-        role: profile.role as 'admin' | 'user',
-        createdAt: profile.users?.created_at || '',
-        lastSignIn: profile.users?.last_sign_in_at || null,
-        entriesCount: profile.aportes?.[0]?.count || 0
-      }));
+      return usersData || [];
     },
     enabled: !!user
   });
@@ -57,8 +41,7 @@ export function useAdminData() {
     queryKey: ['admin', 'stats'],
     queryFn: async (): Promise<AdminStats> => {
       const { data, error } = await supabase
-        .from('profiles')
-        .select('role', { count: 'exact' });
+        .rpc('get_admin_stats');
 
       if (error) {
         console.error('Erro ao carregar estatísticas:', error);
@@ -70,15 +53,13 @@ export function useAdminData() {
         throw error;
       }
 
-      const adminCount = data?.filter(p => p.role === 'admin').length || 0;
-
-      return {
-        totalUsers: data?.length || 0,
-        adminCount,
-        totalEntries: users?.reduce((acc, user) => acc + user.entriesCount, 0) || 0
+      return data || {
+        totalUsers: 0,
+        adminCount: 0,
+        totalEntries: 0
       };
     },
-    enabled: !!users
+    enabled: !!user
   });
 
   return {
