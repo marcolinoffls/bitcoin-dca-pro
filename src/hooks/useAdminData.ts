@@ -22,7 +22,7 @@ export function useAdminData() {
         .select(`
           id,
           role,
-          users:auth.users!id(
+          users:auth.users(
             email,
             created_at,
             last_sign_in_at

@@ -3,10 +3,10 @@
  * Componente que exibe estatísticas gerais no painel administrativo
  */
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AdminStats } from "@/types/admin";
+import { AdminStats as AdminStatsType } from "@/types/admin";
 
 interface AdminStatsProps {
-  stats: AdminStats;
+  stats: AdminStatsType;
 }
 
 export function AdminStats({ stats }: AdminStatsProps) {
