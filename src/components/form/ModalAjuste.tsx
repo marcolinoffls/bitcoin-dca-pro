@@ -152,7 +152,7 @@ const ModalAjuste: React.FC<ModalAjusteProps> = ({
           <TabsList className="grid w-full grid-cols-2 mb-4 rounded-xl">
             <TabsTrigger 
               value="manual" 
-              className="data-[state=active]:rounded-xl bg-bitcoin"
+              className="data-[state=active]:bg-bitcoin data-[state=active]:text-white data-[state=active]:rounded-xl"
             >
               Ajuste Manual
             </TabsTrigger>
