@@ -111,6 +111,25 @@ export type Database = {
         Args: { user_id: string }
         Returns: boolean
       }
+      get_admin_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          totalusers: number
+          admincount: number
+          totalentries: number
+        }[]
+      }
+      get_all_users_with_data: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          email: string
+          role: string
+          createdat: string
+          lastsignin: string
+          entriescount: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

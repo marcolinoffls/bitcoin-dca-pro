@@ -17,7 +17,6 @@ export function useAdminData() {
   const { data: users, isLoading: loadingUsers } = useQuery({
     queryKey: ['admin', 'users'],
     queryFn: async (): Promise<AdminUserData[]> => {
-      // Primeiro, buscar todos os usuários com auth.users (email, created_at) usando RPC
       const { data: usersData, error: usersError } = await supabase
         .rpc('get_all_users_with_data');
       
