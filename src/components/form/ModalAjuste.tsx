@@ -151,10 +151,11 @@ const ModalAjuste: React.FC<ModalAjusteProps> = ({
         >
           <TabsList className="grid w-full grid-cols-2 mb-4 rounded-xl">
             <TabsTrigger 
-              value="manual"
+              value="manual" 
               className="data-[state=active]:rounded-xl"
             >
               Ajuste Manual
+            </TabsTrigger>
             <TabsTrigger 
               value="total" 
               className="data-[state=active]:rounded-xl"
@@ -162,6 +163,7 @@ const ModalAjuste: React.FC<ModalAjusteProps> = ({
               Definir Saldo Total
             </TabsTrigger>
           </TabsList>
+
 
           <form onSubmit={handleSubmit} className="space-y-4 py-2">
             <DatePickerField 
