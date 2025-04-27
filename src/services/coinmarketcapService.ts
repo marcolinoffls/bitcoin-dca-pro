@@ -37,10 +37,12 @@ export const fetchFearGreedIndex = async () => {
       throw new Error('Dados inválidos recebidos da API');
     }
 
+    // Como estamos simulando os dados do Fear & Greed Index,
+    // vamos garantir que os valores estejam dentro do intervalo esperado
     const fearGreedData = response.data[0];
-
+    
     return {
-      value: fearGreedData.value,
+      value: Math.min(100, Math.max(0, fearGreedData.value)), // Garante valor entre 0 e 100
       valueText: fearGreedData.value_classification,
       timestamp: fearGreedData.timestamp
     };
@@ -49,3 +51,4 @@ export const fetchFearGreedIndex = async () => {
     throw error;
   }
 };
+
