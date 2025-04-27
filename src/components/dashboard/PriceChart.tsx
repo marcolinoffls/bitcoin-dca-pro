@@ -7,7 +7,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { fetchBitcoinPriceHistory } from '@/services/BitcoinService'; // Novo serviço de histórico de preço
+import { fetchBitcoinPriceHistory } from '@/services/bitcoinService'; 
 
 // Define os períodos de tempo disponíveis
 type TimeRange = '1D' | '7D' | '1M' | '1Y' | 'ALL';
