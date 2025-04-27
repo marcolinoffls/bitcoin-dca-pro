@@ -10,17 +10,17 @@ import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
 
 export function useAdminData() {
-  const { user } = useAuth(); // Recupera usuário autenticado
-  const { toast } = useToast(); // Sistema de notificações (erros)
+  const { user } = useAuth(); // Recupera o usuário autenticado
+  const { toast } = useToast(); // Hook para exibir notificações (erros, etc.)
 
   /**
    * Carrega a lista de usuários, com contagem de aportes de cada um
    */
   const { data: users, isLoading: loadingUsers } = useQuery({
-    queryKey: ['admin', 'users'], // Chave única para cache no React Query
+    queryKey: ['admin', 'users'], // Define uma chave única de cache para esta query
     queryFn: async (): Promise<AdminUserData[]> => {
       const { data: usersData, error: usersError } = await supabase
-        .rpc('get_all_users_with_data'); // Chama função RPC no Supabase
+        .rpc('get_all_users_with_data'); // Executa função RPC criada no Supabase
 
       if (usersError) {
         console.error('Erro ao carregar usuários:', usersError);
@@ -29,30 +29,30 @@ export function useAdminData() {
           title: 'Erro ao carregar dados',
           description: 'Não foi possível carregar a lista de usuários.'
         });
-        throw usersError; // Força o React Query a entender que houve erro
+        throw usersError; // Propaga o erro para o React Query lidar corretamente
       }
 
-      // Corrige nomes dos campos vindos do Supabase (snake_case para camelCase)
+      // Faz o mapeamento para corrigir nomes das propriedades do Supabase
       return (usersData || []).map((user: any) => ({
         id: user.id,
         email: user.email,
         role: user.role,
-        createdAt: user.createdat,    // Corrigido para camelCase
-        lastSignIn: user.lastsignin,  // Corrigido para camelCase
-        entriesCount: user.entriescount, // Corrigido para camelCase
+        createdAt: user.createdat,      // Ajuste para camelCase
+        lastSignIn: user.lastsignin,    // Ajuste para camelCase
+        entriesCount: user.entriescount // Ajuste para camelCase
       }));
     },
-    enabled: !!user // Só busca se o usuário estiver logado
+    enabled: !!user // Só executa a query se o usuário estiver logado
   });
 
   /**
    * Carrega estatísticas gerais do sistema (número de usuários, admins e aportes)
    */
   const { data: stats, isLoading: loadingStats } = useQuery({
-    queryKey: ['admin', 'stats'], // Outra chave de cache
+    queryKey: ['admin', 'stats'], // Define uma outra chave de cache
     queryFn: async (): Promise<AdminStats> => {
       const { data, error } = await supabase
-        .rpc('get_admin_stats'); // Chama a função de estatísticas no Supabase
+        .rpc('get_admin_stats'); // Executa a função RPC de estatísticas
 
       if (error) {
         console.error('Erro ao carregar estatísticas:', error);
@@ -61,31 +61,31 @@ export function useAdminData() {
           title: 'Erro ao carregar estatísticas',
           description: 'Não foi possível carregar os dados estatísticos.'
         });
-        throw error; // Informa erro ao React Query
+        throw error; // Propaga o erro para o React Query
       }
 
-      // Função RPC retorna um array com um único objeto, precisamos pegar data[0]
+      // A função retorna um array com um único objeto => pegamos o primeiro elemento
       const statsData = Array.isArray(data) && data.length > 0 ? data[0] : null;
 
       return statsData ? {
-        totalUsers: statsData.totalusers,   // Corrigido para camelCase
-        adminCount: statsData.admincount,   // Corrigido para camelCase
-        totalEntries: statsData.totalentries, // Corrigido para camelCase
+        totalUsers: statsData.totalusers,     // Ajuste de campo snake_case para camelCase
+        adminCount: statsData.admincount,     // Ajuste de campo snake_case para camelCase
+        totalEntries: statsData.totalentries, // Ajuste de campo snake_case para camelCase
       } : {
         totalUsers: 0,
         adminCount: 0,
         totalEntries: 0
       };
     },
-    enabled: !!user // Só busca se o usuário estiver logado
+    enabled: !!user // Só executa a query se o usuário estiver logado
   });
 
   /**
    * Retorna os dados carregados para quem usar esse hook
    */
   return {
-    users,        // Lista de usuários carregada
+    users,        // Lista de usuários
     stats,        // Estatísticas gerais
-    isLoading: loadingUsers || loadingStats // Se qualquer uma das buscas estiver carregando
+    isLoading: loadingUsers || loadingStats // Status de carregamento
   };
 }
