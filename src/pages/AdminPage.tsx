@@ -1,4 +1,3 @@
-
 /**
  * Página principal do painel administrativo
  * Acessível apenas para usuários com role === 'admin'
@@ -27,8 +26,8 @@ export default function AdminPage() {
       const { data, error } = await supabase
         .rpc('check_if_user_is_admin', { user_id: user.id });
 
-      if (error || !data) {
-        console.error('Erro ao verificar permissão de admin:', error);
+      if (error || !data || data !== true) {
+        console.error('Acesso negado ou erro ao verificar admin:', error);
         navigate('/');
       }
     };
