@@ -1,13 +1,15 @@
+
 /**
  * Gráfico de preço do Bitcoin
  * Exibe a variação de preço em diferentes períodos (1D, 7D, 1M, 1Y, ALL)
- * Agora busca dados reais usando o serviço BitcoinService.ts
+ * Busca dados reais usando o serviço BitcoinService.ts
  */
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { fetchBitcoinPriceHistory } from '@/services/bitcoinService'; // Novo serviço de histórico de preço
+import { fetchBitcoinPriceHistory } from '@/services/bitcoinService'; 
+import { Loader2 } from 'lucide-react';
 
 // Define os períodos de tempo disponíveis
 type TimeRange = '1D' | '7D' | '1M' | '1Y' | 'ALL';
@@ -21,34 +23,50 @@ interface PriceHistoryData {
 export const PriceChart = () => {
   const [selectedRange, setSelectedRange] = useState<TimeRange>('1M'); // Período selecionado
   const [data, setData] = useState<PriceHistoryData[]>([]); // Dados carregados para o gráfico
-  const [loading, setLoading] = useState(false); // Estado de carregamento
+  const [loading, setLoading] = useState(true); // Estado de carregamento inicial ativo
+  const [error, setError] = useState<string | null>(null); // Estado para controlar erros
 
   /**
    * Função para carregar os dados baseado no período selecionado
+   * Agora com tratamento de erro e estado de carregamento
    */
   const loadData = async (range: TimeRange) => {
     try {
-      setLoading(true);
+      setLoading(true); // Inicia o carregamento
+      setError(null); // Limpa erros anteriores
+      console.log(`Carregando dados para o período: ${range}`);
 
       // Chama a função do BitcoinService para pegar dados do histórico
       const history = await fetchBitcoinPriceHistory(range);
+      console.log(`Dados carregados: ${history.length} pontos`);
 
       // Atualiza os dados do gráfico
       setData(history);
     } catch (error) {
       console.error('Erro ao carregar dados do histórico:', error);
+      setError('Não foi possível carregar os dados. Tente novamente mais tarde.');
     } finally {
-      setLoading(false);
+      setLoading(false); // Finaliza o carregamento independente do resultado
     }
   };
 
-  // Sempre que mudar o período selecionado, recarrega os dados
+  /**
+   * Manipulador para troca de período
+   * Separado para melhorar a legibilidade e permitir extensões futuras
+   */
+  const handleRangeChange = (range: TimeRange) => {
+    console.log(`Alterando período para: ${range}`);
+    setSelectedRange(range);
+  };
+
+  // Carrega dados iniciais e sempre que mudar o período selecionado
   useEffect(() => {
     loadData(selectedRange);
-  }, [selectedRange]);
+  }, [selectedRange]); // Dependência apenas do selectedRange garante que atualize quando mudar período
 
   /**
    * Renderiza o gráfico dentro de um Card
+   * Com estados de carregamento e erro
    */
   return (
     <Card>
@@ -62,8 +80,8 @@ export const PriceChart = () => {
               key={range}
               variant={selectedRange === range ? "default" : "outline"}
               size="sm"
-              onClick={() => setSelectedRange(range)}
-              disabled={loading} // Desativa botão enquanto carrega
+              onClick={() => handleRangeChange(range)}
+              disabled={loading} // Desativa botões durante carregamento
             >
               {range}
             </Button>
@@ -72,8 +90,36 @@ export const PriceChart = () => {
       </CardHeader>
 
       <CardContent>
-        {/* Container do gráfico */}
-        <div className="h-[400px] w-full">
+        {/* Container do gráfico com estados de carregamento e erro */}
+        <div className="h-[400px] w-full relative">
+          {/* Overlay de carregamento */}
+          {loading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/60 dark:bg-gray-950/60 z-10">
+              <div className="flex flex-col items-center gap-2">
+                <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+                <span className="text-sm text-gray-500">Carregando dados...</span>
+              </div>
+            </div>
+          )}
+
+          {/* Mensagem de erro */}
+          {error && !loading && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-md text-center">
+                <p className="text-red-600 dark:text-red-400">{error}</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2"
+                  onClick={() => loadData(selectedRange)}
+                >
+                  Tentar novamente
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Gráfico */}
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
               data={data}
@@ -93,6 +139,7 @@ export const PriceChart = () => {
                 tickLine={false}
                 axisLine={false}
                 fontSize={12}
+                minTickGap={15} // Espaçamento mínimo entre ticks para melhorar legibilidade
               />
 
               {/* Eixo Y (preço) */}
@@ -101,19 +148,42 @@ export const PriceChart = () => {
                 axisLine={false}
                 fontSize={12}
                 tickFormatter={(value) => `$${value.toLocaleString()}`}
+                domain={['auto', 'auto']} // Ajusta automaticamente a escala com base nos dados
               />
 
-              {/* Tooltip (dica ao passar o mouse) */}
+              {/* Tooltip (dica ao passar o mouse) melhorado */}
               <Tooltip
                 contentStyle={{
                   backgroundColor: "#fff",
                   border: "1px solid #ccc",
+                  borderRadius: "6px",
+                  padding: "10px",
                   fontSize: "12px",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
                 }}
-                formatter={(value: any) => [`$${Number(value).toLocaleString()}`, 'Preço']}
+                formatter={(value: any) => {
+                  // Formatação para exibir o valor com símbolo $ e separador de milhares
+                  const formattedValue = new Intl.NumberFormat('pt-BR', {
+                    style: 'currency',
+                    currency: 'USD',
+                    minimumFractionDigits: 2
+                  }).format(Number(value));
+                  return [formattedValue, 'Preço']; 
+                }}
                 labelStyle={{
                   fontWeight: "bold",
                   fontSize: "12px",
+                  color: "#555"
+                }}
+                labelFormatter={(label) => {
+                  // Dependendo do período, formata o label de data/hora
+                  if (selectedRange === "1D") {
+                    return `Horário: ${label}`;
+                  } else if (selectedRange === "7D" || selectedRange === "1M") {
+                    return `Data: ${label}`;
+                  } else {
+                    return `Período: ${label}`;
+                  }
                 }}
               />
 
@@ -124,9 +194,16 @@ export const PriceChart = () => {
                 stroke="#F7931A"
                 fill="url(#price)"
                 strokeWidth={2}
+                isAnimationActive={!loading} // Desativa animação durante carregamento para melhor UX
               />
             </AreaChart>
           </ResponsiveContainer>
+        </div>
+        
+        {/* Indicador da fonte de dados (opcional) */}
+        <div className="text-xs text-gray-400 text-right mt-2">
+          Dados via CoinGecko{selectedRange === '1D' ? " (últimas 24h)" : selectedRange === '7D' ? " (últimos 7 dias)" : 
+            selectedRange === '1M' ? " (último mês)" : selectedRange === '1Y' ? " (último ano)" : " (histórico completo)"}
         </div>
       </CardContent>
     </Card>
