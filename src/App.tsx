@@ -19,6 +19,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
 import AdminPage from "./pages/AdminPage";
+import SatsflowAI from "./pages/SatsflowAI";
 
 import "./styles/globals.css";  // estilos globais da aplicação
 
@@ -75,6 +76,16 @@ const App = () => {
                 element={
                   <RequireAuth>
                     <Index />
+                  </RequireAuth>
+                }
+              />
+
+              {/* Nova rota para Satsflow AI */}
+              <Route
+                path="/satsflow-ai"
+                element={
+                  <RequireAuth>
+                    <SatsflowAI />
                   </RequireAuth>
                 }
               />
