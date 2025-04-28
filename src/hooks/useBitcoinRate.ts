@@ -1,6 +1,7 @@
+
 import { useState, useEffect } from 'react';
 import { CurrentRate, PriceVariation } from '@/types';
-import { fetchCurrentBitcoinRate, fetchBitcoinPriceVariation } from '@/services/bitcoin';
+import { fetchCurrentBitcoinRate, fetchBitcoinPriceVariation } from '@/services/bitcoinService';
 import { useToast } from '@/components/ui/use-toast';
 
 // Objeto padrão a ser usado quando não há dados disponíveis

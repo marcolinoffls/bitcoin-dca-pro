@@ -1,3 +1,4 @@
+
 /**
  * Gráfico de preço do Bitcoin
  * Exibe a variação de preço em diferentes períodos (1D, 7D, 1M, 1Y, ALL)
@@ -7,9 +8,8 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { fetchBitcoinPriceHistory } from '@/services/bitcoin'; 
+import { fetchBitcoinPriceHistory } from '@/services/bitcoinService'; 
 import { Loader2 } from 'lucide-react';
-import type { TimeRange } from '@/services/bitcoin';
 
 // Define os períodos de tempo disponíveis
 type TimeRange = '1D' | '7D' | '1M' | '1Y' | 'ALL';

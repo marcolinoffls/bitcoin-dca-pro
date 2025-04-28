@@ -11,7 +11,6 @@ import {
   deleteBitcoinEntry,
   deleteAllSpreadsheetEntries
 } from '@/services/bitcoinEntryService';
-import { calculateTotalBitcoin } from '@/services/bitcoin';
 
 /**
  * Converte string de data para objeto Date, forçando o fuso horário local

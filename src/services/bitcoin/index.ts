@@ -12,4 +12,3 @@ export {
   calculateAverageByPeriod
 } from './calculations';
 export type { TimeRange, PriceHistoryPoint } from './types';
-
