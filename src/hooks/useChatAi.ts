@@ -61,21 +61,17 @@ export function useChatAi() {
    * Este token será usado para autenticar requisições ao webhook do n8n
    * e inclui um chat_id persistente para rastreamento das conversas
    */
-  const fetchChatToken = async (): Promise<boolean> => {
+  const fetchChatToken = async (): Promise<ChatToken | null> => {
     try {
       setIsTokenLoading(true);
-
-      // Obtém a sessão atual do usuário para extrair o token de autenticação
+  
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-
       if (sessionError || !sessionData.session) {
         throw new Error('Sessão de usuário não encontrada');
       }
-
-      // URL da Edge Function do Supabase que gera o token de chat
+  
       const edgeFunctionUrl = 'https://wccbdayxpucptynpxhew.supabase.co/functions/v1/generate-chat-token';
-      
-      // Chamada para a Edge Function usando o token de autenticação do Supabase
+  
       const response = await fetch(edgeFunctionUrl, {
         method: 'POST',
         headers: {
@@ -83,42 +79,41 @@ export function useChatAi() {
           'Content-Type': 'application/json'
         }
       });
-
+  
       if (!response.ok) {
         const errorData = await response.text();
         console.error('Resposta da Edge Function:', response.status, errorData);
         throw new Error(`Erro ao obter token: ${response.status} ${response.statusText}`);
       }
-
-      // Extrai o token e o chat_id da resposta
+  
       const data = await response.json();
-      const jwtToken = data.token;
-      const chatId = data.chatId;
-      
-      // Armazena o token com seu chat_id e data de expiração (5 minutos)
-      setChatToken({
-        token: jwtToken,
-        chatId: chatId,
-        expiresAt: Date.now() + (5 * 60 * 1000) // 5 minutos em milissegundos
-      });
-      
-      console.log('✅ Token JWT recebido da Edge Function com chat_id:', chatId); 
-      
-      return true;
+  
+      const newToken: ChatToken = {
+        token: data.token,
+        chatId: data.chatId,
+        expiresAt: Date.now() + (5 * 60 * 1000),
+      };
+  
+      console.log('✅ Token JWT recebido com chat_id:', newToken.chatId);
+  
+      // ✅ Salva no estado
+      setChatToken(newToken);
+  
+      return newToken;
+  
     } catch (error) {
       console.error('Erro ao obter token de chat:', error);
-      
       toast({
         title: "Erro de autenticação",
         description: "Falha ao autenticar o chat. Tente novamente em instantes.",
         variant: "destructive",
       });
-      
-      return false;
+      return null;
     } finally {
       setIsTokenLoading(false);
     }
   };
+  
 
   /**
    * Função para enviar mensagem do usuário para o webhook do n8n
@@ -138,12 +133,15 @@ export function useChatAi() {
 
       // Verifica se precisa obter um novo token JWT
       if (!isTokenValid()) {
-        const tokenSuccess = await fetchChatToken();
-        if (!tokenSuccess || !chatToken?.token) {
+        const newToken = await fetchChatToken();
+        if (!newToken) {
           throw new Error('Falha ao obter token de autenticação');
         }
-      }
       
+        // Atualize as variáveis locais após fetch
+        chatToken = newToken;
+      }
+
       // ✅ Garante que o token está atualizado após possível atualização
       const jwt = chatToken?.token;
       const chatId = chatToken?.chatId;
