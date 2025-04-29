@@ -37,3 +37,4 @@ goth_port = 54329
 # Configuração da Edge Function "generate-chat-token"
 [functions.generate-chat-token]
 verify_jwt = true
+

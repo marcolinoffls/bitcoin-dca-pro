@@ -3,9 +3,10 @@
  * Hook para gerenciar o estado e a lógica do chat com a IA
  * Responsável por:
  * - Manter histórico de mensagens
- * - Comunicar com a API do n8n via webhook autenticado
+ * - Comunicar com a API do n8n via webhook autenticado com JWT
  * - Gerenciar estados de loading, erro e token de autenticação
  * - Sanitizar input do usuário para segurança
+ * - Gerenciar chat_id persistente para agrupamento de conversas
  */
 import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
@@ -18,7 +19,8 @@ export interface ChatMessage {
 
 interface ChatToken {
   token: string;
-  expiresAt: number; // timestamp em milissegundos
+  chatId: string;     // ID persistente do chat (diferente do user.id)
+  expiresAt: number;  // timestamp em milissegundos
 }
 
 export function useChatAi() {
@@ -55,8 +57,9 @@ export function useChatAi() {
   };
 
   /**
-   * Obtém um novo token de chat da Edge Function do Supabase
+   * Obtém um novo token JWT de chat da Edge Function do Supabase
    * Este token será usado para autenticar requisições ao webhook do n8n
+   * e inclui um chat_id persistente para rastreamento das conversas
    */
   const fetchChatToken = async (): Promise<boolean> => {
     try {
@@ -87,17 +90,19 @@ export function useChatAi() {
         throw new Error(`Erro ao obter token: ${response.status} ${response.statusText}`);
       }
 
-      // Extrai o token e define quando ele expira (5 minutos a partir de agora)
+      // Extrai o token e o chat_id da resposta
       const data = await response.json();
-      const token: string = data.token;
+      const jwtToken = data.token;
+      const chatId = data.chatId;
       
-      // Armazena o token com sua data de expiração (5 minutos)
+      // Armazena o token com seu chat_id e data de expiração (5 minutos)
       setChatToken({
-        token,
+        token: jwtToken,
+        chatId: chatId,
         expiresAt: Date.now() + (5 * 60 * 1000) // 5 minutos em milissegundos
       });
       
-      console.log('✅ Token de chat recebido da Edge Function:', token); 
+      console.log('✅ Token JWT recebido da Edge Function com chat_id:', chatId); 
       
       return true;
     } catch (error) {
@@ -117,7 +122,7 @@ export function useChatAi() {
 
   /**
    * Função para enviar mensagem do usuário para o webhook do n8n
-   * Gerencia a obtenção do token se necessário e inclui autenticação
+   * Gerencia a obtenção do token JWT se necessário e inclui autenticação
    * 
    * @param userMessage - Mensagem enviada pelo usuário
    */
@@ -131,7 +136,7 @@ export function useChatAi() {
       // Adiciona mensagem do usuário ao histórico
       setMessages(prev => [...prev, { content: userMessage, isAi: false }]);
 
-      // Verifica se precisa obter um novo token
+      // Verifica se precisa obter um novo token JWT
       if (!isTokenValid()) {
         const tokenSuccess = await fetchChatToken();
         if (!tokenSuccess) {
@@ -143,10 +148,11 @@ export function useChatAi() {
       const promptContext = {
         message: sanitizedMessage,
         role: "user",
+        chat_id: chatToken?.chatId, // Envia o chat_id persistente
         timestamp: new Date().toISOString()
       };
 
-      // Chamada ao webhook do n8n com autenticação
+      // Chamada ao webhook do n8n com autenticação JWT
       const response = await fetch('https://workflows.marcolinofernades.site/webhook-test/satsflow-ai', {
         method: 'POST',
         headers: {
@@ -192,5 +198,6 @@ export function useChatAi() {
     messages,
     isLoading: isLoading || isTokenLoading, // Loading é true se estiver carregando mensagem ou token
     sendMessage,
+    chatId: chatToken?.chatId // Expõe o chat_id para uso externo se necessário
   };
 }
