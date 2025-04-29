@@ -73,7 +73,7 @@ export function useChatAi() {
       }
 
       // URL da Edge Function do Supabase que gera o token de chat
-      const edgeFunctionUrl = 'https://wccbdayxpucptynpxhew.supabase.co/functions/v1/generate-chat-token-v3';
+      const edgeFunctionUrl = 'https://wccbdayxpucptynpxhew.supabase.co/functions/v1/generate-chat-token';
       
       // Chamada para a Edge Function usando o token de autenticação do Supabase
       const response = await fetch(edgeFunctionUrl, {
