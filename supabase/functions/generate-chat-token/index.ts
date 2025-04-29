@@ -23,20 +23,16 @@ const corsHeaders = {
 };
 
 // Chave usada para assinar o JWT
-// Ideal: configure como segredo no painel do Supabase
-const JWT_SECRET = Deno.env.get("JWT_SECRET") || "super_secret_jwt_key_for_satsflow_ai_chat";
+// ATENÇÃO: configure como variável de ambiente secreta no painel do Supabase
+const JWT_SECRET = Deno.env.get("JWT_SECRET") || "default_insecure_dev_key_DO_NOT_USE_IN_PROD";
 
-// Função principal da Edge Function
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, {
-      status: 204,
-      headers: corsHeaders,
-    });
+    return new Response(null, { status: 204, headers: corsHeaders });
   }
 
   try {
-    // 1. Autenticação: extrai token do cabeçalho
+    // 1. Verifica header de autorização
     const authHeader = req.headers.get("Authorization");
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Autenticação necessária" }), {
@@ -47,7 +43,7 @@ serve(async (req) => {
 
     const supabaseAuthToken = authHeader.split(" ")[1];
 
-    // 2. Conecta ao Supabase com privilégios administrativos
+    // 2. Conexão com Supabase com privilégios de serviço
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
@@ -65,21 +61,20 @@ serve(async (req) => {
       }
     );
 
-    // 3. Verifica qual usuário está logado
+    // 3. Autenticação do usuário
     const { data: { user }, error: userError } = await supabase.auth.getUser(supabaseAuthToken);
-
     if (userError || !user) {
       console.error("Erro ao verificar usuário:", userError);
-      return new Response(
-        JSON.stringify({ error: "Usuário não autenticado", details: userError?.message }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+      return new Response(JSON.stringify({
+        error: "Usuário não autenticado",
+        details: userError?.message,
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    // 4. Verifica ou cria um chat_id persistente para esse usuário
+    // 4. Verifica ou cria chat_id persistente
     let chatId: string;
 
     const { data: existingChatId, error: chatIdError } = await supabase
@@ -95,6 +90,7 @@ serve(async (req) => {
         .insert({ user_id: user.id, chat_id: newChatId });
 
       if (insertError) {
+        console.error("Erro ao criar novo chat_id:", insertError);
         throw new Error("Erro ao salvar novo chat_id no banco");
       }
 
@@ -103,7 +99,7 @@ serve(async (req) => {
       chatId = existingChatId.chat_id;
     }
 
-    // 5. Cria o token JWT assinado
+    // 5. Monta header + payload do JWT
     const header: Header = {
       alg: "HS256",
       typ: "JWT",
@@ -112,34 +108,42 @@ serve(async (req) => {
     const payload: Payload = {
       sub: user.id,
       chat_id: chatId,
-      iat: getNumericDate(0),        // Emitido agora
-      exp: getNumericDate(60 * 5),   // Expira em 5 minutos
+      iat: getNumericDate(0),
+      exp: getNumericDate(60 * 5), // 5 minutos
     };
 
-    const jwtToken = await create(header, payload, JWT_SECRET);
-
-    // 6. Retorna o token assinado + chat_id
-    return new Response(
-      JSON.stringify({
-        token: jwtToken,
-        chatId: chatId,
-        userId: user.id,
-        expiresIn: 300, // em segundos
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+    // 6. Converte string para chave HMAC segura
+    const encoder = new TextEncoder();
+    const cryptoKey = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(JWT_SECRET),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"],
     );
+
+    // 7. Gera JWT
+    const jwtToken = await create(header, payload, cryptoKey);
+
+    // 8. Retorna token e metadados
+    return new Response(JSON.stringify({
+      token: jwtToken,
+      chatId: chatId,
+      userId: user.id,
+      expiresIn: 300, // segundos
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
 
   } catch (err) {
     console.error("Erro ao gerar token JWT de chat:", err);
-    return new Response(
-      JSON.stringify({ error: "Falha ao gerar token de chat", details: err.message }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    return new Response(JSON.stringify({
+      error: "Falha ao gerar token de chat",
+      details: err.message,
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
