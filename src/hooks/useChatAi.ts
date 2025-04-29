@@ -1,145 +1,203 @@
+
 /**
- * Edge Function: generate-chat-token
- *
- * Gera um token JWT assinado para autenticar o chat com IA.
- * O token inclui:
- * - user.id (no campo "sub")
- * - chat_id único e persistente por usuário
- *
- * O objetivo é permitir:
- * - Autenticação segura no webhook n8n
- * - Rastreabilidade de conversas por chat_id
- */ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.14.0";
-import { create, getNumericDate } from "https://deno.land/x/djwt@v2.8/mod.ts";
-import { v4 as uuidv4 } from "https://esm.sh/uuid@9.0.0";
-// CORS Headers (libera acesso ao frontend)
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
-};
-// Chave usada para assinar o JWT (configure como segredo no Supabase)
-const JWT_SECRET = Deno.env.get("JWT_SECRET") || "super_secret_jwt_key_for_satsflow_ai_chat";
-serve(async (req)=>{
-  if (req.method === "OPTIONS") {
-    return new Response(null, {
-      status: 204,
-      headers: corsHeaders
-    });
-  }
-  try {
-    // 1. Autenticação: extrai token do cabeçalho
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({
-        error: "Autenticação necessária"
-      }), {
-        status: 401,
+ * Hook para gerenciar o estado e a lógica do chat com a IA
+ * Responsável por:
+ * - Manter histórico de mensagens
+ * - Comunicar com a API do n8n via webhook autenticado com JWT
+ * - Gerenciar estados de loading, erro e token de autenticação
+ * - Sanitizar input do usuário para segurança
+ * - Gerenciar chat_id persistente para agrupamento de conversas
+ */
+import { useState, useEffect } from 'react';
+import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+
+export interface ChatMessage {
+  content: string;
+  isAi: boolean;
+}
+
+interface ChatToken {
+  token: string;
+  chatId: string;     // ID persistente do chat (diferente do user.id)
+  expiresAt: number;  // timestamp em milissegundos
+}
+
+export function useChatAi() {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [chatToken, setChatToken] = useState<ChatToken | null>(null);
+  const [isTokenLoading, setIsTokenLoading] = useState(false);
+  const { toast } = useToast();
+
+  /**
+   * Sanitiza o input do usuário para evitar injeção de código malicioso
+   * Remove tags HTML e caracteres especiais potencialmente perigosos
+   * 
+   * @param input - Texto bruto fornecido pelo usuário
+   * @returns Texto sanitizado seguro para processamento
+   */
+  const sanitizeInput = (input: string): string => {
+    return input
+      .replace(/<[^>]*>?/gm, '') // remove tags HTML
+      .replace(/[`"$<>;]/g, '')   // remove caracteres potencialmente perigosos
+      .trim();
+  };
+
+  /**
+   * Verifica se o token atual é válido ou se está expirado
+   * Retorna true se o token for válido e false se estiver expirado ou não existir
+   */
+  const isTokenValid = (): boolean => {
+    if (!chatToken) return false;
+    
+    // Verificar se o token expirou (com margem de segurança de 30 segundos)
+    const nowWithMargin = Date.now() + 30000; // atual + 30 segundos
+    return chatToken.expiresAt > nowWithMargin;
+  };
+
+  /**
+   * Obtém um novo token JWT de chat da Edge Function do Supabase
+   * Este token será usado para autenticar requisições ao webhook do n8n
+   * e inclui um chat_id persistente para rastreamento das conversas
+   */
+  const fetchChatToken = async (): Promise<boolean> => {
+    try {
+      setIsTokenLoading(true);
+
+      // Obtém a sessão atual do usuário para extrair o token de autenticação
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+
+      if (sessionError || !sessionData.session) {
+        throw new Error('Sessão de usuário não encontrada');
+      }
+
+      // URL da Edge Function do Supabase que gera o token de chat
+      const edgeFunctionUrl = 'https://wccbdayxpucptynpxhew.supabase.co/functions/v1/generate-chat-token';
+      
+      // Chamada para a Edge Function usando o token de autenticação do Supabase
+      const response = await fetch(edgeFunctionUrl, {
+        method: 'POST',
         headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json"
+          'Authorization': `Bearer ${sessionData.session.access_token}`,
+          'Content-Type': 'application/json'
         }
       });
-    }
-    const supabaseAuthToken = authHeader.split(" ")[1];
-    // 2. Conecta ao Supabase com privilégios administrativos
-    const supabase = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "", {
-      global: {
-        headers: {
-          Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`
-        }
-      },
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-        detectSessionInUrl: false
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Resposta da Edge Function:', response.status, errorData);
+        throw new Error(`Erro ao obter token: ${response.status} ${response.statusText}`);
       }
-    });
-    // 3. Verifica qual usuário está logado
-    const { data: { user }, error: userError } = await supabase.auth.getUser(supabaseAuthToken);
-    if (userError || !user) {
-      console.error("❌ Erro ao verificar usuário:", userError);
-      return new Response(JSON.stringify({
-        error: "Usuário não autenticado",
-        details: userError?.message
-      }), {
-        status: 401,
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json"
-        }
+
+      // Extrai o token e o chat_id da resposta
+      const data = await response.json();
+      const jwtToken = data.token;
+      const chatId = data.chatId;
+      
+      // Armazena o token com seu chat_id e data de expiração (5 minutos)
+      setChatToken({
+        token: jwtToken,
+        chatId: chatId,
+        expiresAt: Date.now() + (5 * 60 * 1000) // 5 minutos em milissegundos
       });
-    }
-    console.log("✅ Usuário autenticado:", user.id);
-    // 4. Verifica ou cria um chat_id persistente
-    let chatId;
-    const { data: existingChatId, error: chatIdError } = await supabase.from("user_chat_ids").select("chat_id").eq("user_id", user.id).single();
-    if (chatIdError || !existingChatId) {
-      const newChatId = uuidv4();
-      const { error: insertError } = await supabase.from("user_chat_ids").insert({
-        user_id: user.id,
-        chat_id: newChatId
+      
+      console.log('✅ Token JWT recebido da Edge Function com chat_id:', chatId); 
+      
+      return true;
+    } catch (error) {
+      console.error('Erro ao obter token de chat:', error);
+      
+      toast({
+        title: "Erro de autenticação",
+        description: "Falha ao autenticar o chat. Tente novamente em instantes.",
+        variant: "destructive",
       });
-      if (insertError) {
-        console.error("❌ Erro ao salvar novo chat_id no banco:", insertError);
-        throw new Error("Erro ao salvar novo chat_id no banco");
-      }
-      chatId = newChatId;
-      console.log("🆕 chat_id gerado:", chatId);
-    } else {
-      chatId = existingChatId.chat_id;
-      console.log("🔁 chat_id existente:", chatId);
+      
+      return false;
+    } finally {
+      setIsTokenLoading(false);
     }
-    // 5. Cria o token JWT assinado
-    // Converte o segredo (string) em uma CryptoKey válida para HMAC-SHA256
-    const encoder = new TextEncoder();
-    const keyData = encoder.encode(JWT_SECRET);
-    const secretKey = await crypto.subtle.importKey("raw", keyData, {
-      name: "HMAC",
-      hash: "SHA-256"
-    }, false, [
-      "sign"
-    ] // uso permitido
-    );
-    // Define o cabeçalho do JWT
-    const header = {
-      alg: "HS256",
-      typ: "JWT"
-    };
-    // Define os dados (payload) do token
-    const payload = {
-      sub: user.id,
-      chat_id: chatId,
-      iat: getNumericDate(0),
-      exp: getNumericDate(60 * 5) // expira em 5 min
-    };
-    // Cria o token assinado
-    const jwtToken = await create(header, payload, secretKey);
-    console.log("✅ JWT gerado com sucesso:", jwtToken);
-    // 6. Retorna o token assinado + chat_id
-    return new Response(JSON.stringify({
-      token: jwtToken,
-      chatId: chatId,
-      userId: user.id,
-      expiresIn: 300
-    }), {
-      status: 200,
-      headers: {
-        ...corsHeaders,
-        "Content-Type": "application/json"
+  };
+
+  /**
+   * Função para enviar mensagem do usuário para o webhook do n8n
+   * Gerencia a obtenção do token JWT se necessário e inclui autenticação
+   * 
+   * @param userMessage - Mensagem enviada pelo usuário
+   */
+  const sendMessage = async (userMessage: string) => {
+    try {
+      setIsLoading(true);
+      
+      // Sanitiza a mensagem do usuário para segurança
+      const sanitizedMessage = sanitizeInput(userMessage);
+      
+      // Adiciona mensagem do usuário ao histórico
+      setMessages(prev => [...prev, { content: userMessage, isAi: false }]);
+
+      // Verifica se precisa obter um novo token JWT
+      if (!isTokenValid()) {
+        const tokenSuccess = await fetchChatToken();
+        if (!tokenSuccess) {
+          throw new Error('Falha ao obter token de autenticação');
+        }
       }
-    });
-  } catch (err) {
-    console.error("❌ Erro ao gerar token JWT de chat:", err);
-    return new Response(JSON.stringify({
-      error: "Falha ao gerar token de chat",
-      details: err.message
-    }), {
-      status: 500,
-      headers: {
-        ...corsHeaders,
-        "Content-Type": "application/json"
+      
+      // Prepara o contexto do prompt para evitar injeção de comandos
+      const promptContext = {
+        message: sanitizedMessage,
+        role: "user",
+        chat_id: chatToken?.chatId, // Envia o chat_id persistente
+        timestamp: new Date().toISOString()
+      };
+
+      // Chamada ao webhook do n8n com autenticação JWT
+      const response = await fetch('https://workflows.marcolinofernades.site/webhook-test/satsflow-ai', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${chatToken?.token}`,
+        },
+        body: JSON.stringify(promptContext),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro na comunicação: ${response.status} ${response.statusText}`);
       }
-    });
-  }
-});
+
+      // Processa a resposta do webhook
+      const data = await response.json();
+      
+      // Extrai a mensagem da resposta - assumindo que o webhook retorna um objeto com campo "message"
+      const aiResponse = data.message || data.response || data.text || JSON.stringify(data);
+      
+      // Adiciona resposta da IA ao histórico
+      setMessages(prev => [...prev, { content: aiResponse, isAi: true }]);
+    } catch (error) {
+      console.error('Erro ao enviar mensagem:', error);
+      
+      // Exibe toast com mensagem de erro para o usuário
+      toast({
+        title: "Erro na comunicação",
+        description: "Não foi possível obter resposta da IA. Tente novamente em instantes.",
+        variant: "destructive",
+      });
+      
+      // Adiciona mensagem de erro ao chat
+      setMessages(prev => [...prev, { 
+        content: "Desculpe, tivemos um problema de comunicação. Tente novamente em alguns instantes.", 
+        isAi: true 
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return {
+    messages,
+    isLoading: isLoading || isTokenLoading, // Loading é true se estiver carregando mensagem ou token
+    sendMessage,
+    chatId: chatToken?.chatId // Expõe o chat_id para uso externo se necessário
+  };
+}
