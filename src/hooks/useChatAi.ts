@@ -165,7 +165,7 @@ export function useChatAi() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${jwt}`,
+          'Authorization': `Bearer ${chatToken?.token}`,
         },
         body: JSON.stringify(promptContext),
       });
