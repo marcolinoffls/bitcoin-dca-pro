@@ -34,6 +34,6 @@ port = 54327
 vector_port = 54328
 goth_port = 54329
 
-# Configuração da nova Edge Function "generate-chat-token"
+# Configuração da Edge Function "generate-chat-token"
 [functions.generate-chat-token]
 verify_jwt = true

@@ -82,6 +82,8 @@ export function useChatAi() {
       });
 
       if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Resposta da Edge Function:', response.status, errorData);
         throw new Error(`Erro ao obter token: ${response.status} ${response.statusText}`);
       }
 
