@@ -33,7 +33,7 @@ export function useChatAi() {
       setMessages(prev => [...prev, { content: userMessage, isAi: false }]);
 
       // Chamada ao webhook do n8n
-      const response = await fetch('https://workflows.marcolinofernades.site/webhook-test/satsflow-ai', {
+      const response = await fetch('https://workflows.marcolinofernades.site/webhook/satsflow-ai', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
