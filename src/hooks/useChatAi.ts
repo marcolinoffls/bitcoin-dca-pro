@@ -153,7 +153,7 @@ export function useChatAi() {
       };
 
       // Chamada POST para o endpoint do webhook autenticado
-      const response = await fetch('https://workflows.marcolinofernades.site/webhook-test/satsflow-ai', {
+      const response = await fetch('https://webhooks.marcolinofernades.site/webhook/satsflow-ai', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${jwt}`,
