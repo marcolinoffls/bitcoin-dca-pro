@@ -1,14 +1,15 @@
-
 /**
  * Hook para gerenciar o estado e a lógica do chat com a IA
+ *
  * Responsável por:
- * - Manter histórico de mensagens
- * - Comunicar com a API do n8n via webhook autenticado com JWT
- * - Gerenciar estados de loading, erro e token de autenticação
- * - Sanitizar input do usuário para segurança
- * - Gerenciar chat_id persistente para agrupamento de conversas
+ * ✅ Manter histórico de mensagens
+ * ✅ Comunicar com a API do n8n via webhook autenticado com JWT
+ * ✅ Gerenciar estados de loading, erro e token de autenticação
+ * ✅ Sanitizar input do usuário para segurança
+ * ✅ Gerenciar chat_id persistente para agrupamento de conversas
  */
-import { useState, useEffect } from 'react';
+
+import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -19,8 +20,8 @@ export interface ChatMessage {
 
 interface ChatToken {
   token: string;
-  chatId: string;     // ID persistente do chat (diferente do user.id)
-  expiresAt: number;  // timestamp em milissegundos
+  chatId: string;
+  expiresAt: number;
 }
 
 export function useChatAi() {
@@ -31,169 +32,140 @@ export function useChatAi() {
   const { toast } = useToast();
 
   /**
-   * Sanitiza o input do usuário para evitar injeção de código malicioso
-   * Remove tags HTML e caracteres especiais potencialmente perigosos
-   * 
-   * @param input - Texto bruto fornecido pelo usuário
-   * @returns Texto sanitizado seguro para processamento
+   * Sanitiza o input do usuário para evitar XSS/injeção
    */
   const sanitizeInput = (input: string): string => {
     return input
       .replace(/<[^>]*>?/gm, '') // remove tags HTML
-      .replace(/[`"$<>;]/g, '')   // remove caracteres potencialmente perigosos
+      .replace(/[`"$<>;]/g, '')  // remove caracteres perigosos
       .trim();
   };
 
   /**
-   * Verifica se o token atual é válido ou se está expirado
-   * Retorna true se o token for válido e false se estiver expirado ou não existir
+   * Verifica se o token atual é válido
    */
   const isTokenValid = (): boolean => {
     if (!chatToken) return false;
-    
-    // Verificar se o token expirou (com margem de segurança de 30 segundos)
-    const nowWithMargin = Date.now() + 30000; // atual + 30 segundos
+    const nowWithMargin = Date.now() + 30_000; // 30s de margem
     return chatToken.expiresAt > nowWithMargin;
   };
 
   /**
-   * Obtém um novo token JWT de chat da Edge Function do Supabase
-   * Este token será usado para autenticar requisições ao webhook do n8n
-   * e inclui um chat_id persistente para rastreamento das conversas
+   * Obtém um novo token JWT da Edge Function Supabase
    */
   const fetchChatToken = async (): Promise<ChatToken | null> => {
     try {
       setIsTokenLoading(true);
-  
+
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !sessionData.session) {
         throw new Error('Sessão de usuário não encontrada');
       }
-  
+
       const edgeFunctionUrl = 'https://wccbdayxpucptynpxhew.supabase.co/functions/v1/generate-chat-token';
-  
+
       const response = await fetch(edgeFunctionUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${sessionData.session.access_token}`,
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       });
-  
+
       if (!response.ok) {
-        const errorData = await response.text();
-        console.error('Resposta da Edge Function:', response.status, errorData);
-        throw new Error(`Erro ao obter token: ${response.status} ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('Erro na chamada da Edge Function:', errorText);
+        throw new Error(`Erro HTTP ${response.status}: ${response.statusText}`);
       }
-  
+
       const data = await response.json();
-  
+
       const newToken: ChatToken = {
         token: data.token,
         chatId: data.chatId,
-        expiresAt: Date.now() + (5 * 60 * 1000),
+        expiresAt: Date.now() + (5 * 60 * 1000), // 5 min
       };
-  
-      console.log('✅ Token JWT recebido com chat_id:', newToken.chatId);
-  
-      // ✅ Salva no estado
+
       setChatToken(newToken);
-  
+      console.log('✅ Novo token JWT salvo com chatId:', newToken.chatId);
       return newToken;
-  
+
     } catch (error) {
-      console.error('Erro ao obter token de chat:', error);
+      console.error('Erro ao buscar token de chat:', error);
       toast({
-        title: "Erro de autenticação",
-        description: "Falha ao autenticar o chat. Tente novamente em instantes.",
-        variant: "destructive",
+        title: 'Erro de autenticação',
+        description: 'Falha ao autenticar o chat. Tente novamente.',
+        variant: 'destructive',
       });
       return null;
     } finally {
       setIsTokenLoading(false);
     }
   };
-  
 
   /**
-   * Função para enviar mensagem do usuário para o webhook do n8n
-   * Gerencia a obtenção do token JWT se necessário e inclui autenticação
-   * 
-   * @param userMessage - Mensagem enviada pelo usuário
+   * Envia mensagem para o webhook com JWT
    */
   const sendMessage = async (userMessage: string) => {
     try {
       setIsLoading(true);
-      
-      // Sanitiza a mensagem do usuário para segurança
+
       const sanitizedMessage = sanitizeInput(userMessage);
-      
-      // Adiciona mensagem do usuário ao histórico
       setMessages(prev => [...prev, { content: userMessage, isAi: false }]);
 
-      // Verifica se precisa obter um novo token JWT
+      // Token local
+      let jwt = chatToken?.token || null;
+      let chatId = chatToken?.chatId || null;
+
       if (!isTokenValid()) {
         const newToken = await fetchChatToken();
         if (!newToken) {
-          throw new Error('Falha ao obter token de autenticação');
+          throw new Error('Token não pôde ser renovado');
         }
-      
-        // Atualize as variáveis locais após fetch
-        chatToken = newToken;
+        jwt = newToken.token;
+        chatId = newToken.chatId;
       }
 
-      // ✅ Garante que o token está atualizado após possível atualização
-      const jwt = chatToken?.token;
-      const chatId = chatToken?.chatId;
-      
       if (!jwt || !chatId) {
-        throw new Error('Token ou chatId ausente após fetch');
+        throw new Error('Token ou chatId ausente após tentativa de renovação');
       }
 
-      // Prepara o contexto do prompt para evitar injeção de comandos
-      const promptContext = {
+      const payload = {
         message: sanitizedMessage,
-        role: "user",
-        chat_id: chatToken?.chatId, // Envia o chat_id persistente
-        timestamp: new Date().toISOString()
+        role: 'user',
+        chat_id: chatId,
+        timestamp: new Date().toISOString(),
       };
 
-      // Chamada ao webhook do n8n com autenticação JWT
       const response = await fetch('https://workflows.marcolinofernades.site/webhook-test/satsflow-ai', {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${jwt}`,
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${chatToken?.token}`,
         },
-        body: JSON.stringify(promptContext),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        throw new Error(`Erro na comunicação: ${response.status} ${response.statusText}`);
+        const responseText = await response.text();
+        throw new Error(`Webhook retornou erro ${response.status}: ${responseText}`);
       }
 
-      // Processa a resposta do webhook
       const data = await response.json();
-      
-      // Extrai a mensagem da resposta - assumindo que o webhook retorna um objeto com campo "message"
-      const aiResponse = data.message || data.response || data.text || JSON.stringify(data);
-      
-      // Adiciona resposta da IA ao histórico
-      setMessages(prev => [...prev, { content: aiResponse, isAi: true }]);
+      const aiReply = data.message || data.response || data.text || JSON.stringify(data);
+
+      setMessages(prev => [...prev, { content: aiReply, isAi: true }]);
+
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
-      
-      // Exibe toast com mensagem de erro para o usuário
       toast({
-        title: "Erro na comunicação",
-        description: "Não foi possível obter resposta da IA. Tente novamente em instantes.",
-        variant: "destructive",
+        title: 'Erro na comunicação',
+        description: 'Não foi possível obter resposta da IA.',
+        variant: 'destructive',
       });
-      
-      // Adiciona mensagem de erro ao chat
-      setMessages(prev => [...prev, { 
-        content: "Desculpe, tivemos um problema de comunicação. Tente novamente em alguns instantes.", 
-        isAi: true 
+      setMessages(prev => [...prev, {
+        content: 'Desculpe, tivemos um problema de comunicação. Tente novamente em instantes.',
+        isAi: true,
       }]);
     } finally {
       setIsLoading(false);
@@ -202,8 +174,8 @@ export function useChatAi() {
 
   return {
     messages,
-    isLoading: isLoading || isTokenLoading, // Loading é true se estiver carregando mensagem ou token
+    isLoading: isLoading || isTokenLoading,
     sendMessage,
-    chatId: chatToken?.chatId // Expõe o chat_id para uso externo se necessário
+    chatId: chatToken?.chatId,
   };
 }
