@@ -24,8 +24,8 @@ const corsHeaders = {
 
 // Chave usada para assinar o JWT
 // Ideal: configure como segredo no painel do Supabase
-const JWT_SECRET = Deno.env.get("JWT_SECRET") || "super_secret_jwt_key_for_satsflow_ai_chat";
-
+const JWT_SECRET = Deno.env.get("JWT_SECRET");
+if (!JWT_SECRET) throw new Error("JWT_SECRET não definido");
 // Função principal da Edge Function
 serve(async (req) => {
   if (req.method === "OPTIONS") {
