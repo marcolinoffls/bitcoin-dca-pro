@@ -114,9 +114,6 @@ export function useChatAi() {
       setMessages(prev => [...prev, { content: userMessage, isAi: false }]);
 
       // Token local
-      let jwt = chatToken?.token || null;
-      let chatId = chatToken?.chatId || null;
-
       let jwt = chatToken?.token;
       let chatId = chatToken?.chatId;
       
@@ -146,7 +143,7 @@ export function useChatAi() {
           'Authorization': `Bearer ${jwt}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
+        body: JSON.stringify(promptContext),
           message: sanitizedMessage,
           role: "user",
           chat_id: chatId,
