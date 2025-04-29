@@ -117,15 +117,18 @@ export function useChatAi() {
       let jwt = chatToken?.token || null;
       let chatId = chatToken?.chatId || null;
 
+      let jwt = chatToken?.token;
+      let chatId = chatToken?.chatId;
+      
       if (!isTokenValid()) {
         const newToken = await fetchChatToken();
         if (!newToken) {
-          throw new Error('Token não pôde ser renovado');
+          throw new Error('Falha ao obter token de autenticação');
         }
+      
         jwt = newToken.token;
         chatId = newToken.chatId;
       }
-
       if (!jwt || !chatId) {
         throw new Error('Token ou chatId ausente após tentativa de renovação');
       }
@@ -143,8 +146,12 @@ export function useChatAi() {
           'Authorization': `Bearer ${jwt}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload),
-      });
+        body: JSON.stringify({
+          message: sanitizedMessage,
+          role: "user",
+          chat_id: chatId,
+          timestamp: new Date().toISOString()
+        }),
 
       if (!response.ok) {
         const responseText = await response.text();
