@@ -41,7 +41,7 @@ const SatsflowAI: React.FC = () => {
             key={index}
             content={msg.content}
             isAi={msg.isAi}
-            isLoading={isAi && isLoading && index === messages.length - 1}
+            isLoading={msg.isAi && isLoading && index === messages.length - 1}
           />
         ))}
         <div ref={messagesEndRef} />

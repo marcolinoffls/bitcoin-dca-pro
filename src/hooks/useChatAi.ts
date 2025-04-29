@@ -3,7 +3,7 @@
  * Hook para gerenciar o estado e a lógica do chat com a IA
  * Responsável por:
  * - Manter histórico de mensagens
- * - Comunicar com a API do n8n
+ * - Comunicar com a API do n8n via webhook
  * - Gerenciar estados de loading e erro
  */
 import { useState } from 'react';
@@ -19,6 +19,12 @@ export function useChatAi() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  /**
+   * Função para enviar mensagem do usuário para o webhook do n8n
+   * e processar a resposta retornada pela IA
+   * 
+   * @param userMessage - Mensagem enviada pelo usuário
+   */
   const sendMessage = async (userMessage: string) => {
     try {
       setIsLoading(true);
@@ -26,21 +32,43 @@ export function useChatAi() {
       // Adiciona mensagem do usuário ao histórico
       setMessages(prev => [...prev, { content: userMessage, isAi: false }]);
 
-      // TODO: Implementar chamada real à API do n8n
-      // Por enquanto, simula uma resposta após 1 segundo
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Chamada ao webhook do n8n
+      const response = await fetch('https://workflows.marcolinofernades.site/webhook-test/satsflow-ai', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: userMessage }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro na comunicação: ${response.status} ${response.statusText}`);
+      }
+
+      // Processa a resposta do webhook
+      const data = await response.json();
       
-      // Simula resposta da IA
-      const aiResponse = "Esta é uma resposta simulada da IA. A integração real com o n8n será implementada em breve.";
+      // Extrai a mensagem da resposta - assumindo que o webhook retorna um objeto com campo "message"
+      // Se o formato for diferente, ajuste conforme necessário
+      const aiResponse = data.message || data.response || data.text || JSON.stringify(data);
       
+      // Adiciona resposta da IA ao histórico
       setMessages(prev => [...prev, { content: aiResponse, isAi: true }]);
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
+      
+      // Exibe toast com mensagem de erro para o usuário
       toast({
         title: "Erro na comunicação",
-        description: "Não foi possível enviar sua mensagem. Tente novamente.",
+        description: "Não foi possível obter resposta da IA. Tente novamente em instantes.",
         variant: "destructive",
       });
+      
+      // Opcionalmente, adiciona mensagem de erro ao chat
+      setMessages(prev => [...prev, { 
+        content: "Desculpe, tivemos um problema de comunicação. Tente novamente em alguns instantes.", 
+        isAi: true 
+      }]);
     } finally {
       setIsLoading(false);
     }
