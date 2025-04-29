@@ -1,27 +1,29 @@
 /**
  * Hook para gerenciar o estado e a lógica do chat com a IA
  *
- * Responsável por:
+ * Funções:
  * ✅ Manter histórico de mensagens
- * ✅ Comunicar com a API do n8n via webhook autenticado com JWT
- * ✅ Gerenciar estados de loading, erro e token de autenticação
- * ✅ Sanitizar input do usuário para segurança
- * ✅ Gerenciar chat_id persistente para agrupamento de conversas
+ * ✅ Comunicar com o n8n via webhook autenticado com JWT
+ * ✅ Buscar e validar token JWT via Supabase Edge Function
+ * ✅ Prevenir XSS com sanitização de entrada
+ * ✅ Lidar com estados de loading e erros
  */
 
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
+// Tipo das mensagens exibidas no chat
 export interface ChatMessage {
   content: string;
   isAi: boolean;
 }
 
+// Tipo do token JWT retornado da Edge Function
 interface ChatToken {
   token: string;
   chatId: string;
-  expiresAt: number;
+  expiresAt: number; // timestamp em ms
 }
 
 export function useChatAi() {
@@ -31,28 +33,22 @@ export function useChatAi() {
   const [isTokenLoading, setIsTokenLoading] = useState(false);
   const { toast } = useToast();
 
-  /**
-   * Sanitiza o input do usuário para evitar XSS/injeção
-   */
+  // Sanitiza o input do usuário para evitar injeção de HTML/JS
   const sanitizeInput = (input: string): string => {
     return input
-      .replace(/<[^>]*>?/gm, '') // remove tags HTML
-      .replace(/[`"$<>;]/g, '')  // remove caracteres perigosos
+      .replace(/<[^>]*>?/gm, '')     // Remove tags HTML
+      .replace(/[`"'$<>;]/g, '')     // Remove caracteres perigosos
       .trim();
   };
 
-  /**
-   * Verifica se o token atual é válido
-   */
+  // Verifica se o token atual ainda está válido
   const isTokenValid = (): boolean => {
     if (!chatToken) return false;
-    const nowWithMargin = Date.now() + 30_000; // 30s de margem
-    return chatToken.expiresAt > nowWithMargin;
+    const margin = 30_000; // 30s de segurança
+    return chatToken.expiresAt > Date.now() + margin;
   };
 
-  /**
-   * Obtém um novo token JWT da Edge Function Supabase
-   */
+  // Função para buscar um novo token JWT da Edge Function
   const fetchChatToken = async (): Promise<ChatToken | null> => {
     try {
       setIsTokenLoading(true);
@@ -74,24 +70,22 @@ export function useChatAi() {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Erro na chamada da Edge Function:', errorText);
+        console.error('Erro na Edge Function:', errorText);
         throw new Error(`Erro HTTP ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
-
       const newToken: ChatToken = {
         token: data.token,
         chatId: data.chatId,
-        expiresAt: Date.now() + (5 * 60 * 1000), // 5 min
+        expiresAt: Date.now() + 5 * 60 * 1000 // 5 min
       };
 
       setChatToken(newToken);
       console.log('✅ Novo token JWT salvo com chatId:', newToken.chatId);
       return newToken;
-
     } catch (error) {
-      console.error('Erro ao buscar token de chat:', error);
+      console.error('Erro ao buscar token:', error);
       toast({
         title: 'Erro de autenticação',
         description: 'Falha ao autenticar o chat. Tente novamente.',
@@ -103,52 +97,44 @@ export function useChatAi() {
     }
   };
 
-  /**
-   * Envia mensagem para o webhook com JWT
-   */
+  // Envia uma mensagem para o webhook n8n usando JWT
   const sendMessage = async (userMessage: string) => {
     try {
       setIsLoading(true);
-
       const sanitizedMessage = sanitizeInput(userMessage);
       setMessages(prev => [...prev, { content: userMessage, isAi: false }]);
 
-      // Token local
+      // Pega token JWT atual ou renova se expirado
       let jwt = chatToken?.token;
       let chatId = chatToken?.chatId;
-      
+
       if (!isTokenValid()) {
         const newToken = await fetchChatToken();
-        if (!newToken) {
-          throw new Error('Falha ao obter token de autenticação');
-        }
-      
+        if (!newToken) throw new Error('Token JWT inválido');
+
         jwt = newToken.token;
         chatId = newToken.chatId;
       }
+
       if (!jwt || !chatId) {
-        throw new Error('Token ou chatId ausente após tentativa de renovação');
+        throw new Error('Token ou chatId ausente');
       }
 
       const payload = {
         message: sanitizedMessage,
         role: 'user',
         chat_id: chatId,
-        timestamp: new Date().toISOString(),
+        timestamp: new Date().toISOString()
       };
 
       const response = await fetch('https://workflows.marcolinofernades.site/webhook-test/satsflow-ai', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${jwt}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(promptContext),
-          message: sanitizedMessage,
-          role: "user",
-          chat_id: chatId,
-          timestamp: new Date().toISOString()
-        }),
+        body: JSON.stringify(payload)
+      });
 
       if (!response.ok) {
         const responseText = await response.text();
@@ -159,18 +145,20 @@ export function useChatAi() {
       const aiReply = data.message || data.response || data.text || JSON.stringify(data);
 
       setMessages(prev => [...prev, { content: aiReply, isAi: true }]);
-
     } catch (error) {
-      console.error('Erro ao enviar mensagem:', error);
+      console.error('❌ Erro ao enviar mensagem:', error);
       toast({
         title: 'Erro na comunicação',
         description: 'Não foi possível obter resposta da IA.',
         variant: 'destructive',
       });
-      setMessages(prev => [...prev, {
-        content: 'Desculpe, tivemos um problema de comunicação. Tente novamente em instantes.',
-        isAi: true,
-      }]);
+      setMessages(prev => [
+        ...prev,
+        {
+          content: 'Desculpe, tivemos um problema de comunicação. Tente novamente em alguns instantes.',
+          isAi: true,
+        },
+      ]);
     } finally {
       setIsLoading(false);
     }
@@ -180,6 +168,6 @@ export function useChatAi() {
     messages,
     isLoading: isLoading || isTokenLoading,
     sendMessage,
-    chatId: chatToken?.chatId,
+    chatId: chatToken?.chatId
   };
 }
