@@ -94,7 +94,9 @@ export function useChatAi() {
         token,
         expiresAt: Date.now() + (5 * 60 * 1000) // 5 minutos em milissegundos
       });
-
+      
+      console.log('✅ Token de chat recebido da Edge Function:', token); 
+      
       return true;
     } catch (error) {
       console.error('Erro ao obter token de chat:', error);
