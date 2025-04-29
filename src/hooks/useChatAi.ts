@@ -127,7 +127,7 @@ export function useChatAi() {
         timestamp: new Date().toISOString()
       };
 
-      const response = await fetch('https://webhooks.marcolinofernades.site/webhook/satsflow-ai', {
+      const response = await fetch('https://workflows.marcolinofernades.site/webhook-test/satsflow-ai', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${jwt}`,
