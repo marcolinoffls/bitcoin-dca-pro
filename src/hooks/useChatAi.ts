@@ -139,11 +139,19 @@ export function useChatAi() {
       // Verifica se precisa obter um novo token JWT
       if (!isTokenValid()) {
         const tokenSuccess = await fetchChatToken();
-        if (!tokenSuccess) {
+        if (!tokenSuccess || !chatToken?.token) {
           throw new Error('Falha ao obter token de autenticação');
         }
       }
       
+      // ✅ Garante que o token está atualizado após possível atualização
+      const jwt = chatToken?.token;
+      const chatId = chatToken?.chatId;
+      
+      if (!jwt || !chatId) {
+        throw new Error('Token ou chatId ausente após fetch');
+      }
+
       // Prepara o contexto do prompt para evitar injeção de comandos
       const promptContext = {
         message: sanitizedMessage,
@@ -157,7 +165,7 @@ export function useChatAi() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${chatToken?.token}`,
+          'Authorization': `Bearer ${jwt}`,
         },
         body: JSON.stringify(promptContext),
       });
