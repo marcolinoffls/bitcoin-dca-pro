@@ -13,7 +13,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BitcoinEntry, CurrentRate } from '@/types';
-import { calculateAverageByPeriod } from '@/services/bitcoinService';
+import { calculateAverageByPeriod } from '@/services/bitcoin';
 import { formatNumber } from '@/lib/utils';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Loader2 } from 'lucide-react';
