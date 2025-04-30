@@ -1,17 +1,17 @@
-
 /**
  * Serviço para buscar histórico de preços do Bitcoin
- * 
- * Este módulo contém funções para obter o histórico 
- * de preços do Bitcoin em diferentes intervalos de tempo
- * através da Edge Function do Supabase ou diretamente das APIs.
- * 
- * É usado principalmente no componente:
+ *
+ * Este módulo contém funções para obter o histórico
+ * de preços do Bitcoin em diferentes intervalos de tempo,
+ * através da Supabase Edge Function ou fallback para CoinCap/CoinMarketCap.
+ *
+ * Usado principalmente em:
  * - PriceChart.tsx
  */
+
 import { supabase } from "@/integrations/supabase/client";
 
-// Tipo para definir os dados do histórico de preços
+// Tipo para os pontos retornados no histórico
 export interface PriceHistoryPoint {
   time: string;
   price: number;
@@ -19,329 +19,172 @@ export interface PriceHistoryPoint {
 
 /**
  * Busca o histórico de preços do Bitcoin para diferentes períodos de tempo.
- * Usa a Supabase Edge Function para evitar problemas de CORS e rate limiting.
- * 
- * @param range Período selecionado ('1D', '7D', '1M', '1Y', 'ALL')
- * @returns Lista de pontos para o gráfico [{ time, price }]
+ * Tenta primeiro via Supabase Edge Function, com fallback para CoinCap e CoinMarketCap.
+ *
+ * @param range Período desejado ('1D', '7D', '1M', '1Y', 'ALL')
+ * @returns Lista de pontos [{ time, price }]
  */
-export const fetchBitcoinPriceHistory = async (range: '1D' | '7D' | '1M' | '1Y' | 'ALL'): Promise<PriceHistoryPoint[]> => {
+export const fetchBitcoinPriceHistory = async (
+  range: '1D' | '7D' | '1M' | '1Y' | 'ALL'
+): Promise<PriceHistoryPoint[]> => {
   try {
     console.log(`Buscando histórico do Bitcoin via Edge Function: período=${range}`);
-    
-    // Chama a Edge Function via Supabase client
-    const { data, error } = await supabase.functions.invoke('get-bitcoin-history', {
+    const { data, error } = await supabase.functions.invoke("get-bitcoin-history", {
       body: { range }
     });
-    
-    // Verifica se houve erro na chamada
+
     if (error) {
-      console.error('Erro ao chamar Edge Function:', error);
-      throw new Error(`Edge function retornou erro: ${error.message || 'Desconhecido'}`);
+      console.error("Erro ao chamar Edge Function:", error);
+      throw new Error(`Edge Function falhou: ${error.message || 'Erro desconhecido'}`);
     }
-    
-    // Verifica se a resposta tem o formato esperado
+
     if (!Array.isArray(data)) {
-      console.error('Resposta inesperada da Edge Function:', data);
-      throw new Error('Formato de resposta inválido da Edge Function');
+      console.error("Formato inválido recebido da Edge Function:", data);
+      throw new Error("Formato inválido de retorno da Edge Function");
     }
-    
-    console.log(`Dados recebidos: ${data.length} pontos para o período ${range}`);
+
+    console.log(`Recebido ${data.length} pontos da Edge Function`);
     return data;
-  } catch (error) {
-    console.error("Erro ao buscar histórico via Edge Function:", error);
-    
-    // FALLBACK: Se falhar a chamada à Edge Function, tenta diretamente a API (código atual)
-    console.log("Usando fallback direto para CoinGecko");
-    
-    return await fetchDirectFromCoinGecko(range);
+  } catch (err) {
+    console.warn("Edge Function falhou. Usando fallback para CoinCap.");
+    try {
+      return await fetchDirectFromCoinCap(range);
+    } catch (coinCapErr) {
+      console.warn("CoinCap também falhou. Usando fallback para CoinMarketCap.");
+      return await fetchFromCoinMarketCapFallback(range);
+    }
   }
 };
 
 /**
- * Função auxiliar para buscar dados diretamente da API CoinGecko
- * @param range Período selecionado
+ * Fallback: Busca histórico diretamente da CoinCap API
  */
-async function fetchDirectFromCoinGecko(range: '1D' | '7D' | '1M' | '1Y' | 'ALL'): Promise<PriceHistoryPoint[]> {
-  try {
-    // Definimos o número de dias conforme o período selecionado
-    const daysMap: {[key: string]: number | 'max'} = {
-      '1D': 1,        // 1 dia
-      '7D': 7,        // 7 dias
-      '1M': 30,       // 30 dias (aproximadamente 1 mês)
-      '1Y': 365,      // 365 dias (1 ano)
-      'ALL': 'max'    // Período máximo disponível
-    };
-    
-    // Obtém o valor de dias baseado no período selecionado
-    const days = daysMap[range];
-    
-    // Define o intervalo ideal para cada período:
-    // Obs: CoinGecko tem limitações para intervalos específicos na API gratuita
-    let interval;
-    if (range === '1D') {
-      // Para 1 dia, ideal seria minutely, mas pode cair para hourly se API rejeitar
-      interval = 'minutely';
-    } else if (range === '7D' || range === '1M') {
-      // Para 7 dias e 1 mês, usamos hourly
-      interval = 'hourly';
-    } else {
-      // Para 1 ano e ALL, usamos daily
-      interval = 'daily';
-    }
-    
-    console.log(`Buscando histórico do Bitcoin via CoinGecko: período=${range}, days=${days}, interval=${interval}`);
-    
-    // Constrói a URL da API CoinGecko com os parâmetros
-    const url = `https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=${days}${interval ? `&interval=${interval}` : ''}`;
-    
-    // Faz a requisição à API
-    const response = await fetch(url);
-    
-    // Verifica se a resposta foi bem-sucedida
-    if (!response.ok) {
-      // Se tiver erro, analisamos o código de status e mensagem
-      const errorData = await response.json();
-      console.error(`CoinGecko API error (${response.status}):`, errorData);
-      
-      // Verifica se o erro é específico sobre limitação do plano enterprise
-      if (errorData?.status?.error_message?.includes("interval=")) {
-        // Se o erro for relacionado ao intervalo, tentamos novamente sem especificar o intervalo
-        console.log("Tentando novamente sem especificar intervalo (limitação da API gratuita)");
-        return await fetchWithoutInterval(days);
-      }
-      
-      throw new Error(`CoinGecko API responded with status: ${response.status}`);
-    }
-    
-    // Analisa a resposta como JSON
-    const data = await response.json();
-    
-    // Valida se a estrutura de dados está correta
-    if (!data?.prices || !Array.isArray(data.prices)) {
-      console.error("CoinGecko retornou dados inesperados:", data);
-      throw new Error("Estrutura de dados inválida da CoinGecko");
-    }
-    
-    // Formata os dados para o formato esperado pelo gráfico
-    const formattedData = formatPriceData(data.prices, range);
-    
-    console.log(`Dados formatados: ${formattedData.length} pontos para o período ${range}`);
-    return formattedData;
-  } catch (error) {
-    console.error("Erro buscando histórico na CoinGecko:", error);
-    
-    // FALLBACK: Se falhar, tentamos buscar via CoinMarketCap
-    return await fetchFromCoinMarketCapFallback();
-  }
-}
-
-/**
- * Função auxiliar que tenta fazer uma requisição sem especificar o intervalo
- * Usada quando a API rejeita intervalos específicos por limitações do plano gratuito
- * 
- * @param days Número de dias ou 'max'
- */
-async function fetchWithoutInterval(days: number | 'max'): Promise<PriceHistoryPoint[]> {
-  try {
-    // Nova tentativa sem especificar intervalo
-    const url = `https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=${days}`;
-    const response = await fetch(url);
-    
-    if (!response.ok) {
-      throw new Error(`CoinGecko API responded with status: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    
-    if (!data?.prices || !Array.isArray(data.prices)) {
-      console.error("CoinGecko retornou dados inesperados:", data);
-      throw new Error("Estrutura de dados inválida da CoinGecko");
-    }
-    
-    // Para não sobrecarregar o gráfico, limitamos o número de pontos
-    // Se o dataset for muito grande, fazemos uma amostragem
-    let pricesToUse = data.prices;
-    if (pricesToUse.length > 200 && (days === 'max' || (typeof days === 'number' && days > 90))) {
-      const step = Math.floor(pricesToUse.length / 200);
-      pricesToUse = pricesToUse.filter((_, index) => index % step === 0);
-      console.log(`Dataset reduzido de ${data.prices.length} para ${pricesToUse.length} pontos`);
-    }
-    
-    // Calcula o período aproximado pelos timestamps para formatar corretamente
-    let periodType;
-    if (days === 1 || days === '1') {
-      periodType = '1D';
-    } else if (typeof days === 'number' && days <= 7) {
-      periodType = '7D';
-    } else if (typeof days === 'number' && days <= 30) {
-      periodType = '1M';
-    } else if (typeof days === 'number' && days <= 365) {
-      periodType = '1Y';
-    } else {
-      periodType = 'ALL';
-    }
-    
-    // Formatação de acordo com o período identificado
-    return formatPriceData(pricesToUse, periodType as '1D' | '7D' | '1M' | '1Y' | 'ALL');
-  } catch (error) {
-    console.error("Erro na tentativa sem especificar intervalo:", error);
-    throw error; // Repassa o erro para ser tratado no fallback
-  }
-}
-
-/**
- * Formata os dados de preço para o formato usado no gráfico
- */
-function formatPriceData(
-  prices: [number, number][], 
+async function fetchDirectFromCoinCap(
   range: '1D' | '7D' | '1M' | '1Y' | 'ALL'
-): PriceHistoryPoint[] {
-  return prices.map(([timestamp, price]) => {
-    const date = new Date(timestamp);
-    
-    let timeLabel;
+): Promise<PriceHistoryPoint[]> {
+  const apiKey = import.meta.env.VITE_COINCAP_API_KEY;
+  if (!apiKey) throw new Error("VITE_COINCAP_API_KEY não definida no .env");
+
+  const now = Date.now();
+  const intervals: Record<string, { interval: string; start: number }> = {
+    '1D': { interval: 'm5', start: now - 1 * 86400000 },
+    '7D': { interval: 'h2', start: now - 7 * 86400000 },
+    '1M': { interval: 'h12', start: now - 30 * 86400000 },
+    '1Y': { interval: 'd1', start: now - 365 * 86400000 },
+    'ALL': { interval: 'd1', start: 1367107200000 }
+  };
+
+  const { interval, start } = intervals[range];
+  const url = `https://api.coincap.io/v2/assets/bitcoin/history?interval=${interval}&start=${start}&end=${now}`;
+
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${apiKey}` }
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Erro CoinCap (${response.status}): ${error}`);
+  }
+
+  const json = await response.json();
+  const rawPoints = json?.data ?? [];
+
+  return rawPoints.map((item: { time: number; priceUsd: string }) => {
+    const date = new Date(item.time);
+    let timeLabel: string;
+
     if (range === '1D') {
-      // Para 1 dia, mostramos o horário (HH:MM)
       timeLabel = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     } else if (range === '7D' || range === '1M') {
-      // Para 7 dias e 1 mês, mostramos o dia/mês (DD/MM)
       timeLabel = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-    } else { 
-      // Para 1 ano e ALL, mostramos mês/ano (MM/YY)
+    } else {
       timeLabel = date.toLocaleDateString('pt-BR', { month: '2-digit', year: '2-digit' });
     }
-    
-    // Retorna o ponto formatado para o gráfico
+
     return {
       time: timeLabel,
-      price: parseFloat(price.toFixed(2)), // Arredonda para 2 casas decimais
+      price: parseFloat(parseFloat(item.priceUsd).toFixed(2))
     };
   });
 }
 
 /**
- * Fallback para a CoinMarketCap quando a CoinGecko falha
+ * Fallback final: CoinMarketCap
+ * Retorna pontos simulados baseados no preço atual
  */
-async function fetchFromCoinMarketCapFallback(): Promise<PriceHistoryPoint[]> {
+async function fetchFromCoinMarketCapFallback(
+  range: '1D' | '7D' | '1M' | '1Y' | 'ALL'
+): Promise<PriceHistoryPoint[]> {
   try {
-    console.log("Tentando fallback via CoinMarketCap...");
-    const coinMarketCapApiKey = import.meta.env.VITE_CMC_API_KEY;
-    
-    // Verifica se temos uma API key configurada
-    if (!coinMarketCapApiKey) {
-      console.warn("CoinMarketCap API key não encontrada no ambiente");
-      throw new Error("CoinMarketCap API key não encontrada");
-    }
-    
-    // Faz requisição à API da CoinMarketCap para obter pelo menos o preço atual
-    const response = await fetch(
+    const apiKey = import.meta.env.VITE_CMC_API_KEY;
+    if (!apiKey) throw new Error("VITE_CMC_API_KEY não definida");
+
+    const res = await fetch(
       "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=BTC&convert=USD",
       {
         headers: {
-          'X-CMC_PRO_API_KEY': coinMarketCapApiKey,
-        },
+          "X-CMC_PRO_API_KEY": apiKey
+        }
       }
     );
-    
-    if (!response.ok) {
-      throw new Error(`CoinMarketCap API respondeu com status: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    
-    // Valida a estrutura de dados recebida
-    if (!data?.data?.BTC?.quote?.USD) {
-      throw new Error("CoinMarketCap retornou dados inesperados");
-    }
-    
-    const currentPrice = data.data.BTC.quote.USD.price;
-    const now = new Date();
-    
-    // Com base no período, geramos pontos simulados para não deixar o gráfico vazio
-    // Esta é uma solução de emergência quando ambas as APIs falham
-    const simulatedPoints = generateSimulatedPoints('1D', currentPrice, now);
-    
-    console.log(`Fallback: gerando ${simulatedPoints.length} pontos simulados baseados no preço atual`);
-    return simulatedPoints;
+
+    if (!res.ok) throw new Error(`CoinMarketCap status: ${res.status}`);
+    const data = await res.json();
+
+    const currentPrice = data?.data?.BTC?.quote?.USD?.price;
+    if (!currentPrice) throw new Error("Resposta inesperada da CoinMarketCap");
+
+    return generateSimulatedPoints(range, currentPrice, new Date());
   } catch (error) {
-    console.error("Erro também no fallback da CoinMarketCap:", error);
-    
-    // Se tudo falhar, retorna um único ponto com erro para não quebrar o gráfico
-    return [{ time: "Erro na API", price: 0 }];
+    console.error("Falha total ao buscar dados:", error);
+    return [{ time: "Erro", price: 0 }];
   }
 }
 
 /**
- * Gera pontos simulados para o gráfico quando todas as APIs falham
- * Cria variação aleatória em torno do preço atual
- * 
- * @param range Período selecionado
- * @param currentPrice Preço atual do Bitcoin
- * @param now Data atual
+ * Gera dados simulados caso nenhuma API funcione
  */
 function generateSimulatedPoints(
-  range: '1D' | '7D' | '1M' | '1Y' | 'ALL', 
-  currentPrice: number, 
+  range: '1D' | '7D' | '1M' | '1Y' | 'ALL',
+  currentPrice: number,
   now: Date
 ): PriceHistoryPoint[] {
-  // Define quantos pontos gerar baseado no período
-  const pointsCount = {
-    '1D': 24,       // 24 pontos para 1 dia (1 ponto por hora)
-    '7D': 7,        // 7 pontos para 7 dias (1 ponto por dia)
-    '1M': 30,       // 30 pontos para 1 mês (1 ponto por dia)
-    '1Y': 12,       // 12 pontos para 1 ano (1 ponto por mês)
-    'ALL': 10,      // 10 pontos para histórico completo
+  const count = {
+    '1D': 24,
+    '7D': 7,
+    '1M': 30,
+    '1Y': 12,
+    'ALL': 10
   }[range];
-  
-  const points = [];
-  
-  for (let i = 0; i < pointsCount; i++) {
-    // Cria uma variação aleatória entre -5% e +5% do preço atual
-    // Isso é apenas para ter alguma flutuação visual no gráfico de fallback
-    const randomVariation = 0.9 + Math.random() * 0.2; // entre 0.9 e 1.1
-    const simulatedPrice = currentPrice * randomVariation;
-    
-    // Calcula uma data baseada no período
-    const simulatedDate = new Date(now);
-    
-    // Ajusta a data de acordo com o período
+
+  const points: PriceHistoryPoint[] = [];
+
+  for (let i = 0; i < count; i++) {
+    const date = new Date(now);
+    const variation = 0.9 + Math.random() * 0.2;
+    const price = parseFloat((currentPrice * variation).toFixed(2));
+
     if (range === '1D') {
-      // Para 1 dia, subtrai horas
-      simulatedDate.setHours(now.getHours() - (pointsCount - i));
-      
-    } else if (range === '7D') {
-      // Para 7 dias, subtrai dias
-      simulatedDate.setDate(now.getDate() - (pointsCount - i));
-      
-    } else if (range === '1M') {
-      // Para 1 mês, subtrai dias
-      simulatedDate.setDate(now.getDate() - (pointsCount - i));
-      
+      date.setHours(now.getHours() - (count - i));
+    } else if (range === '7D' || range === '1M') {
+      date.setDate(now.getDate() - (count - i));
     } else if (range === '1Y') {
-      // Para 1 ano, subtrai meses
-      simulatedDate.setMonth(now.getMonth() - (pointsCount - i));
-      
+      date.setMonth(now.getMonth() - (count - i));
     } else {
-      // Para ALL (histórico completo), subtrai anos
-      simulatedDate.setFullYear(now.getFullYear() - (pointsCount - i));
+      date.setFullYear(now.getFullYear() - (count - i));
     }
-    
-    // Formata o rótulo de tempo de acordo com o período
+
     let timeLabel;
     if (range === '1D') {
-      timeLabel = simulatedDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      timeLabel = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     } else if (range === '7D' || range === '1M') {
-      timeLabel = simulatedDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+      timeLabel = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
     } else {
-      timeLabel = simulatedDate.toLocaleDateString('pt-BR', { month: '2-digit', year: '2-digit' });
+      timeLabel = date.toLocaleDateString('pt-BR', { month: '2-digit', year: '2-digit' });
     }
-    
-    // Adiciona o ponto simulado à lista
-    points.push({
-      time: timeLabel,
-      price: parseFloat(simulatedPrice.toFixed(2)),
-    });
+
+    points.push({ time: timeLabel, price });
   }
-  
+
   return points;
 }
