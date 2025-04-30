@@ -22,7 +22,7 @@ const corsHeaders = {
 // Intervalos e datas por período
 const rangeMap = {
   '1D': { days: 1, points: 24 },
-  '7D': { days: 7, points: 7 },
+  '7D': { days: 7, points: 14 },
   '1M': { days: 30, points: 30 },
   '1Y': { days: 365, points: 12 },
   'ALL': { days: 365 * 10, points: 10 } // Simula 10 anos
