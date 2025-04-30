@@ -66,9 +66,6 @@ export const PriceChart = ({
       setLoading(false); // Finaliza carregamento
     }
   };
-  setData(mockUsdPrices);
-  console.log('Mock carregado:', mockUsdPrices.length, 'pontos');
-  // return; // Descomente se quiser bloquear a linha real abaixo
 
   /**
    * Manipulador para troca de período
