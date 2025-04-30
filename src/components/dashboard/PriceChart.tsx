@@ -37,23 +37,22 @@ export const PriceChart = ({
   const loadData = async (range: TimeRange) => {
     try {
       setLoading(true); // Inicia o carregamento
-      setError(null); // Limpa erros anteriores
-      console.log(`Carregando dados para o período: ${range}`);
-
-      // Chama a função do BitcoinService para pegar dados do histórico
-      // Esta agora usa a Edge Function como fonte primária
-      const history = await fetchBitcoinPriceHistory(range);
-      console.log(`Dados carregados: ${history.length} pontos`);
-
-      // Atualiza os dados do gráfico
-      setData(history);
-    } catch (error) {
-      console.error('Erro ao carregar dados do histórico:', error);
-      setError('Não foi possível carregar os dados. Tente novamente mais tarde.');
-    } finally {
-      setLoading(false); // Finaliza o carregamento independente do resultado
-    }
-  };
+  // const history = await fetchBitcoinPriceHistory(range);
+  const mockUsdPrices: PriceHistoryPoint[] = Array.from({ length: 10 }).map((_, i) => {
+    const date = new Date();
+    date.setDate(date.getDate() - (10 - i));
+    return {
+      time: date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+      price: 10000 + i * 1000, // Mock em USD
+    };
+  });
+  
+  // Simula tempo de carregamento
+  await new Promise((res) => setTimeout(res, 300));
+  
+  setData(mockUsdPrices);
+  console.log('Mock carregado:', mockUsdPrices.length, 'pontos');
+  // return; // Descomente se quiser bloquear a linha real abaixo
 
   /**
    * Manipulador para troca de período
