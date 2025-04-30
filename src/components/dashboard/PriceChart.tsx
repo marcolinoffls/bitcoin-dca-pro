@@ -116,6 +116,7 @@ export const PriceChart = ({
     ...point,
     price: convertPrice(point.price)
   }));
+  console.log("Dados convertidos para o gráfico:", convertedData);
 
   /**
    * Renderiza o gráfico dentro de um Card
