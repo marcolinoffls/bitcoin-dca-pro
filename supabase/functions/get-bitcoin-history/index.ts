@@ -121,48 +121,53 @@ serve(async (req) => {
 
 /**
  * Busca dados históricos da API do CoinCap
+ * Esta função calcula dinamicamente os intervalos com base no momento da chamada.
  * @param range Período desejado ('1D', '7D', '1M', '1Y', 'ALL')
  * @returns Array formatado para o frontend
  */
 async function fetchFromCoinCap(range: string): Promise<PriceHistoryData[]> {
   const COINCAP_API_KEY = Deno.env.get('COINCAP_API_KEY');
-  
   if (!COINCAP_API_KEY) {
     throw new Error("COINCAP_API_KEY não está configurada");
   }
-  
-  // Obtém os parâmetros de intervalo e período
-  const { interval, start, end } = rangeToIntervalMap[range];
-  
-  // Constrói a URL com os parâmetros corretos
-  let url = `https://api.coincap.io/v2/assets/bitcoin/history?interval=${interval}`;
-  
-  // Adiciona timestamps se houver
-  if (start) url += `&start=${start}`;
-  if (end) url += `&end=${end || Date.now()}`;
-  
+
+  // Garante que os timestamps estejam sempre atualizados no momento da requisição
+  const now = Date.now();
+
+  // Mapeamento dinâmico do intervalo baseado no tempo atual
+  const rangeMap: Record<string, { interval: string; start: number }> = {
+    '1D':  { interval: 'm5',  start: now - 1 * 86400000 },   // últimos 24h
+    '7D':  { interval: 'h2',  start: now - 7 * 86400000 },   // últimos 7 dias
+    '1M':  { interval: 'h12', start: now - 30 * 86400000 },  // últimos 30 dias
+    '1Y':  { interval: 'd1',  start: now - 365 * 86400000 }, // últimos 365 dias
+    'ALL': { interval: 'd1',  start: 1367107200000 }         // desde abril de 2013
+  };
+
+  const { interval, start } = rangeMap[range];
+
+  // Constrói a URL final da CoinCap com os parâmetros atualizados
+  const url = `https://api.coincap.io/v2/assets/bitcoin/history?interval=${interval}&start=${start}&end=${now}`;
+
   console.log(`Chamando CoinCap API: ${url}`);
-  
-  // Faz a requisição à API do CoinCap
+
   const response = await fetch(url, {
     headers: {
       'Authorization': `Bearer ${COINCAP_API_KEY}`
     }
   });
-  
+
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`CoinCap API respondeu com status: ${response.status}, ${errorText}`);
   }
-  
-  // Parse da resposta
+
   const data: CoinCapHistoryResponse = await response.json();
-  
+
   if (!data.data || !Array.isArray(data.data)) {
     throw new Error("Formato de resposta inválido da CoinCap");
   }
-  
-  // Formata os dados para o formato esperado pelo frontend
+
+  // Formata os dados brutos no padrão aceito pelo frontend
   return formatCoinCapData(data.data, range);
 }
 
