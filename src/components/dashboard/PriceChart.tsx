@@ -40,12 +40,12 @@ export const PriceChart = ({
       setError(null);   // Limpa erros anteriores
   
       // --- MODO REAL ---
-      const history = await fetchBitcoinPriceHistory(range);
-      console.log(`Dados carregados: ${history.length} pontos`);
-      setData(history);
+      // const history = await fetchBitcoinPriceHistory(range);
+      // console.log(`Dados carregados: ${history.length} pontos`);
+      // setData(history);
   
       // --- MODO MOCK (descomente abaixo para simular) ---
-      /*
+      
       const mockUsdPrices: PriceHistoryPoint[] = Array.from({ length: 10 }).map((_, i) => {
         const date = new Date();
         date.setDate(date.getDate() - (10 - i));
