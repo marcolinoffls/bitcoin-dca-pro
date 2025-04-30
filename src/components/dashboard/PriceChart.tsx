@@ -57,7 +57,6 @@ export const PriceChart = ({
       await new Promise((res) => setTimeout(res, 300)); // Simula carregamento
       setData(mockUsdPrices);
       console.log('Mock carregado:', mockUsdPrices.length, 'pontos');
-      */
   
     } catch (error) {
       console.error('Erro ao carregar dados do histórico:', error);
