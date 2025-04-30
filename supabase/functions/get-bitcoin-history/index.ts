@@ -80,31 +80,43 @@ serve(async (req) => {
 /**
  * Busca dados históricos da CoinStats API
  */
-async function fetchFromCoinStats(range: string): Promise<{ time: string; price: number }[]> {
-  const API_KEY = Deno.env.get('COINSTATS_API_KEY');
-  if (!API_KEY) throw new Error("COINSTATS_API_KEY não definida");
+async function fetchFromCoinCap(range: '1D' | '7D' | '1M' | '1Y' | 'ALL') {
+  const now = Date.now();
+  
+  const intervals: Record<string, { interval: string; start: number }> = {
+    '1D': { interval: 'm15', start: now - 1 * 24 * 60 * 60 * 1000 },     // 15 min para 24h
+    '7D': { interval: 'h2', start: now - 7 * 24 * 60 * 60 * 1000 },
+    '1M': { interval: 'h12', start: now - 30 * 24 * 60 * 60 * 1000 },
+    '1Y': { interval: 'd1', start: now - 365 * 24 * 60 * 60 * 1000 },
+    'ALL': { interval: 'd1', start: 1367107200000 } // Desde 2013
+  };
 
-  const now = Math.floor(Date.now());
-  const { days } = rangeMap[range];
-  const from = now - days * 24 * 60 * 60 * 1000;
+  const { interval, start } = intervals[range];
+  const url = `https://api.coincap.io/v2/assets/bitcoin/history?interval=${interval}&start=${start}&end=${now}`;
 
-  const url = `https://openapiv1.coinstats.app/coins/bitcoin/charts?period=${days}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Erro CoinCap: ${res.status}`);
 
-  console.log(`Chamando CoinStats: ${url}`);
-
-  const res = await fetch(url, {
-    headers: {
-      'Accept': 'application/json',
-      'X-API-KEY': API_KEY
-    }
-  });
-
-  if (!res.ok) throw new Error(`CoinStats API status: ${res.status}`);
   const json = await res.json();
+  const raw = json?.data ?? [];
 
-  if (!json?.chart || !Array.isArray(json.chart)) throw new Error("Resposta inválida da CoinStats");
+  return raw.map((item: { time: number; priceUsd: string }) => {
+    const date = new Date(item.time);
+    let label: string;
 
-  return formatChartData(json.chart, range);
+    if (range === '1D') {
+      label = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    } else if (range === '7D' || range === '1M') {
+      label = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    } else {
+      label = date.toLocaleDateString('pt-BR', { month: '2-digit', year: '2-digit' });
+    }
+
+    return {
+      time: label,
+      price: parseFloat(parseFloat(item.priceUsd).toFixed(2))
+    };
+  });
 }
 
 /**
