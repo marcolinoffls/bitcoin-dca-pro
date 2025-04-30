@@ -2,7 +2,7 @@
 /**
  * Gráfico de preço do Bitcoin
  * Exibe a variação de preço em diferentes períodos (1D, 7D, 1M, 1Y, ALL)
- * Busca dados reais usando o serviço bitcoin/priceHistory.ts
+ * Suporta exibição em USD ou BRL conforme a preferência do usuário
  */
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,14 +10,21 @@ import { Button } from '@/components/ui/button';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { fetchBitcoinPriceHistory, PriceHistoryPoint } from '@/services/bitcoin';
 import { Loader2 } from 'lucide-react';
+import { CurrentRate } from '@/types';
 
 // Define os períodos de tempo disponíveis
 type TimeRange = '1D' | '7D' | '1M' | '1Y' | 'ALL';
 
-// Define o formato dos dados que o gráfico usa
-// Agora importando da interface PriceHistoryPoint
+// Props do componente para receber a moeda selecionada e taxa de câmbio
+interface PriceChartProps {
+  selectedCurrency?: 'BRL' | 'USD';
+  currentRate?: CurrentRate;
+}
 
-export const PriceChart = () => {
+export const PriceChart = ({ 
+  selectedCurrency = 'USD',
+  currentRate = { usd: 0, brl: 0, timestamp: new Date() }
+}: PriceChartProps) => {
   const [selectedRange, setSelectedRange] = useState<TimeRange>('1M'); // Período selecionado
   const [data, setData] = useState<PriceHistoryPoint[]>([]); // Dados carregados para o gráfico
   const [loading, setLoading] = useState(true); // Estado de carregamento inicial ativo
@@ -61,6 +68,43 @@ export const PriceChart = () => {
   useEffect(() => {
     loadData(selectedRange);
   }, [selectedRange]); // Dependência apenas do selectedRange garante que atualize quando mudar período
+
+  /**
+   * Converte o preço em USD para a moeda selecionada (USD ou BRL)
+   * Usa a taxa de câmbio atual do currentRate
+   */
+  const convertPrice = (priceUsd: number): number => {
+    if (selectedCurrency === 'BRL' && currentRate?.brl && currentRate?.usd) {
+      // Calcula a taxa de conversão e aplica ao preço USD
+      const conversionRate = currentRate.brl / currentRate.usd;
+      return parseFloat((priceUsd * conversionRate).toFixed(2));
+    }
+    return priceUsd; // Mantém em USD se a moeda selecionada for USD ou se não tiver taxa
+  };
+
+  /**
+   * Retorna o símbolo da moeda atual para exibição no gráfico
+   */
+  const getCurrencySymbol = (): string => {
+    return selectedCurrency === 'BRL' ? 'R$' : '$';
+  };
+
+  /**
+   * Formata o valor para exibição no tooltip com símbolo correto
+   */
+  const formatCurrencyValue = (value: number): string => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: selectedCurrency,
+      minimumFractionDigits: 2
+    }).format(value);
+  };
+
+  // Prepara os dados convertidos para o gráfico
+  const convertedData = data.map(point => ({
+    ...point,
+    price: convertPrice(point.price)
+  }));
 
   /**
    * Renderiza o gráfico dentro de um Card
@@ -120,7 +164,7 @@ export const PriceChart = () => {
           {/* Gráfico */}
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
-              data={data}
+              data={convertedData}
               margin={{ top: 20, right: 0, left: 0, bottom: 0 }}
             >
               {/* Gradiente de fundo */}
@@ -140,16 +184,16 @@ export const PriceChart = () => {
                 minTickGap={15} // Espaçamento mínimo entre ticks para melhorar legibilidade
               />
 
-              {/* Eixo Y (preço) */}
+              {/* Eixo Y (preço) - Agora com símbolo da moeda dinâmico */}
               <YAxis
                 tickLine={false}
                 axisLine={false}
                 fontSize={12}
-                tickFormatter={(value) => `$${value.toLocaleString()}`}
+                tickFormatter={(value) => `${getCurrencySymbol()}${value.toLocaleString()}`}
                 domain={['auto', 'auto']} // Ajusta automaticamente a escala com base nos dados
               />
 
-              {/* Tooltip (dica ao passar o mouse) melhorado */}
+              {/* Tooltip (dica ao passar o mouse) melhorado com moeda dinâmica */}
               <Tooltip
                 contentStyle={{
                   backgroundColor: "#fff",
@@ -160,13 +204,8 @@ export const PriceChart = () => {
                   boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
                 }}
                 formatter={(value: any) => {
-                  // Formatação para exibir o valor com símbolo $ e separador de milhares
-                  const formattedValue = new Intl.NumberFormat('pt-BR', {
-                    style: 'currency',
-                    currency: 'USD',
-                    minimumFractionDigits: 2
-                  }).format(Number(value));
-                  return [formattedValue, 'Preço']; 
+                  // Formatação para exibir o valor na moeda selecionada
+                  return [formatCurrencyValue(Number(value)), 'Preço']; 
                 }}
                 labelStyle={{
                   fontWeight: "bold",
@@ -198,9 +237,10 @@ export const PriceChart = () => {
           </ResponsiveContainer>
         </div>
         
-        {/* Indicador da fonte de dados (opcional) */}
+        {/* Indicador da fonte de dados com moeda atual */}
         <div className="text-xs text-gray-400 text-right mt-2">
-          Dados via CoinGecko{selectedRange === '1D' ? " (últimas 24h)" : selectedRange === '7D' ? " (últimos 7 dias)" : 
+          Dados via CoinCap em {selectedCurrency}
+          {selectedRange === '1D' ? " (últimas 24h)" : selectedRange === '7D' ? " (últimos 7 dias)" : 
             selectedRange === '1M' ? " (último mês)" : selectedRange === '1Y' ? " (último ano)" : " (histórico completo)"}
         </div>
       </CardContent>
