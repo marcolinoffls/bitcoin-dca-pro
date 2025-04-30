@@ -28,33 +28,23 @@ export interface PriceHistoryPoint {
 export const fetchBitcoinPriceHistory = async (
   range: '1D' | '7D' | '1M' | '1Y' | 'ALL'
 ): Promise<PriceHistoryPoint[]> => {
-  try {
-    console.log(`Buscando histórico do Bitcoin via Edge Function: período=${range}`);
-    const { data, error } = await supabase.functions.invoke("get-bitcoin-history", {
-      body: { range }
-    });
+  console.log(`[fetchBitcoinPriceHistory] Chamando função Edge com range=${range}`);
+  const { data, error } = await supabase.functions.invoke("get-bitcoin-history", {
+    body: { range }
+  });
 
-    if (error) {
-      console.error("Erro ao chamar Edge Function:", error);
-      throw new Error(`Edge Function falhou: ${error.message || 'Erro desconhecido'}`);
-    }
-
-    if (!Array.isArray(data)) {
-      console.error("Formato inválido recebido da Edge Function:", data);
-      throw new Error("Formato inválido de retorno da Edge Function");
-    }
-
-    console.log(`Recebido ${data.length} pontos da Edge Function`);
-    return data;
-  } catch (err) {
-    console.warn("Edge Function falhou. Usando fallback para CoinCap.");
-    try {
-      return await fetchDirectFromCoinCap(range);
-    } catch (coinCapErr) {
-      console.warn("CoinCap também falhou. Usando fallback para CoinMarketCap.");
-      return await fetchFromCoinMarketCapFallback(range);
-    }
+  if (error) {
+    console.error("Erro na função Edge:", error);
+    throw new Error("Erro ao buscar dados do histórico");
   }
+
+  if (!Array.isArray(data)) {
+    console.error("Formato inválido da resposta da Edge Function:", data);
+    throw new Error("Dados inválidos recebidos da função Edge");
+  }
+
+  console.log("Dados da Edge Function:", data.slice(0, 5)); // debug dos 5 primeiros
+  return data;
 };
 
 /**
