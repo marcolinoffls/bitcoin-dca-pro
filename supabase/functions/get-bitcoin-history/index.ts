@@ -172,35 +172,39 @@ async function fetchFromCoinCap(range: string): Promise<PriceHistoryData[]> {
 }
 
 /**
- * Formata os dados da CoinCap para o formato do frontend
+ * Formata os dados da CoinCap para o formato esperado pelo frontend.
+ * Garante a conversão correta de `priceUsd` para número e arredonda.
+ * 
+ * @param data Dados brutos da CoinCap
+ * @param range Período (usado para formatar o rótulo de tempo)
  */
 function formatCoinCapData(
   data: Array<{ priceUsd: string; time: number }>, 
   range: string
 ): PriceHistoryData[] {
-  return data.map(item => {
-    const date = new Date(item.time);
-    
-    // Formata o rótulo de tempo de acordo com o intervalo selecionado
-    let timeLabel: string;
-    if (range === '1D') {
-      // Para 1 dia, mostramos o horário (HH:MM)
-      timeLabel = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    } else if (range === '7D' || range === '1M') {
-      // Para 7 dias e 1 mês, mostramos o dia/mês (DD/MM)
-      timeLabel = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-    } else { 
-      // Para 1 ano e ALL, mostramos mês/ano (MM/YY)
-      timeLabel = date.toLocaleDateString('pt-BR', { month: '2-digit', year: '2-digit' });
-    }
-    
-    return {
-      time: timeLabel,
-      price: parseFloat(parseFloat(item.priceUsd).toFixed(2))
-    };
-  });
-}
+  return data
+    .filter(item => item.priceUsd !== null && !isNaN(Number(item.priceUsd))) // evita entradas inválidas
+    .map(item => {
+      const date = new Date(item.time);
 
+      // Formata o rótulo de tempo de acordo com o range
+      let timeLabel: string;
+      if (range === '1D') {
+        timeLabel = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      } else if (range === '7D' || range === '1M') {
+        timeLabel = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+      } else {
+        timeLabel = date.toLocaleDateString('pt-BR', { month: '2-digit', year: '2-digit' });
+      }
+
+      // Converte corretamente o preço para float com 2 casas decimais
+      const price = parseFloat(item.priceUsd);
+      return {
+        time: timeLabel,
+        price: parseFloat(price.toFixed(2))
+      };
+    });
+}
 /**
  * Busca dados de preço da CoinMarketCap como fallback
  * (Implementação simplificada para fallback)
