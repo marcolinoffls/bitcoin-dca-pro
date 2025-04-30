@@ -2,7 +2,56 @@
 # Arquivo de configuração do Supabase
 # Documentação: https://supabase.com/docs/guides/functions/config
 
-project_id = "wccbdayxpucptynpxhew"
-
 [functions.get-bitcoin-history]
 verify_jwt = false
+
+# 📦 Projeto Supabase
+project_id = "wccbdayxpucptynpxhew"
+
+# 🚀 API (Schemas públicos)
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage"]
+
+# 🗃️ Banco de dados
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+# 🧪 Supabase Studio (interface de admin local)
+[studio]
+enabled = true
+port = 54323
+api_url = "http://localhost"
+
+# 📩 Inbox para e-mails
+[inbucket]
+enabled = true
+port = 54324
+
+# 🗂️ Storage
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+# 🔐 Autenticação
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+
+# 📊 Analytics (desativado)
+[analytics]
+enabled = false
+port = 54327
+vector_port = 54328
+goth_port = 54329
+
+# ⚙️ Edge Function: gerar token JWT com segurança
+[functions.generate-chat-token]
+verify_jwt = true  # 🔒 necessário!
+
+# 📂 Edge Function pública (opcional)
+[functions.get-bitcoin-history]
+verify_jwt = false  # ⚠️ público — cuidado ao liberar!
