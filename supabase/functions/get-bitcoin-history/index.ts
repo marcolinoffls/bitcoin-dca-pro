@@ -46,7 +46,7 @@ serve(async (req) => {
     console.log(`[Edge Function] Buscando histórico: ${range}`);
 
     try {
-      const data = await fetchFromCoinStats(range);
+      const data = await fetchFromCoinCap(range);
       return new Response(JSON.stringify(data), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
