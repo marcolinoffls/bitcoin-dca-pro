@@ -7,21 +7,18 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { fetchBitcoinPriceHistory } from '@/services/bitcoinService'; 
+import { fetchBitcoinPriceHistory, PriceHistoryPoint } from '@/services/bitcoin'; // Atualizado o caminho de importação
 import { Loader2 } from 'lucide-react';
 
 // Define os períodos de tempo disponíveis
 type TimeRange = '1D' | '7D' | '1M' | '1Y' | 'ALL';
 
 // Define o formato dos dados que o gráfico usa
-interface PriceHistoryData {
-  time: string;  // Ex: "00:00", "04/25", "2024" dependendo do período
-  price: number; // Preço do Bitcoin naquele horário/data
-}
+// Agora importando da interface PriceHistoryPoint
 
 export const PriceChart = () => {
   const [selectedRange, setSelectedRange] = useState<TimeRange>('1M'); // Período selecionado
-  const [data, setData] = useState<PriceHistoryData[]>([]); // Dados carregados para o gráfico
+  const [data, setData] = useState<PriceHistoryPoint[]>([]); // Dados carregados para o gráfico
   const [loading, setLoading] = useState(true); // Estado de carregamento inicial ativo
   const [error, setError] = useState<string | null>(null); // Estado para controlar erros
 
