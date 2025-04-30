@@ -1,40 +1,8 @@
 
+# Arquivo de configuração do Supabase
+# Documentação: https://supabase.com/docs/guides/functions/config
+
 project_id = "wccbdayxpucptynpxhew"
 
-[api]
-enabled = true
-port = 54321
-schemas = ["public", "storage"]
-
-[db]
-port = 54322
-shadow_port = 54320
-major_version = 15
-
-[studio]
-enabled = true
-port = 54323
-api_url = "http://localhost"
-
-[inbucket]
-enabled = true
-port = 54324
-
-[storage]
-enabled = true
-file_size_limit = "50MiB"
-
-[auth]
-enabled = true
-site_url = "http://localhost:3000"
-
-[analytics]
-enabled = false
-port = 54327
-vector_port = 54328
-goth_port = 54329
-
-# Configuração da Edge Function "generate-chat-token"
-[functions.generate-chat-token]
-verify_jwt = true
-
+[functions.get-bitcoin-history]
+verify_jwt = false

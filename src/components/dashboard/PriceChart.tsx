@@ -1,4 +1,3 @@
-
 /**
  * Gráfico de preço do Bitcoin
  * Exibe a variação de preço em diferentes períodos (1D, 7D, 1M, 1Y, ALL)
@@ -28,7 +27,7 @@ export const PriceChart = () => {
 
   /**
    * Função para carregar os dados baseado no período selecionado
-   * Agora com tratamento de erro e estado de carregamento
+   * Agora utilizando a Edge Function via fetchBitcoinPriceHistory
    */
   const loadData = async (range: TimeRange) => {
     try {
@@ -37,6 +36,7 @@ export const PriceChart = () => {
       console.log(`Carregando dados para o período: ${range}`);
 
       // Chama a função do BitcoinService para pegar dados do histórico
+      // Esta agora usa a Edge Function como fonte primária
       const history = await fetchBitcoinPriceHistory(range);
       console.log(`Dados carregados: ${history.length} pontos`);
 
