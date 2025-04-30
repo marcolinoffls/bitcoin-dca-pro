@@ -2,10 +2,6 @@
 # Arquivo de configuração do Supabase
 # Documentação: https://supabase.com/docs/guides/functions/config
 
-[functions.get-bitcoin-history]
-verify_jwt = false
-
-# 📦 Projeto Supabase
 project_id = "wccbdayxpucptynpxhew"
 
 # 🚀 API (Schemas públicos)
@@ -52,6 +48,6 @@ goth_port = 54329
 [functions.generate-chat-token]
 verify_jwt = true  # 🔒 necessário!
 
-# 📂 Edge Function pública (opcional)
+# 📂 Edge Function pública para o histórico de preços
 [functions.get-bitcoin-history]
 verify_jwt = false  # ⚠️ público — cuidado ao liberar!

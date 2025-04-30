@@ -281,3 +281,9 @@ export const useBitcoinEntries = () => {
     refetch,
   };
 };
+
+import {
+  calculateAverageByPeriod,
+  calculateTotalInvested,
+  calculateTotalBitcoin
+} from '@/services/bitcoin';

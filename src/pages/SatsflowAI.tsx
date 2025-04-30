@@ -1,4 +1,3 @@
-
 /**
  * Página principal do Satsflow AI
  * Interface de chat para interação com IA especializada em Bitcoin
@@ -12,8 +11,8 @@ import ChatMessage from '@/components/chat/ChatMessage';
 import { useChatAi } from '@/hooks/useChatAi';
 
 const SatsflowAI: React.FC = () => {
-  const [inputMessage, setInputMessage] = useState('');
-  const { messages, isLoading, sendMessage, chatId, startNewChat } = useChatAi();
+  const [messageText, setMessageText] = useState('');
+  const { messages, isLoading, sendMessage, chatId } = useChatAi();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -37,9 +36,9 @@ const SatsflowAI: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputMessage.trim()) return;
-    await sendMessage(inputMessage);
-    setInputMessage('');
+    if (!messageText.trim()) return;
+    await sendMessage(messageText);
+    setMessageText('');
   };
 
   return (
@@ -50,7 +49,7 @@ const SatsflowAI: React.FC = () => {
           <Menu className="w-5 h-5" />
         </button>
         <h1 className="text-sm font-semibold tracking-wide">Satsflow AI</h1>
-        <button onClick={() => startNewChat?.()}>
+        <button onClick={() => console.log('Start new chat')}>
           <Plus className="w-5 h-5" />
         </button>
       </div>
@@ -95,15 +94,15 @@ const SatsflowAI: React.FC = () => {
       >
         <div className="w-full max-w-2xl bg-white border shadow-lg rounded-2xl p-3 flex gap-2 items-center">
           <Input
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
+            value={messageText}
+            onChange={(e) => setMessageText(e.target.value)}
             placeholder="Digite sua mensagem..."
             disabled={isLoading}
             className="flex-1 border-none focus:ring-0 focus:outline-none"
           />
           <Button
             type="submit"
-            disabled={isLoading || !inputMessage.trim()}
+            disabled={isLoading || !messageText.trim()}
             className="bg-bitcoin hover:bg-bitcoin/90"
           >
             <Send className="w-4 h-4" />
@@ -115,4 +114,3 @@ const SatsflowAI: React.FC = () => {
 };
 
 export default SatsflowAI;
-

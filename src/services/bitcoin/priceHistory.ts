@@ -1,3 +1,4 @@
+
 /**
  * Serviço para buscar histórico de preços do Bitcoin
  *
@@ -155,7 +156,7 @@ function generateSimulatedPoints(
     '1M': 30,
     '1Y': 12,
     'ALL': 10
-  }[range];
+  }[range] || 10; // Valor padrão para garantir um valor válido
 
   const points: PriceHistoryPoint[] = [];
 

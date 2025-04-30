@@ -1,13 +1,14 @@
+
 /**
  * Gráfico de preço do Bitcoin
  * Exibe a variação de preço em diferentes períodos (1D, 7D, 1M, 1Y, ALL)
- * Busca dados reais usando o serviço BitcoinService.ts
+ * Busca dados reais usando o serviço bitcoin/priceHistory.ts
  */
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { fetchBitcoinPriceHistory, PriceHistoryPoint } from '@/services/bitcoin'; // Atualizado o caminho de importação
+import { fetchBitcoinPriceHistory, PriceHistoryPoint } from '@/services/bitcoin';
 import { Loader2 } from 'lucide-react';
 
 // Define os períodos de tempo disponíveis

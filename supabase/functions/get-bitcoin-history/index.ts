@@ -17,7 +17,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS'
+  'Access-Control-Allow-Methods': 'POST, OPTIONS'
 }
 
 // Mapeamento de intervalo para período na API do CoinCap
@@ -26,7 +26,7 @@ const rangeToIntervalMap: Record<string, { interval: string, start?: number, end
   '7D': { interval: 'h2', start: Date.now() - 7 * 24 * 60 * 60 * 1000 }, // 2 horas para 7 dias
   '1M': { interval: 'h12', start: Date.now() - 30 * 24 * 60 * 60 * 1000 }, // 12 horas para 30 dias
   '1Y': { interval: 'd1', start: Date.now() - 365 * 24 * 60 * 60 * 1000 }, // 1 dia para 1 ano
-  'ALL': { interval: 'd1' } // 1 dia para todo o histórico
+  'ALL': { interval: 'd1', start: 1367107200000 } // 1 dia para todo o histórico (desde 2013)
 }
 
 // Interface para os dados retornados pela API do CoinCap
@@ -34,7 +34,7 @@ interface CoinCapHistoryResponse {
   data: Array<{
     priceUsd: string;
     time: number;
-    date: string;
+    date?: string;
   }>;
   timestamp: number;
 }
@@ -51,13 +51,12 @@ serve(async (req) => {
     return new Response(null, {
       status: 204,
       headers: corsHeaders
-    })
+    });
   }
 
   try {
-    // Pega o range dos query params
-    const url = new URL(req.url)
-    const range = url.searchParams.get('range')
+    // Parse do corpo JSON da requisição
+    const { range } = await req.json();
 
     // Valida o range
     if (!range || !['1D', '7D', '1M', '1Y', 'ALL'].includes(range)) {
@@ -69,14 +68,14 @@ serve(async (req) => {
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
-      )
+      );
     }
 
-    console.log(`Buscando histórico do Bitcoin para range: ${range}`)
+    console.log(`Buscando histórico do Bitcoin via Edge Function: período=${range}`);
     
     // Tenta buscar os dados da API do CoinCap
     try {
-      const historyData = await fetchFromCoinCap(range)
+      const historyData = await fetchFromCoinCap(range);
       
       return new Response(
         JSON.stringify(historyData),
@@ -84,13 +83,13 @@ serve(async (req) => {
           status: 200, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
-      )
+      );
     } catch (coinCapError) {
-      console.error("Erro ao buscar da CoinCap:", coinCapError)
+      console.error("Erro ao buscar da CoinCap:", coinCapError);
       
       // Tenta o fallback com CoinMarketCap
       try {
-        const fallbackData = await fetchFromCoinMarketCap(range)
+        const fallbackData = await fetchFromCoinMarketCap(range);
         
         return new Response(
           JSON.stringify(fallbackData),
@@ -98,14 +97,14 @@ serve(async (req) => {
             status: 200, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
           }
-        )
+        );
       } catch (cmcError) {
-        console.error("Erro também no fallback CoinMarketCap:", cmcError)
-        throw new Error("Todas as tentativas de API falharam")
+        console.error("Erro também no fallback CoinMarketCap:", cmcError);
+        throw new Error("Todas as tentativas de API falharam");
       }
     }
   } catch (error) {
-    console.error("Erro na função Edge:", error)
+    console.error("Erro na função Edge:", error);
     
     return new Response(
       JSON.stringify({ 
@@ -116,9 +115,9 @@ serve(async (req) => {
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
-    )
+    );
   }
-})
+});
 
 /**
  * Busca dados históricos da API do CoinCap
@@ -126,41 +125,45 @@ serve(async (req) => {
  * @returns Array formatado para o frontend
  */
 async function fetchFromCoinCap(range: string): Promise<PriceHistoryData[]> {
-  const COINCAP_API_KEY = Deno.env.get('COINCAP_API_KEY')
+  const COINCAP_API_KEY = Deno.env.get('COINCAP_API_KEY');
   
   if (!COINCAP_API_KEY) {
-    throw new Error("COINCAP_API_KEY não está configurada")
+    throw new Error("COINCAP_API_KEY não está configurada");
   }
   
   // Obtém os parâmetros de intervalo e período
-  const { interval, start, end } = rangeToIntervalMap[range]
+  const { interval, start, end } = rangeToIntervalMap[range];
   
   // Constrói a URL com os parâmetros corretos
-  let url = `https://api.coincap.io/v2/assets/bitcoin/history?interval=${interval}`
+  let url = `https://api.coincap.io/v2/assets/bitcoin/history?interval=${interval}`;
   
   // Adiciona timestamps se houver
-  if (start) url += `&start=${start}`
-  if (end) url += `&end=${end || Date.now()}`
+  if (start) url += `&start=${start}`;
+  if (end) url += `&end=${end || Date.now()}`;
   
-  console.log(`Chamando CoinCap API: ${url}`)
+  console.log(`Chamando CoinCap API: ${url}`);
   
   // Faz a requisição à API do CoinCap
   const response = await fetch(url, {
     headers: {
       'Authorization': `Bearer ${COINCAP_API_KEY}`
     }
-  })
+  });
   
   if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error(`CoinCap API respondeu com status: ${response.status}, ${errorText}`)
+    const errorText = await response.text();
+    throw new Error(`CoinCap API respondeu com status: ${response.status}, ${errorText}`);
   }
   
   // Parse da resposta
-  const data: CoinCapHistoryResponse = await response.json()
+  const data: CoinCapHistoryResponse = await response.json();
+  
+  if (!data.data || !Array.isArray(data.data)) {
+    throw new Error("Formato de resposta inválido da CoinCap");
+  }
   
   // Formata os dados para o formato esperado pelo frontend
-  return formatCoinCapData(data.data, range)
+  return formatCoinCapData(data.data, range);
 }
 
 /**
@@ -171,26 +174,26 @@ function formatCoinCapData(
   range: string
 ): PriceHistoryData[] {
   return data.map(item => {
-    const date = new Date(item.time)
+    const date = new Date(item.time);
     
     // Formata o rótulo de tempo de acordo com o intervalo selecionado
-    let timeLabel: string
+    let timeLabel: string;
     if (range === '1D') {
       // Para 1 dia, mostramos o horário (HH:MM)
-      timeLabel = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      timeLabel = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     } else if (range === '7D' || range === '1M') {
       // Para 7 dias e 1 mês, mostramos o dia/mês (DD/MM)
-      timeLabel = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+      timeLabel = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
     } else { 
       // Para 1 ano e ALL, mostramos mês/ano (MM/YY)
-      timeLabel = date.toLocaleDateString('pt-BR', { month: '2-digit', year: '2-digit' })
+      timeLabel = date.toLocaleDateString('pt-BR', { month: '2-digit', year: '2-digit' });
     }
     
     return {
       time: timeLabel,
       price: parseFloat(parseFloat(item.priceUsd).toFixed(2))
-    }
-  })
+    };
+  });
 }
 
 /**
@@ -198,13 +201,13 @@ function formatCoinCapData(
  * (Implementação simplificada para fallback)
  */
 async function fetchFromCoinMarketCap(range: string): Promise<PriceHistoryData[]> {
-  const COINMARKETCAP_API_KEY = Deno.env.get('COINMARKETCAP_API_KEY')
+  const COINMARKETCAP_API_KEY = Deno.env.get('COINMARKETCAP_API_KEY');
   
   if (!COINMARKETCAP_API_KEY) {
-    throw new Error("COINMARKETCAP_API_KEY não está configurada")
+    throw new Error("COINMARKETCAP_API_KEY não está configurada");
   }
   
-  console.log("Usando fallback da CoinMarketCap")
+  console.log("Usando fallback da CoinMarketCap");
   
   // Para simplificar, buscamos apenas o preço atual
   // Em uma implementação completa, você usaria endpoints históricos
@@ -216,24 +219,24 @@ async function fetchFromCoinMarketCap(range: string): Promise<PriceHistoryData[]
         'Accept': 'application/json'
       }
     }
-  )
+  );
   
   if (!response.ok) {
-    throw new Error(`CoinMarketCap API respondeu com status: ${response.status}`)
+    throw new Error(`CoinMarketCap API respondeu com status: ${response.status}`);
   }
   
-  const data = await response.json()
+  const data = await response.json();
   
   if (!data?.data?.BTC?.quote?.USD?.price) {
-    throw new Error("Formato de resposta inesperado da CoinMarketCap")
+    throw new Error("Formato de resposta inesperado da CoinMarketCap");
   }
   
   // Com base no preço atual, gera pontos simulados para o gráfico
-  const currentPrice = data.data.BTC.quote.USD.price
-  const now = new Date()
+  const currentPrice = data.data.BTC.quote.USD.price;
+  const now = new Date();
   
   // Gera pontos simulados para o período
-  return generateSimulatedPoints(range, currentPrice, now)
+  return generateSimulatedPoints(range, currentPrice, now);
 }
 
 /**
@@ -257,7 +260,7 @@ function generateSimulatedPoints(
   const points = [];
   
   for (let i = 0; i < pointsCount; i++) {
-    // Cria uma variação aleatória entre -5% e +5% do preço atual
+    // Cria uma variação aleatória entre -10% e +10% do preço atual
     // Isso é apenas para ter alguma flutuação visual no gráfico de fallback
     const randomVariation = 0.9 + Math.random() * 0.2; // entre 0.9 e 1.1
     const simulatedPrice = currentPrice * randomVariation;
