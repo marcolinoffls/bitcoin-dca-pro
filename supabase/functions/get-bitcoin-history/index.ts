@@ -88,7 +88,7 @@ async function fetchFromCoinStats(range: string): Promise<{ time: string; price:
   const { days } = rangeMap[range];
   const from = now - days * 24 * 60 * 60 * 1000;
 
-  const url = `https://api.coinstats.app/public/v1/charts?period=${days}d&coinId=bitcoin`;
+  const url = `https://openapiv1.coinstats.app/coins/bitcoin/charts?period=${days}`;
 
   console.log(`Chamando CoinStats: ${url}`);
 
