@@ -13,7 +13,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { BitcoinEntry, CurrentRate } from '@/types';
 import { ArrowDown, ArrowUp, Eye, EyeOff } from 'lucide-react';
 import { formatNumber } from '@/lib/utils';
-import { calculateTotalBitcoin } from '@/services/bitcoinService';
+import { calculateTotalBitcoin } from '@/services/bitcoin';
 import { Badge } from '@/components/ui/badge';
 import { useBalanceVisibility } from '@/hooks/useBalanceVisibility';
 interface BitcoinTotalCardProps {
