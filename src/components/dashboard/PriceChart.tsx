@@ -251,7 +251,7 @@ export const PriceChart = ({
         
         {/* Indicador da fonte de dados com moeda atual */}
         <div className="text-xs text-gray-400 text-right mt-2">
-          Dados via CoinCap em {selectedCurrency}
+          Dados via CoinStats em {selectedCurrency}
           {selectedRange === '1D' ? " (últimas 24h)" : selectedRange === '7D' ? " (últimos 7 dias)" : 
             selectedRange === '1M' ? " (último mês)" : selectedRange === '1Y' ? " (último ano)" : " (histórico completo)"}
         </div>
