@@ -37,19 +37,35 @@ export const PriceChart = ({
   const loadData = async (range: TimeRange) => {
     try {
       setLoading(true); // Inicia o carregamento
-  // const history = await fetchBitcoinPriceHistory(range);
-  const mockUsdPrices: PriceHistoryPoint[] = Array.from({ length: 10 }).map((_, i) => {
-    const date = new Date();
-    date.setDate(date.getDate() - (10 - i));
-    return {
-      time: date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-      price: 10000 + i * 1000, // Mock em USD
-    };
-  });
+      setError(null);   // Limpa erros anteriores
   
-  // Simula tempo de carregamento
-  await new Promise((res) => setTimeout(res, 300));
+      // --- MODO REAL ---
+      const history = await fetchBitcoinPriceHistory(range);
+      console.log(`Dados carregados: ${history.length} pontos`);
+      setData(history);
   
+      // --- MODO MOCK (descomente abaixo para simular) ---
+      /*
+      const mockUsdPrices: PriceHistoryPoint[] = Array.from({ length: 10 }).map((_, i) => {
+        const date = new Date();
+        date.setDate(date.getDate() - (10 - i));
+        return {
+          time: date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+          price: 10000 + i * 1000, // Mock em USD
+        };
+      });
+      await new Promise((res) => setTimeout(res, 300)); // Simula carregamento
+      setData(mockUsdPrices);
+      console.log('Mock carregado:', mockUsdPrices.length, 'pontos');
+      */
+  
+    } catch (error) {
+      console.error('Erro ao carregar dados do histórico:', error);
+      setError('Não foi possível carregar os dados. Tente novamente mais tarde.');
+    } finally {
+      setLoading(false); // Finaliza carregamento
+    }
+  };
   setData(mockUsdPrices);
   console.log('Mock carregado:', mockUsdPrices.length, 'pontos');
   // return; // Descomente se quiser bloquear a linha real abaixo
