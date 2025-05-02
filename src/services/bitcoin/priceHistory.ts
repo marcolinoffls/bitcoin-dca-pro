@@ -48,12 +48,14 @@ function formatLabelFromTimestamp(timestamp: string, range: string): string {
  * - Para períodos recentes ('1D', '7D', '1M'): Usa webhook do n8n para dados dinâmicos
  *
  * @param range Período desejado ('1D', '7D', '1M', '1Y', 'ALL')
+ * @param currency Moeda para retornar os valores ('USD' ou 'BRL')
  * @returns Lista de pontos [{ time, price }]
  */
 export const fetchBitcoinPriceHistory = async (
-  range: '1D' | '7D' | '1M' | '1Y' | 'ALL'
+  range: '1D' | '7D' | '1M' | '1Y' | 'ALL',
+  currency: 'USD' | 'BRL' = 'USD' // Padrão é USD se não for especificado
 ): Promise<PriceHistoryPoint[]> => {
-  console.log(`[fetchBitcoinPriceHistory] Buscando histórico para range=${range}`);
+  console.log(`[fetchBitcoinPriceHistory] Buscando histórico para range=${range}, currency=${currency}`);
   
   try {
     if (range === '1Y' || range === 'ALL') {
@@ -92,8 +94,9 @@ export const fetchBitcoinPriceHistory = async (
       }));
     } else {
       // 2. Consultar Webhook dinâmico para dados recentes (1D, 7D, 1M)
-      console.log(`Consultando webhook para dados recentes: ${range}`);
-      const url = `https://workflows.marcolinofernades.site/webhook-test/bitcoin-precos?range=${range}`;
+      // Agora enviando também o parâmetro currency para o webhook
+      console.log(`Consultando webhook para dados recentes: ${range} em ${currency}`);
+      const url = `https://workflows.marcolinofernades.site/webhook-test/bitcoin-precos?range=${range}&currency=${currency}`;
       
       const res = await fetch(url);
       if (!res.ok) {

@@ -32,7 +32,7 @@ export const PriceChart = ({
 
   /**
    * Função para carregar os dados baseado no período selecionado
-   * Agora utilizando a Edge Function via fetchBitcoinPriceHistory
+   * Agora passando a moeda selecionada como segundo parâmetro
    */
   const loadData = async (range: TimeRange) => {
     try {
@@ -40,8 +40,9 @@ export const PriceChart = ({
       setError(null);   // Limpa erros anteriores
   
       // --- MODO REAL ---
-      const history = await fetchBitcoinPriceHistory(range);
-      console.log(`Dados carregados: ${history.length} pontos`);
+      // Passamos a moeda selecionada para a função de busca
+      const history = await fetchBitcoinPriceHistory(range, selectedCurrency);
+      console.log(`Dados carregados: ${history.length} pontos em ${selectedCurrency}`);
       setData(history);
   
       // --- MODO MOCK (descomente abaixo para simular) ---
@@ -75,23 +76,10 @@ export const PriceChart = ({
     setSelectedRange(range);
   };
 
-  // Carrega dados iniciais e sempre que mudar o período selecionado
+  // Carrega dados iniciais e sempre que mudar o período selecionado ou a moeda
   useEffect(() => {
     loadData(selectedRange);
-  }, [selectedRange]); // Dependência apenas do selectedRange garante que atualize quando mudar período
-
-  /**
-   * Converte o preço em USD para a moeda selecionada (USD ou BRL)
-   * Usa a taxa de câmbio atual do currentRate
-   */
-  const convertPrice = (priceUsd: number): number => {
-    if (selectedCurrency === 'BRL' && currentRate?.brl && currentRate?.usd) {
-      // Calcula a taxa de conversão e aplica ao preço USD
-      const conversionRate = currentRate.brl / currentRate.usd;
-      return parseFloat((priceUsd * conversionRate).toFixed(2));
-    }
-    return priceUsd; // Mantém em USD se a moeda selecionada for USD ou se não tiver taxa
-  };
+  }, [selectedRange, selectedCurrency]); // Adicionado selectedCurrency como dependência
 
   /**
    * Retorna o símbolo da moeda atual para exibição no gráfico
@@ -110,13 +98,6 @@ export const PriceChart = ({
       minimumFractionDigits: 2
     }).format(value);
   };
-
-  // Prepara os dados convertidos para o gráfico
-  const convertedData = data.map(point => ({
-    ...point,
-    price: convertPrice(point.price)
-  }));
-  console.log("Dados convertidos para o gráfico:", convertedData);
 
   /**
    * Renderiza o gráfico dentro de um Card
@@ -176,7 +157,7 @@ export const PriceChart = ({
           {/* Gráfico */}
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
-              data={convertedData}
+              data={data}
               margin={{ top: 20, right: 0, left: 0, bottom: 0 }}
             >
               {/* Gradiente de fundo */}
@@ -196,7 +177,7 @@ export const PriceChart = ({
                 minTickGap={15} // Espaçamento mínimo entre ticks para melhorar legibilidade
               />
 
-              {/* Eixo Y (preço) - Agora com símbolo da moeda dinâmico */}
+              {/* Eixo Y (preço) - Com símbolo da moeda dinâmico */}
               <YAxis
                 tickLine={false}
                 axisLine={false}
