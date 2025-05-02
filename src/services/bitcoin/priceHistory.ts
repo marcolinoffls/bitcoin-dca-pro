@@ -4,7 +4,7 @@
  *
  * Este módulo contém funções para obter o histórico
  * de preços do Bitcoin em diferentes intervalos de tempo,
- * através da Supabase Edge Function ou fallback para CoinCap/CoinMarketCap.
+ * através do Supabase (períodos longos) ou webhook n8n (períodos recentes).
  *
  * Usado principalmente em:
  * - PriceChart.tsx
@@ -19,8 +19,33 @@ export interface PriceHistoryPoint {
 }
 
 /**
+ * Formata a label de data/hora baseada no timestamp e no período selecionado
+ * 
+ * @param timestamp String de data/hora em formato ISO
+ * @param range Período selecionado ('1D', '7D', '1M', '1Y', 'ALL')
+ * @returns String formatada para exibição no gráfico
+ */
+function formatLabelFromTimestamp(timestamp: string, range: string): string {
+  const date = new Date(timestamp);
+  
+  if (range === '1D') {
+    return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  } else if (range === '7D' || range === '1M') {
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+  } else if (range === '1Y') {
+    return date.toLocaleDateString('pt-BR', { month: '2-digit', year: '2-digit' });
+  } else {
+    // ALL
+    return date.toLocaleDateString('pt-BR', { month: '2-digit', year: '2-digit' });
+  }
+}
+
+/**
  * Busca o histórico de preços do Bitcoin para diferentes períodos de tempo.
- * Tenta primeiro via Supabase Edge Function, com fallback para CoinCap e CoinMarketCap.
+ * 
+ * Estratégia de dados:
+ * - Para períodos longos ('1Y', 'ALL'): Usa a tabela btc_prices do Supabase
+ * - Para períodos recentes ('1D', '7D', '1M'): Usa webhook do n8n para dados dinâmicos
  *
  * @param range Período desejado ('1D', '7D', '1M', '1Y', 'ALL')
  * @returns Lista de pontos [{ time, price }]
@@ -28,154 +53,64 @@ export interface PriceHistoryPoint {
 export const fetchBitcoinPriceHistory = async (
   range: '1D' | '7D' | '1M' | '1Y' | 'ALL'
 ): Promise<PriceHistoryPoint[]> => {
-  console.log(`[fetchBitcoinPriceHistory] Chamando função Edge com range=${range}`);
-  const { data, error } = await supabase.functions.invoke("get-bitcoin-history", {
-    body: { range }
-  });
-
-  if (error) {
-    console.error("Erro na função Edge:", error);
-    throw new Error("Erro ao buscar dados do histórico");
-  }
-
-  if (!Array.isArray(data)) {
-    console.error("Formato inválido da resposta da Edge Function:", data);
-    throw new Error("Dados inválidos recebidos da função Edge");
-  }
-
-  console.log("Dados da Edge Function:", data.slice(0, 5)); // debug dos 5 primeiros
-  return data;
-};
-
-/**
- * Fallback: Busca histórico diretamente da CoinCap API
- */
-async function fetchDirectFromCoinCap(
-  range: '1D' | '7D' | '1M' | '1Y' | 'ALL'
-): Promise<PriceHistoryPoint[]> {
-  const apiKey = import.meta.env.VITE_COINCAP_API_KEY;
-  if (!apiKey) throw new Error("VITE_COINCAP_API_KEY não definida no .env");
-
-  const now = Date.now();
-  const intervals: Record<string, { interval: string; start: number }> = {
-    '1D': { interval: 'm5', start: now - 1 * 86400000 },
-    '7D': { interval: 'h2', start: now - 7 * 86400000 },
-    '1M': { interval: 'h12', start: now - 30 * 86400000 },
-    '1Y': { interval: 'd1', start: now - 365 * 86400000 },
-    'ALL': { interval: 'd1', start: 1367107200000 }
-  };
-
-  const { interval, start } = intervals[range];
-  const url = `https://api.coincap.io/v2/assets/bitcoin/history?interval=${interval}&start=${start}&end=${now}`;
-
-  const response = await fetch(url, {
-    headers: { Authorization: `Bearer ${apiKey}` }
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Erro CoinCap (${response.status}): ${error}`);
-  }
-
-  const json = await response.json();
-  const rawPoints = json?.data ?? [];
-
-  return rawPoints.map((item: { time: number; priceUsd: string }) => {
-    const date = new Date(item.time);
-    let timeLabel: string;
-
-    if (range === '1D') {
-      timeLabel = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    } else if (range === '7D' || range === '1M') {
-      timeLabel = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-    } else {
-      timeLabel = date.toLocaleDateString('pt-BR', { month: '2-digit', year: '2-digit' });
-    }
-
-    return {
-      time: timeLabel,
-      price: parseFloat(parseFloat(item.priceUsd).toFixed(2))
-    };
-  });
-}
-
-/**
- * Fallback final: CoinMarketCap
- * Retorna pontos simulados baseados no preço atual
- */
-async function fetchFromCoinMarketCapFallback(
-  range: '1D' | '7D' | '1M' | '1Y' | 'ALL'
-): Promise<PriceHistoryPoint[]> {
+  console.log(`[fetchBitcoinPriceHistory] Buscando histórico para range=${range}`);
+  
   try {
-    const apiKey = import.meta.env.VITE_CMC_API_KEY;
-    if (!apiKey) throw new Error("VITE_CMC_API_KEY não definida");
-
-    const res = await fetch(
-      "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=BTC&convert=USD",
-      {
-        headers: {
-          "X-CMC_PRO_API_KEY": apiKey
-        }
+    if (range === '1Y' || range === 'ALL') {
+      // 1. Consultar tabela Supabase 'btc_prices' para períodos longos
+      console.log(`Buscando dados do Supabase para ${range}`);
+      
+      let query = supabase
+        .from('btc_prices')
+        .select('timestamp, price')
+        .order('timestamp', { ascending: true });
+      
+      // Filtrar por período se for 1Y
+      if (range === '1Y') {
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        query = query.gte('timestamp', oneYearAgo.toISOString());
       }
-    );
+      
+      const { data, error } = await query;
+      
+      if (error) {
+        console.error("Erro ao buscar dados do Supabase:", error);
+        throw new Error('Erro ao buscar dados do Supabase');
+      }
+      
+      if (!data || data.length === 0) {
+        console.warn("Nenhum dado encontrado no Supabase para", range);
+        throw new Error('Nenhum dado encontrado no Supabase');
+      }
 
-    if (!res.ok) throw new Error(`CoinMarketCap status: ${res.status}`);
-    const data = await res.json();
-
-    const currentPrice = data?.data?.BTC?.quote?.USD?.price;
-    if (!currentPrice) throw new Error("Resposta inesperada da CoinMarketCap");
-
-    return generateSimulatedPoints(range, currentPrice, new Date());
+      console.log(`Recebidos ${data.length} registros do Supabase`);
+      
+      return data.map(row => ({
+        time: formatLabelFromTimestamp(row.timestamp, range),
+        price: parseFloat((row.price || 0).toFixed(2))
+      }));
+    } else {
+      // 2. Consultar Webhook dinâmico para dados recentes (1D, 7D, 1M)
+      console.log(`Consultando webhook para dados recentes: ${range}`);
+      const url = `https://workflows.marcolinofernades.site/webhook-test/bitcoin-precos?range=${range}`;
+      
+      const res = await fetch(url);
+      if (!res.ok) {
+        console.error(`Erro na resposta do webhook: ${res.status} ${res.statusText}`);
+        throw new Error(`Erro ao consultar Webhook (${res.status})`);
+      }
+      
+      const data = await res.json();
+      console.log(`Recebidos ${data.length} pontos do webhook`);
+      
+      // Garante que os dados estejam no formato correto
+      return Array.isArray(data) ? data : [];
+    }
   } catch (error) {
-    console.error("Falha total ao buscar dados:", error);
-    return [{ time: "Erro", price: 0 }];
+    console.error("Falha ao buscar histórico de preços:", error);
+    
+    // Retorna array vazio em caso de erro para evitar quebra do aplicativo
+    return [];
   }
-}
-
-/**
- * Gera dados simulados caso nenhuma API funcione
- */
-function generateSimulatedPoints(
-  range: '1D' | '7D' | '1M' | '1Y' | 'ALL',
-  currentPrice: number,
-  now: Date
-): PriceHistoryPoint[] {
-  const count = {
-    '1D': 24,
-    '7D': 7,
-    '1M': 30,
-    '1Y': 12,
-    'ALL': 10
-  }[range] || 10; // Valor padrão para garantir um valor válido
-
-  const points: PriceHistoryPoint[] = [];
-
-  for (let i = 0; i < count; i++) {
-    const date = new Date(now);
-    const variation = 0.9 + Math.random() * 0.2;
-    const price = parseFloat((currentPrice * variation).toFixed(2));
-
-    if (range === '1D') {
-      date.setHours(now.getHours() - (count - i));
-    } else if (range === '7D' || range === '1M') {
-      date.setDate(now.getDate() - (count - i));
-    } else if (range === '1Y') {
-      date.setMonth(now.getMonth() - (count - i));
-    } else {
-      date.setFullYear(now.getFullYear() - (count - i));
-    }
-
-    let timeLabel;
-    if (range === '1D') {
-      timeLabel = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    } else if (range === '7D' || range === '1M') {
-      timeLabel = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-    } else {
-      timeLabel = date.toLocaleDateString('pt-BR', { month: '2-digit', year: '2-digit' });
-    }
-
-    points.push({ time: timeLabel, price });
-  }
-
-  return points;
-}
+};

@@ -57,6 +57,48 @@ export type Database = {
         }
         Relationships: []
       }
+      btc_prices: {
+        Row: {
+          created_at: string | null
+          id: string
+          market_cap: number | null
+          price: number | null
+          price_brl: number | null
+          price_high: number | null
+          price_low: number | null
+          source: string
+          timestamp: string
+          usd_brl: number | null
+          volume: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          market_cap?: number | null
+          price?: number | null
+          price_brl?: number | null
+          price_high?: number | null
+          price_low?: number | null
+          source: string
+          timestamp: string
+          usd_brl?: number | null
+          volume?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          market_cap?: number | null
+          price?: number | null
+          price_brl?: number | null
+          price_high?: number | null
+          price_low?: number | null
+          source?: string
+          timestamp?: string
+          usd_brl?: number | null
+          volume?: number | null
+        }
+        Relationships: []
+      }
       n8n_chat_histories: {
         Row: {
           id: number
