@@ -5,7 +5,7 @@
  * Suporta exibição em USD ou BRL conforme a preferência do usuário
  */
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { fetchBitcoinPriceHistory, PriceHistoryPoint } from '@/services/bitcoin';
@@ -196,24 +196,21 @@ export const PriceChart = ({
                   fontSize: "12px",
                   boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
                 }}
-                formatter={(value: any) => {
-                  // Formatação para exibir o valor na moeda selecionada
-                  return [formatCurrencyValue(Number(value)), 'Preço']; 
-                }}
+                formatter={(value: any) => [formatCurrencyValue(Number(value)), 'Preço']}
                 labelStyle={{
                   fontWeight: "bold",
                   fontSize: "12px",
                   color: "#555"
                 }}
                 labelFormatter={(label) => {
-                  // Dependendo do período, formata o label de data/hora
-                  if (selectedRange === "1D") {
-                    return `Horário: ${label}`;
-                  } else if (selectedRange === "7D" || selectedRange === "1M") {
-                    return `Data: ${label}`;
-                  } else {
-                    return `Período: ${label}`;
-                  }
+                  if (selectedRange === "1D") return `Horário: ${label}`;
+                  if (selectedRange === "7D" || selectedRange === "1M") return `Data: ${label}`;
+                  return `Período: ${label}`;
+                }}
+                cursor={{
+                  stroke: "#F7931A",
+                  strokeWidth: 1,
+                  strokeDasharray: "3 3"
                 }}
               />
 
