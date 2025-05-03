@@ -285,6 +285,8 @@ export const PriceChart = ({
           Dados via CoinStats em {selectedCurrency}
           {selectedRange === '1D' ? " (últimas 24h)" : selectedRange === '7D' ? " (últimos 7 dias)" : 
             selectedRange === '1M' ? " (último mês)" : selectedRange === '1Y' ? " (último ano)" : " (histórico completo)"}
+            selectedRange === '3M' ? " (últimos 90 dias)" :
+            selectedRange === 'YTD' ? " (ano até hoje)" :
         </div>
       </CardContent>
     </Card>
