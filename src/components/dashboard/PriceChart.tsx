@@ -11,6 +11,13 @@ import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'rec
 import { fetchBitcoinPriceHistory, PriceHistoryPoint } from '@/services/bitcoin';
 import { Loader2 } from 'lucide-react';
 import { CurrentRate } from '@/types';
+import {
+  Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, ReferenceLine
+} from 'recharts';
+import { useState } from 'react';
+
+// Adicione logo acima do return do componente:
+const [hoveredPrice, setHoveredPrice] = useState<number | null>(null);
 
 // Define os períodos de tempo disponíveis
 type TimeRange = '1D' | '7D' | '1M' | '1Y' | 'ALL';
@@ -167,61 +174,69 @@ export const PriceChart = ({
                   <stop offset="100%" stopColor="#F7931A" stopOpacity={0} />
                 </linearGradient>
               </defs>
-
-              {/* Eixo X (tempo) */}
+          
+              {/* Eixo X */}
               <XAxis
                 dataKey="time"
                 tickLine={false}
                 axisLine={false}
                 fontSize={12}
-                minTickGap={15} // Espaçamento mínimo entre ticks para melhorar legibilidade
+                minTickGap={15}
               />
-
-              {/* Eixo Y (preço) - Com símbolo da moeda dinâmico */}
+          
+              {/* Eixo Y */}
               <YAxis
                 tickLine={false}
                 axisLine={false}
                 fontSize={12}
                 tickFormatter={(value) => `${getCurrencySymbol()}${value.toLocaleString()}`}
-                domain={['auto', 'auto']} // Ajusta automaticamente a escala com base nos dados
+                domain={['auto', 'auto']}
               />
-
-              {/* Tooltip (dica ao passar o mouse) melhorado com moeda dinâmica */}
+          
+              {/* Linha horizontal quando o mouse passa por um ponto */}
+              {hoveredPrice && (
+                <ReferenceLine
+                  y={hoveredPrice}
+                  stroke="#F7931A"
+                  strokeDasharray="4 4"
+                  strokeWidth={1}
+                />
+              )}
+          
+              {/* Tooltip com captura do valor */}
               <Tooltip
-                contentStyle={{
-                  backgroundColor: "#fff",
-                  border: "1px solid #ccc",
-                  borderRadius: "6px",
-                  padding: "10px",
-                  fontSize: "12px",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
-                }}
-                formatter={(value: any) => [formatCurrencyValue(Number(value)), 'Preço']}
-                labelStyle={{
-                  fontWeight: "bold",
-                  fontSize: "12px",
-                  color: "#555"
-                }}
-                labelFormatter={(label) => {
-                  if (selectedRange === "1D") return `Horário: ${label}`;
-                  if (selectedRange === "7D" || selectedRange === "1M") return `Data: ${label}`;
-                  return `Período: ${label}`;
-                }}
-                cursor={{
-                  stroke: "#F7931A",
-                  strokeWidth: 1,
-                  strokeDasharray: "3 3"
+                content={({ payload, label }) => {
+                  if (payload?.[0]) setHoveredPrice(payload[0].value);
+                  return (
+                    <div
+                      style={{
+                        backgroundColor: "#fff",
+                        border: "1px solid #ccc",
+                        borderRadius: "6px",
+                        padding: "10px",
+                        fontSize: "12px",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                      }}
+                    >
+                      <div><strong>
+                        {selectedRange === "1D" ? `Horário: ${label}` :
+                         selectedRange === "7D" || selectedRange === "1M" ? `Data: ${label}` :
+                         `Período: ${label}`}
+                      </strong></div>
+                      <div>Preço: {formatCurrencyValue(payload?.[0]?.value)}</div>
+                    </div>
+                  );
                 }}
               />
-
-              {/* Linha e área preenchida */}
+          
+              {/* Linha de dados */}
               <Area
                 type="monotone"
                 dataKey="price"
                 stroke="#F7931A"
                 fill="url(#price)"
                 strokeWidth={2}
-                isAnimationActive={!loading} // Desativa animação durante carregamento para melhor UX
+                isAnimationActive={!loading}
               />
             </AreaChart>
           </ResponsiveContainer>
