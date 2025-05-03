@@ -7,14 +7,12 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { fetchBitcoinPriceHistory, PriceHistoryPoint } from '@/services/bitcoin';
 import { Loader2 } from 'lucide-react';
 import { CurrentRate } from '@/types';
 import {
   Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, ReferenceLine
 } from 'recharts';
-import { useState } from 'react';
 
 // Adicione logo acima do return do componente:
 const [hoveredPrice, setHoveredPrice] = useState<number | null>(null);
