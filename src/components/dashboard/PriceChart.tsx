@@ -257,7 +257,7 @@ export const PriceChart = ({
                       <div>
                         <strong>
                           {selectedRange === "1D" && `Horário: ${label}`}
-                          {["7D", "1M"].includes(selectedRange) && `Data: ${label}`}
+                          {["7D", "1M", "3M"].includes(selectedRange) && `Data: ${label}`}
                           {["1Y", "ALL"].includes(selectedRange) && `Data: ${label}`}
                         </strong>
                       </div>
