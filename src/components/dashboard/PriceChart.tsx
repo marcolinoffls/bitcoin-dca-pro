@@ -285,10 +285,13 @@ export const PriceChart = ({
         {/* Indicador da fonte de dados com moeda atual */}
         <div className="text-xs text-gray-400 text-right mt-2">
           Dados via CoinStats em {selectedCurrency}
-          {selectedRange === '1D' ? " (últimas 24h)" : selectedRange === '7D' ? " (últimos 7 dias)" : 
-            selectedRange === '1M' ? " (último mês)" : selectedRange === '1Y' ? " (último ano)" : " (histórico completo)"}
-            selectedRange === '3M' ? " (últimos 90 dias)" :
-            selectedRange === 'YTD' ? " (ano até hoje)" :
+          {selectedRange === '1D' && ' (últimas 24h)'}
+          {selectedRange === '7D' && ' (últimos 7 dias)'}
+          {selectedRange === '1M' && ' (último mês)'}
+          {selectedRange === '3M' && ' (últimos 90 dias)'}
+          {selectedRange === 'YTD' && ' (ano até hoje)'}
+          {selectedRange === '1Y' && ' (último ano)'}
+          {selectedRange === 'ALL' && ' (histórico completo)'}
         </div>
       </CardContent>
     </Card>
