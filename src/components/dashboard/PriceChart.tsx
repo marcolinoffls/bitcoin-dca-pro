@@ -5,7 +5,7 @@
  * Suporta exibição em USD ou BRL conforme a preferência do usuário
  */
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { fetchBitcoinPriceHistory, PriceHistoryPoint } from '@/services/bitcoin';
@@ -156,81 +156,80 @@ export const PriceChart = ({
 
           {/* Gráfico */}
           <ResponsiveContainer width="100%" height="100%">
-            <div style={{ width: '100%', overflowX: 'auto' }}>
-              <div style={{ width: data.length * 50, height: 400 }}>
-                <AreaChart
-                  data={data}
-                  width={data.length * 50}
-                  height={400}
-                  margin={{ top: 20, right: 0, left: 0, bottom: 0 }}
-                >
-                  {/* Gradiente de fundo */}
-                  <defs>
-                    <linearGradient id="price" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#F7931A" stopOpacity={0.5} />
-                      <stop offset="100%" stopColor="#F7931A" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-            
-                  {/* Eixo X com melhoria de formatação */}
-                  <XAxis
-                    dataKey="time"
-                    tickLine={false}
-                    axisLine={false}
-                    fontSize={12}
-                    minTickGap={25}
-                    tickFormatter={(value: string) => {
-                      if (selectedRange === '1D') return value.split(' ')[1]; // "14:15"
-                      if (selectedRange === '7D') return value.split(' ')[0]; // "02/05"
-                      return value;
-                    }}
-                  />
-            
-                  {/* Eixo Y com símbolo da moeda */}
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    fontSize={12}
-                    tickFormatter={(value) => `${getCurrencySymbol()}${value.toLocaleString()}`}
-                    domain={['auto', 'auto']}
-                  />
-            
-                  {/* Tooltip */}
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#fff",
-                      border: "1px solid #ccc",
-                      borderRadius: "6px",
-                      padding: "10px",
-                      fontSize: "12px",
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
-                    }}
-                    formatter={(value: any) => [formatCurrencyValue(Number(value)), 'Preço']}
-                    labelStyle={{
-                      fontWeight: "bold",
-                      fontSize: "12px",
-                      color: "#555"
-                    }}
-                    labelFormatter={(label) => {
-                      if (selectedRange === "1D") return `Horário: ${label}`;
-                      if (selectedRange === "7D" || selectedRange === "1M") return `Data: ${label}`;
-                      return `Período: ${label}`;
-                    }}
-                  />
-            
-                  {/* Linha/área */}
-                  <Area
-                    type="monotone"
-                    dataKey="price"
-                    stroke="#F7931A"
-                    fill="url(#price)"
-                    strokeWidth={2}
-                    isAnimationActive={!loading}
-                  />
-                </AreaChart>
-              </div>
-            </div>
+            <AreaChart
+              data={data}
+              margin={{ top: 20, right: 0, left: 0, bottom: 0 }}
+            >
+              {/* Gradiente de fundo */}
+              <defs>
+                <linearGradient id="price" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#F7931A" stopOpacity={0.5} />
+                  <stop offset="100%" stopColor="#F7931A" stopOpacity={0} />
+                </linearGradient>
+              </defs>
 
+              {/* Eixo X (tempo) */}
+              <XAxis
+                dataKey="time"
+                tickLine={false}
+                axisLine={false}
+                fontSize={12}
+                minTickGap={15} // Espaçamento mínimo entre ticks para melhorar legibilidade
+              />
+
+              {/* Eixo Y (preço) - Com símbolo da moeda dinâmico */}
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                fontSize={12}
+                tickFormatter={(value) => `${getCurrencySymbol()}${value.toLocaleString()}`}
+                domain={['auto', 'auto']} // Ajusta automaticamente a escala com base nos dados
+              />
+
+              {/* Tooltip (dica ao passar o mouse) melhorado com moeda dinâmica */}
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#fff",
+                  border: "1px solid #ccc",
+                  borderRadius: "6px",
+                  padding: "10px",
+                  fontSize: "12px",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
+                }}
+                formatter={(value: any) => {
+                  // Formatação para exibir o valor na moeda selecionada
+                  return [formatCurrencyValue(Number(value)), 'Preço']; 
+                }}
+                labelStyle={{
+                  fontWeight: "bold",
+                  fontSize: "12px",
+                  color: "#555"
+                }}
+                labelFormatter={(label) => {
+                  // Dependendo do período, formata o label de data/hora
+                  if (selectedRange === "1D") {
+                    return `Horário: ${label}`;
+                  } else if (selectedRange === "7D" || selectedRange === "1M") {
+                    return `Data: ${label}`;
+                  } else {
+                    return `Período: ${label}`;
+                  }
+                }}
+              />
+
+              {/* Linha e área preenchida */}
+              <Area
+                type="monotone"
+                dataKey="price"
+                stroke="#F7931A"
+                fill="url(#price)"
+                strokeWidth={2}
+                isAnimationActive={!loading} // Desativa animação durante carregamento para melhor UX
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+        
         {/* Indicador da fonte de dados com moeda atual */}
         <div className="text-xs text-gray-400 text-right mt-2">
           Dados via CoinStats em {selectedCurrency}
