@@ -84,7 +84,7 @@ export const fetchBitcoinPriceHistory = async (
       // Inicia a consulta básica
       let query = supabase
         .from('btc_prices')
-        .select('timestamp, price')
+        .select('timestamp, price, price_brl')
         .order('timestamp', { ascending: true });
       
       // Se for 1Y, adiciona filtro de data
