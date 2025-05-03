@@ -163,7 +163,7 @@ export const PriceChart = ({
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
               data={data}
-              margin={{ top: 20, right: 0, left: 0, bottom: 0 }}
+              margin={{ top: 20, right: 0, left: 40, bottom: 0 }}
             >
               {/* Gradiente de fundo */}
               <defs>
@@ -196,6 +196,7 @@ export const PriceChart = ({
                 fontSize={12}
                 tickFormatter={(value) => `${getCurrencySymbol()}${value.toLocaleString()}`}
                 domain={['auto', 'auto']}
+                padding={{ left: 8 }}
               />
           
               {/* Linha horizontal quando o mouse passa por um ponto */}
