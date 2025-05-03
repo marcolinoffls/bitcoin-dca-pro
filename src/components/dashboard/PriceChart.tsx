@@ -179,13 +179,15 @@ export const PriceChart = ({
                 tickLine={false}
                 axisLine={false}
                 fontSize={12}
-                minTickGap={25}
-                tickFormatter={(value: string) => {
-                  if (selectedRange === '1D') return value.split(' ')[1];       // só a hora
-                  if (selectedRange === '7D' || selectedRange === '1M') return value.split(',')[0]; // só a data
+                tickFormatter={(value: string, index: number) => {
+                  if (selectedRange === '1D') {
+                    const [hour, minute] = value.split(':').map(Number);
+                    return hour % 3 === 0 && minute === 0 ? `${value}` : '';
+                  }
                   return value;
                 }}
               />
+              
               {/* Eixo Y */}
               <YAxis
                 tickLine={false}
