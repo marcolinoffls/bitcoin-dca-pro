@@ -25,19 +25,27 @@ function formatLabelFromTimestamp(timestamp: string, range: string): string {
   const date = new Date(timestamp);
 
   if (range === '1D') {
-    return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   } else if (range === '7D') {
     return date.toLocaleString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
       hour: '2-digit',
-      minute: '2-digit',
+      minute: '2-digit'
     });
   } else if (range === '1M') {
-    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-  }
+    return date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit'
+    });
   } else {
-    return date.toLocaleDateString('pt-BR', { month: '2-digit', year: '2-digit' });
+    return date.toLocaleDateString('pt-BR', {
+      month: '2-digit',
+      year: '2-digit'
+    });
   }
 }
 
