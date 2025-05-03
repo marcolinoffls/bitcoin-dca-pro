@@ -28,13 +28,13 @@ function formatLabelFromTimestamp(timestamp: string, range: string): string {
       minute: '2-digit'
     });
   } else if (range === '7D') {
-    // Exibe data + hora (para diferenciar os dias)
     return date.toLocaleString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
       hour: '2-digit',
       minute: '2-digit'
     });
+  }
   } else if (range === '1M') {
     return date.toLocaleDateString('pt-BR', {
       day: '2-digit',
@@ -110,7 +110,7 @@ export const fetchBitcoinPriceHistory = async (
       const hours = date.getHours();
 
       if (range === '1D') return minutes % 15 === 0;              // Cada 15 minutos
-      if (range === '7D') return minutes === 0;                   // Hora cheia
+      if (range === '7D') return hours % 6 === 0 && minutes === 0; // a cada 6h
       if (range === '1M') return hours === 0 && minutes === 0;    // Meia-noite (diário)
       return true;
     });
