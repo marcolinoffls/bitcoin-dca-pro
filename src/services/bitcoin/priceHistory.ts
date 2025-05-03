@@ -81,7 +81,7 @@ export const fetchBitcoinPriceHistory = async (
       return data.map(row => {
         const price = currency === 'BRL' && row.price_brl != null ? row.price_brl : row.price;
         return {
-          time: formatLabelFromTimestamp(row.timestamp, range),
+          time: range === 'ALL' ? row.timestamp : formatLabelFromTimestamp(row.timestamp, range),
           price: parseFloat(price.toFixed(2)),
         };
       });
