@@ -193,7 +193,7 @@ export const PriceChart = ({
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
               data={data}
-              margin={{ top: 20, right: 0, left: 30, bottom: 0 }}
+              margin={{ top: 20, right: 0, left: 20, bottom: 0 }}
             >
             >
               {/* Gradiente de fundo */}
@@ -226,7 +226,7 @@ export const PriceChart = ({
                 axisLine={false}
                 fontSize={12}
                 mirror
-                dx={-10} // move o texto para dentro do gráfico
+                dx={-15} // move o texto para dentro do gráfico
                 tickFormatter={(value) => `${getCurrencySymbol()}${value.toLocaleString()}`}
                 domain={['auto', 'auto']}
               />
