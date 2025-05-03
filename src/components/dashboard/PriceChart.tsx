@@ -114,13 +114,34 @@ export const PriceChart = ({
         <CardTitle className="text-sm text-muted-foreground">
           Preço do Bitcoin
         </CardTitle>
-        {/* Preço atual acima */}
-        <div className="text-2xl font-bold text-red-700">
-          {formatCurrencyValue(data?.[data.length - 1]?.price || 0)}
+      
+        {/* Preço e variação */}
+        <div className="flex items-center justify-between w-full">
+          <div className="text-3xl font-bold text-black">
+            {formatCurrencyValue(data?.[data.length - 1]?.price || 0)}
+          </div>
+      
+          {/* Cálculo da variação percentual */}
+          {data.length > 1 && (
+            <div className={`ml-3 px-2 py-1 rounded-md text-sm font-medium flex items-center gap-1
+              ${data[0].price > 0 && data[data.length - 1].price >= data[0].price
+                ? 'bg-green-100 text-green-700'
+                : 'bg-red-100 text-red-700'
+              }`}>
+              <span>
+                {data[data.length - 1].price >= data[0].price ? '▲' : '▼'}
+                {' '}
+                {Math.abs(
+                  ((data[data.length - 1].price - data[0].price) / data[0].price) * 100
+                ).toFixed(2)}%
+              </span>
+            </div>
+          )}
         </div>
-        {/* Título e botões abaixo */}
+      
+        {/* Seletor de períodos */}
         <div className="w-full flex justify-center sm:justify-start">
-          <div className="flex flex-wrap gap-2 bg-gray-100 rounded-xl px-3 py-1">
+          <div className="flex flex-wrap justify-center gap-2 bg-gray-100 rounded-xl px-3 py-1">
             {(['1D', '7D', '1M', '1Y', 'ALL'] as TimeRange[]).map((period) => (
               <button
                 key={period}
@@ -136,6 +157,7 @@ export const PriceChart = ({
           </div>
         </div>
       </CardHeader>
+
       <CardContent>
         {/* Container do gráfico com estados de carregamento e erro */}
         <div className="h-[400px] w-full relative">
