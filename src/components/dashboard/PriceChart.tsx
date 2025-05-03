@@ -226,10 +226,11 @@ export const PriceChart = ({
                 axisLine={false}
                 fontSize={12}
                 mirror
-                width={0}
+                dx={-30} // move o texto para dentro do gráfico
                 tickFormatter={(value) => `${getCurrencySymbol()}${value.toLocaleString()}`}
                 domain={['auto', 'auto']}
               />
+
               {/* Linha horizontal quando o mouse passa por um ponto */}
               {hoveredPrice && (
                 <ReferenceLine
