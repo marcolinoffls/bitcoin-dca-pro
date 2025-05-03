@@ -122,7 +122,7 @@ export const PriceChart = ({
         <div className="flex w-full items-center justify-between">
 
     
-          <div className="flex flex-wrap justify-center gap-2 bg-gray-100 rounded-xl px-3 py-1">
+          <div className="flex flex-wrap justify-center sm:justify-start gap-2 bg-gray-100 rounded-xl px-3 py-1">
             {(['1D', '7D', '1M', '1Y', 'ALL'] as TimeRange[]).map((period) => (
               <button
                 key={period}
