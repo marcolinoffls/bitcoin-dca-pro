@@ -17,7 +17,7 @@ import {
 
 
 // Define os períodos de tempo disponíveis
-type TimeRange = '1D' | '7D' | '1M' | '1Y' | 'ALL';
+type TimeRange = '1D' | '7D' | '1M' | '3M' | 'YTD' | '1Y' | 'ALL';
 
 // Props do componente para receber a moeda selecionada e taxa de câmbio
 interface PriceChartProps {
@@ -142,7 +142,8 @@ export const PriceChart = ({
         {/* Seletor de períodos */}
         <div className="w-full flex justify-center sm:justify-start">
           <div className="flex flex-wrap justify-center gap-2 bg-gray-100 rounded-xl px-3 py-1">
-            {(['1D', '7D', '1M', '1Y', 'ALL'] as TimeRange[]).map((period) => (
+            {(['1D', '7D', '1M', '3M', 'YTD', '1Y', 'ALL'] as TimeRange[]).map((period) => (
+
               <button
                 key={period}
                 onClick={() => setSelectedRange(period)}
