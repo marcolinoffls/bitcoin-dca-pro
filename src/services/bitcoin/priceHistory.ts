@@ -26,8 +26,16 @@ function formatLabelFromTimestamp(timestamp: string, range: string): string {
 
   if (range === '1D') {
     return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  } else if (range === '7D' || range === '1M') {
+  } else if (range === '7D') {
+    return date.toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } else if (range === '1M') {
     return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+  }
   } else {
     return date.toLocaleDateString('pt-BR', { month: '2-digit', year: '2-digit' });
   }
@@ -46,7 +54,7 @@ export const fetchBitcoinPriceHistory = async (
     const startDate = new Date();
     if (range === '1D') startDate.setDate(startDate.getDate() - 1);
     else if (range === '7D') startDate.setDate(startDate.getDate() - 7);
-    else if (range === '1M') startDate.setDate(startDate.getDate() - 30);
+  formatLabelFromTimestamp  else if (range === '1M') startDate.setDate(startDate.getDate() - 30);
     else if (range === '1Y') startDate.setFullYear(startDate.getFullYear() - 1);
 
     const startDateISO = startDate.toISOString();
