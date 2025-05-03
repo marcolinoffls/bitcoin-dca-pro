@@ -114,17 +114,18 @@ export const PriceChart = ({
         <CardTitle>Preço do Bitcoin</CardTitle>
 
         {/* Botões para trocar o período */}
-        <div className="flex space-x-2">
-          {(['1D', '7D', '1M', '1Y', 'ALL'] as TimeRange[]).map((range) => (
-            <Button
-              key={range}
-              variant={selectedRange === range ? "default" : "outline"}
-              size="sm"
-              onClick={() => handleRangeChange(range)}
-              disabled={loading} // Desativa botões durante carregamento
+        <div className="flex flex-wrap justify-center gap-2 bg-gray-100 rounded-xl px-3 py-2">
+          {(['1D', '7D', '1M', '1Y', 'ALL'] as TimeRange[]).map((period) => (
+            <button
+              key={period}
+              onClick={() => setSelectedRange(period)}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition
+                ${selectedRange === period
+                  ? 'bg-white text-black shadow'
+                  : 'text-gray-600 hover:bg-white hover:text-black'}`}
             >
-              {range}
-            </Button>
+              {period}
+            </button>
           ))}
         </div>
       </CardHeader>
