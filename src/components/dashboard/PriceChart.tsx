@@ -111,16 +111,16 @@ export const PriceChart = ({
   return (
     <Card>
       <CardHeader className="flex flex-col items-start space-y-2">
+        <CardTitle className="text-sm text-muted-foreground">
+          Preço do Bitcoin
+        </CardTitle>
         {/* Preço atual acima */}
         <div className="text-2xl font-bold text-red-700">
           {formatCurrencyValue(data?.[data.length - 1]?.price || 0)}
         </div>
-    
         {/* Título e botões abaixo */}
         <div className="flex w-full items-center justify-between">
-          <CardTitle className="text-sm text-muted-foreground">
-            Preço do Bitcoin
-          </CardTitle>
+
     
           <div className="flex flex-wrap justify-center gap-2 bg-gray-100 rounded-xl px-3 py-1">
             {(['1D', '7D', '1M', '1Y', 'ALL'] as TimeRange[]).map((period) => (
