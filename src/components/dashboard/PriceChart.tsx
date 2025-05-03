@@ -226,7 +226,7 @@ export const PriceChart = ({
                 axisLine={false}
                 fontSize={12}
                 mirror
-                dx={2} // move o texto para dentro do gráfico
+                dx={1} // move o texto para dentro do gráfico
                 tickFormatter={(value) => `${getCurrencySymbol()}${value.toLocaleString()}`}
                 domain={['auto', 'auto']}
               />
