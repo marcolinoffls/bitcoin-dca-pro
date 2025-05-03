@@ -14,8 +14,7 @@ import {
   Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, ReferenceLine
 } from 'recharts';
 
-// Adicione logo acima do return do componente:
-const [hoveredPrice, setHoveredPrice] = useState<number | null>(null);
+
 
 // Define os períodos de tempo disponíveis
 type TimeRange = '1D' | '7D' | '1M' | '1Y' | 'ALL';
@@ -30,10 +29,11 @@ export const PriceChart = ({
   selectedCurrency = 'USD',
   currentRate = { usd: 0, brl: 0, timestamp: new Date() }
 }: PriceChartProps) => {
-  const [selectedRange, setSelectedRange] = useState<TimeRange>('1M'); // Período selecionado
-  const [data, setData] = useState<PriceHistoryPoint[]>([]); // Dados carregados para o gráfico
-  const [loading, setLoading] = useState(true); // Estado de carregamento inicial ativo
-  const [error, setError] = useState<string | null>(null); // Estado para controlar erros
+  const [selectedRange, setSelectedRange] = useState<TimeRange>('1M');
+  const [data, setData] = useState<PriceHistoryPoint[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [hoveredPrice, setHoveredPrice] = useState<number | null>(null); // ← aqui está certo agora
 
   /**
    * Função para carregar os dados baseado no período selecionado
