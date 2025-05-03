@@ -179,16 +179,15 @@ export const PriceChart = ({
                 tickLine={false}
                 axisLine={false}
                 fontSize={12}
-                minTickGap={50}
-                tickFormatter={(label) => {
+                minTickGap={15}
+                tickFormatter={(value) => {
                   if (selectedRange === 'ALL') {
-                    // Espera-se que label seja tipo 'dd/mm/yyyy' ou ISO
-                    const date = new Date(label);
-                    return date.getFullYear();
+                    return new Date(value).getFullYear();
                   }
-                  return label;
+                  return value;
                 }}
               />
+
 
               {/* Eixo Y */}
               <YAxis
