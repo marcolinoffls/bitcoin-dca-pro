@@ -163,7 +163,7 @@ export const PriceChart = ({
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
               data={data}
-              margin={{ top: 20, right: 0, left: 40, bottom: 0 }}
+              margin={{ top: 20, right: 0, left: 20, bottom: 0 }}
             >
               {/* Gradiente de fundo */}
               <defs>
