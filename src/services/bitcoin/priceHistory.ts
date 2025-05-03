@@ -155,7 +155,16 @@ export const fetchBitcoinPriceHistory = async (
         return date.getHours() === 5 && date.getMinutes() === 55;
       });
     }
-
+    else if (range === '3M') {
+      const seenDays = new Set<string>();
+      filteredData = data.filter(row => {
+        const date = new Date(row.timestamp);
+        const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+        if (seenDays.has(key)) return false;
+        seenDays.add(key);
+        return date.getHours() === 5 && date.getMinutes() === 55;
+      });
+    }
     return filteredData.map(row => {
       const price = currency === 'BRL' && row.price_brl != null ? row.price_brl : row.price;
       return {
