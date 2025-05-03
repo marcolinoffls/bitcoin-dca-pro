@@ -38,6 +38,11 @@ function formatLabelFromTimestamp(timestamp: string, range: string): string {
       day: '2-digit',
       month: '2-digit',
     });
+  } else if (range === '1Y') {
+    return date.toLocaleDateString('pt-BR', {
+      month: '2-digit',
+      year: '2-digit',
+    });    
   } else {
     return date.toLocaleDateString('pt-BR', {
       day: '2-digit',
