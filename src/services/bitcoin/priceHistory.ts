@@ -34,11 +34,9 @@ function formatLabelFromTimestamp(timestamp: string, range: string): string {
       minute: '2-digit',
     });
   } else if (range === '1M') {
-    return date.toLocaleString('pt-BR', {
+    return date.toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
     });
   } else {
     return date.toLocaleDateString('pt-BR', {
@@ -117,17 +115,15 @@ export const fetchBitcoinPriceHistory = async (
         return true;
       });
     } else if (range === '1M') {
-      const seenHours = new Set<string>();
+      const seenDays = new Set<string>();
       filteredData = data.filter(row => {
         const date = new Date(row.timestamp);
-        const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}-${date.getHours()}`;
-        if (date.getHours() % 6 !== 0 || date.getMinutes() !== 0) return false;
-        if (seenHours.has(key)) return false;
-        seenHours.add(key);
-        return true;
+        const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+        if (seenDays.has(key)) return false;
+        seenDays.add(key);
+        return date.getHours() === 5 && date.getMinutes() === 55;
       });
     }
-
     return filteredData.map(row => {
       const price = currency === 'BRL' && row.price_brl != null ? row.price_brl : row.price;
       return {
