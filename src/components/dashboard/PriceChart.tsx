@@ -110,26 +110,34 @@ export const PriceChart = ({
    */
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle>Preço do Bitcoin</CardTitle>
-
-        {/* Botões para trocar o período */}
-        <div className="flex flex-wrap justify-center gap-2 bg-gray-100 rounded-xl px-3 py-2">
-          {(['1D', '7D', '1M', '1Y', 'ALL'] as TimeRange[]).map((period) => (
-            <button
-              key={period}
-              onClick={() => setSelectedRange(period)}
-              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition
-                ${selectedRange === period
-                  ? 'bg-white text-black shadow'
-                  : 'text-gray-600 hover:bg-white hover:text-black'}`}
-            >
-              {period}
-            </button>
-          ))}
+      <CardHeader className="flex flex-col items-start space-y-2">
+        {/* Preço atual acima */}
+        <div className="text-2xl font-bold text-red-700">
+          {formatCurrencyValue(data?.[data.length - 1]?.price || 0)}
+        </div>
+    
+        {/* Título e botões abaixo */}
+        <div className="flex w-full items-center justify-between">
+          <CardTitle className="text-sm text-muted-foreground">
+            Preço do Bitcoin
+          </CardTitle>
+    
+          <div className="flex flex-wrap justify-center gap-2 bg-gray-100 rounded-xl px-3 py-1">
+            {(['1D', '7D', '1M', '1Y', 'ALL'] as TimeRange[]).map((period) => (
+              <button
+                key={period}
+                onClick={() => setSelectedRange(period)}
+                className={`px-3 py-1 rounded-md text-sm font-medium transition
+                  ${selectedRange === period
+                    ? 'bg-white text-black shadow'
+                    : 'text-gray-600 hover:bg-white hover:text-black'}`}
+              >
+                {period}
+              </button>
+            ))}
+          </div>
         </div>
       </CardHeader>
-
       <CardContent>
         {/* Container do gráfico com estados de carregamento e erro */}
         <div className="h-[400px] w-full relative">
