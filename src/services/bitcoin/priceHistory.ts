@@ -1,3 +1,4 @@
+
 /**
  * Serviço para buscar histórico de preços do Bitcoin
  *
