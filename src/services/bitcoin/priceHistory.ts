@@ -23,34 +23,35 @@ function formatLabelFromTimestamp(timestamp: string, range: string): string {
   const date = new Date(timestamp);
 
   if (range === '1D') {
-    // Intervalo de 15 minutos (mostra hora:minuto)
-    return date.toLocaleTimeString('pt-BR', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  } else if (range === '7D') {
-    // Intervalo de 1 hora (mostra data + hora:minuto)
+    // Exibe hora:minuto + data
     return date.toLocaleString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
       hour: '2-digit',
       minute: '2-digit'
     });
-  } else if (range === '1M') {
-    // Intervalo de 1 dia (só data)
+  } else if (range === '7D') {
+    // Dia + hora:minuto
+    return date.toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } else if (range === '1M' || range === '1Y') {
+    // Apenas dia e mês
     return date.toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: '2-digit'
     });
   } else {
-    // Para 1Y e ALL (apenas mês/ano)
+    // ALL: mostra mês/ano
     return date.toLocaleDateString('pt-BR', {
       month: '2-digit',
       year: '2-digit'
     });
   }
 }
-
 /**
  * Busca o histórico de preços para o gráfico
  */
