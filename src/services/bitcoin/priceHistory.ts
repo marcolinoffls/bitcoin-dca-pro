@@ -34,9 +34,11 @@ function formatLabelFromTimestamp(timestamp: string, range: string): string {
       minute: '2-digit',
     });
   } else if (range === '1M') {
-    return date.toLocaleDateString('pt-BR', {
+    return date.toLocaleString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
     });
   } else {
     return date.toLocaleDateString('pt-BR', {
