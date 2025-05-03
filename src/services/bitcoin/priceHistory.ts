@@ -115,9 +115,14 @@ export const fetchBitcoinPriceHistory = async (
         return true;
       });
     } else if (range === '1M') {
+      const seenHours = new Set<string>();
       filteredData = data.filter(row => {
         const date = new Date(row.timestamp);
-        return date.getHours() === 0 && date.getMinutes() === 0;
+        const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}-${date.getHours()}`;
+        if (date.getHours() % 6 !== 0 || date.getMinutes() !== 0) return false;
+        if (seenHours.has(key)) return false;
+        seenHours.add(key);
+        return true;
       });
     }
 
