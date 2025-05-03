@@ -222,17 +222,19 @@ export const PriceChart = ({
                         boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
                       }}
                     >
-                      <div><strong>
-                        {selectedRange === "1D" ? `Horário: ${label}` :
-                         selectedRange === "7D" || selectedRange === "1M" ? `Data: ${label}` :
-                         `Período: ${label}`}
-                      </strong></div>
+                      <div>
+                        <strong>
+                          {selectedRange === "1D" && `Horário: ${label}`}
+                          {["7D", "1M"].includes(selectedRange) && `Data: ${label}`}
+                          {["1Y", "ALL"].includes(selectedRange) && `Data: ${label}`}
+                        </strong>
+                      </div>
                       <div>Preço: {formatCurrencyValue(payload?.[0]?.value)}</div>
                     </div>
                   );
                 }}
               />
-          
+
               {/* Linha de dados */}
               <Area
                 type="monotone"
