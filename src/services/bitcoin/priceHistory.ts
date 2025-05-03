@@ -70,28 +70,32 @@ export const fetchBitcoinPriceHistory = async (
 
     // Longo prazo: tabela `btc_prices`
     if (range === '1Y' || range === 'ALL') {
-      let query = supabase
-        .from('btc_prices')
-        .select('timestamp, price, price_brl')
-        .order('timestamp', { ascending: true });
-
-      if (range === '1Y') {
-        query = query.gte('timestamp', startDateISO);
+        let query = supabase
+          .from('btc_prices')
+          .select('timestamp, price, price_brl')
+          .order('timestamp', { ascending: true });
+      
+        if (range === '1Y') {
+          query = query.gte('timestamp', startDateISO);
+        }
+      
+        // 🔥 Adicione um limite alto para garantir que ALL traga tudo
+        if (range === 'ALL') {
+          query = query.limit(10000); // ou o número que você sabe que abrange todos os anos
+        }
+      
+        const { data, error } = await query;
+        if (error) throw new Error(`Erro Supabase (btc_prices): ${error.message}`);
+        if (!data) return [];
+      
+        return data.map(row => {
+          const price = currency === 'BRL' && row.price_brl != null ? row.price_brl : row.price;
+          return {
+            time: row.timestamp, // mantém timestamp puro para uso no XAxis
+            price: parseFloat(price.toFixed(2)),
+          };
+        });
       }
-
-      const { data, error } = await query;
-      if (error) throw new Error(`Erro Supabase (btc_prices): ${error.message}`);
-      if (!data) return [];
-
-      return data.map(row => {
-        const price = currency === 'BRL' && row.price_brl != null ? row.price_brl : row.price;
-        return {
-          time: range === 'ALL' ? row.timestamp : formatLabelFromTimestamp(row.timestamp, range),
-          price: parseFloat(price.toFixed(2)),
-        };
-      });
-    }
-
     // Curto prazo: tabela `btc_intraday_prices`
     const { data, error } = await supabase
       .from('btc_intraday_prices')
