@@ -1,3 +1,4 @@
+
 // src/App.tsx
 
 import { useState } from "react";
@@ -20,6 +21,7 @@ import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
 import AdminPage from "./pages/AdminPage";
 import SatsflowAI from "./pages/SatsflowAI";
+import FearGreedIndexPage from "./pages/FearGreedIndexPage";
 
 import "./styles/globals.css";  // estilos globais da aplicação
 
@@ -80,7 +82,17 @@ const App = () => {
                 }
               />
 
-              {/* Nova rota para Satsflow AI */}
+              {/* Rota para o índice de medo e ganância */}
+              <Route
+                path="/fear-greed-index"
+                element={
+                  <RequireAuth>
+                    <FearGreedIndexPage />
+                  </RequireAuth>
+                }
+              />
+
+              {/* Rota para Satsflow AI */}
               <Route
                 path="/satsflow-ai"
                 element={
@@ -90,7 +102,7 @@ const App = () => {
                 }
               />
 
-              {/* Nova rota do dashboard */}
+              {/* Rota do dashboard */}
               <Route
                 path="/dashboard"
                 element={
@@ -100,7 +112,7 @@ const App = () => {
                 }
               />
 
-              {/* Nova rota administrativa */}
+              {/* Rota administrativa */}
               <Route
                 path="/admin"
                 element={
