@@ -27,7 +27,6 @@ const BottomNavBar = () => {
   const navItems: NavItem[] = [
     {
       icon: Home,
-      label: 'Home',
       scrollToId: 'top',
     },
     {
