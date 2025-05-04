@@ -66,6 +66,7 @@ export type Database = {
           price_brl: number | null
           price_high: number | null
           price_low: number | null
+          range_origem: string | null
           source: string | null
           timestamp: string
           usd_brl: number | null
@@ -79,6 +80,7 @@ export type Database = {
           price_brl?: number | null
           price_high?: number | null
           price_low?: number | null
+          range_origem?: string | null
           source?: string | null
           timestamp: string
           usd_brl?: number | null
@@ -92,6 +94,7 @@ export type Database = {
           price_brl?: number | null
           price_high?: number | null
           price_low?: number | null
+          range_origem?: string | null
           source?: string | null
           timestamp?: string
           usd_brl?: number | null
@@ -108,6 +111,7 @@ export type Database = {
           price_brl: number | null
           price_high: number | null
           price_low: number | null
+          range_origem: string | null
           source: string
           timestamp: string
           usd_brl: number | null
@@ -121,6 +125,7 @@ export type Database = {
           price_brl?: number | null
           price_high?: number | null
           price_low?: number | null
+          range_origem?: string | null
           source: string
           timestamp: string
           usd_brl?: number | null
@@ -134,6 +139,7 @@ export type Database = {
           price_brl?: number | null
           price_high?: number | null
           price_low?: number | null
+          range_origem?: string | null
           source?: string
           timestamp?: string
           usd_brl?: number | null
