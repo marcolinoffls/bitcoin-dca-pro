@@ -10,7 +10,6 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import ChatMessage from '@/components/chat/ChatMessage';
 import { useChatAi } from '@/hooks/useChatAi';
-import BottomNavBar from '@/components/navigation/BottomNavBar';
 
 const SatsflowAI: React.FC = () => {
   const [messageText, setMessageText] = useState('');
