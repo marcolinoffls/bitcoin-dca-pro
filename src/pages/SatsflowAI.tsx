@@ -91,20 +91,26 @@ const SatsflowAI: React.FC = () => {
       {/* Input */}
       <form
         onSubmit={handleSubmit}
-        className="fixed bottom-20 left-0 right-0 flex justify-center px-4 z-20 md:bottom-6"
+        className="fixed bottom-0 left-0 right-0 flex justify-center px-4 pb-2 z-50 bg-white"
       >
-        <div className="w-full max-w-2xl bg-white border shadow-lg rounded-2xl p-3 flex gap-2 items-center">
-          <Input
+        <div className="w-full max-w-2xl border border-orange-300 shadow-lg rounded-2xl p-2 flex gap-2 items-end">
+          <textarea
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
             placeholder="Digite sua mensagem..."
             disabled={isLoading}
-            className="flex-1 border-none focus:ring-0 focus:outline-none"
+            rows={1}
+            className="flex-1 resize-none overflow-hidden text-sm border-none focus:ring-0 focus:outline-none"
+            onInput={(e) => {
+              const el = e.currentTarget;
+              el.style.height = 'auto';
+              el.style.height = el.scrollHeight + 'px';
+            }}
           />
           <Button
             type="submit"
             disabled={isLoading || !messageText.trim()}
-            className="bg-bitcoin hover:bg-bitcoin/90"
+            className="bg-bitcoin hover:bg-bitcoin/90 px-3 py-2 rounded-xl"
           >
             <Send className="w-4 h-4" />
           </Button>
