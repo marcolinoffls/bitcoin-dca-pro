@@ -110,9 +110,6 @@ const SatsflowAI: React.FC = () => {
           </Button>
         </div>
       </form>
-
-      {/* Barra de navegação inferior */}
-      <BottomNavBar />
     </div>
   );
 };
