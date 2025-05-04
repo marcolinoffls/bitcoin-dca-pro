@@ -1,4 +1,3 @@
-
 /**
  * Gráfico de preço do Bitcoin
  * Exibe a variação de preço em diferentes períodos (1D, 7D, 1M, 1Y, ALL)
@@ -195,7 +194,6 @@ export const PriceChart = ({
               data={data}
               margin={{ top: 20, right: 0, left: 0, bottom: 0 }}
             >
-            >
               {/* Gradiente de fundo */}
               <defs>
                 <linearGradient id="price" x1="0" y1="0" x2="0" y2="1">
@@ -218,7 +216,6 @@ export const PriceChart = ({
                   return value;
                 }}
               />
-
 
               {/* Eixo Y */}
               <YAxis

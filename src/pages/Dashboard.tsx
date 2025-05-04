@@ -15,6 +15,7 @@ import { OriginDistribution } from '@/components/dashboard/OriginDistribution';
 import { MarketCapCard } from '@/components/dashboard/MarketCapCard';
 import ToggleCurrency from '@/components/ToggleCurrency';
 import { useBitcoinRate } from '@/hooks/useBitcoinRate';
+import BottomNavBar from '@/components/navigation/BottomNavBar';
 
 const Dashboard = () => {
   // Estado para controlar a moeda selecionada (USD ou BRL)
@@ -29,7 +30,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-6 space-y-6">
+    <div id="top" className="container mx-auto px-4 py-6 space-y-6 pb-20">
       <h1 className="text-2xl font-semibold text-gray-800 mb-6">
         Dashboard Bitcoin
       </h1>
@@ -60,6 +61,9 @@ const Dashboard = () => {
           <OriginDistribution />
         </div>
       </div>
+      
+      {/* Barra de navegação inferior */}
+      <BottomNavBar />
     </div>
   );
 };

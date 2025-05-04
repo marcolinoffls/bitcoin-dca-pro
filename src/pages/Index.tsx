@@ -17,6 +17,7 @@ import { BitcoinEntry } from '@/types';
 import AveragePriceCard from '@/components/AveragePriceCard';
 import ConfigButton from '@/components/config/ConfigButton';
 import SidebarConfig from '@/components/config/SidebarConfig';
+import BottomNavBar from '@/components/navigation/BottomNavBar';
 
 /**
  * Página principal do aplicativo
@@ -104,7 +105,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div id="top" className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
       {/* Sidebar de configurações */}
       <SidebarConfig open={configOpen} onOpenChange={setConfigOpen} />
       
@@ -196,7 +197,7 @@ const Index = () => {
           </div>
         
           {/* Card Registrar Novo Aporte - Largura total */}
-          <div className="w-full">
+          <div id="entry-form" className="w-full">
             <EntryForm
               onAddEntry={handleAddEntry}
               currentRate={currentRate}
@@ -207,7 +208,7 @@ const Index = () => {
           </div>
         
           {/* Card Aportes Registrados - Largura total */}
-          <div className="w-full">
+          <div id="entries-list" className="w-full">
             <EntriesList
               entries={entries}
               currentRate={currentRate}
@@ -220,6 +221,9 @@ const Index = () => {
           </div>
         </div>
       </div>
+      
+      {/* Barra de navegação inferior */}
+      <BottomNavBar />
     </div>
   );
 };

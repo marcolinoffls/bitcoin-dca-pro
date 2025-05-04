@@ -1,3 +1,4 @@
+
 /**
  * Página principal do Satsflow AI
  * Interface de chat para interação com IA especializada em Bitcoin
@@ -9,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import ChatMessage from '@/components/chat/ChatMessage';
 import { useChatAi } from '@/hooks/useChatAi';
+import BottomNavBar from '@/components/navigation/BottomNavBar';
 
 const SatsflowAI: React.FC = () => {
   const [messageText, setMessageText] = useState('');
@@ -42,7 +44,7 @@ const SatsflowAI: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-white">
+    <div id="top" className="flex flex-col h-screen bg-white">
       {/* Top Bar */}
       <div className="fixed top-0 left-0 right-0 z-10 h-14 bg-bitcoin border-b border-orange-300 flex items-center justify-between px-4 text-white">
         <button onClick={() => console.log('Abrir sidebar')}>
@@ -90,7 +92,7 @@ const SatsflowAI: React.FC = () => {
       {/* Input */}
       <form
         onSubmit={handleSubmit}
-        className="fixed bottom-6 left-0 right-0 flex justify-center px-4 z-20"
+        className="fixed bottom-20 left-0 right-0 flex justify-center px-4 z-20 md:bottom-6"
       >
         <div className="w-full max-w-2xl bg-white border shadow-lg rounded-2xl p-3 flex gap-2 items-center">
           <Input
@@ -109,6 +111,9 @@ const SatsflowAI: React.FC = () => {
           </Button>
         </div>
       </form>
+
+      {/* Barra de navegação inferior */}
+      <BottomNavBar />
     </div>
   );
 };
