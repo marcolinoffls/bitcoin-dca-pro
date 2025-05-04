@@ -111,7 +111,7 @@ export const PriceChart = ({
   return (
     <Card>
       <CardHeader className="flex flex-col items-start space-y-2">
-        <CardTitle className="text-sm text-muted-foreground">
+        <CardTitle className="text-base text-muted-foreground">
           Preço do Bitcoin
         </CardTitle>
       
