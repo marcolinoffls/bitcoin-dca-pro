@@ -1,295 +1,245 @@
+
 /**
- * Gráfico de preço do Bitcoin
- * Exibe a variação de preço em diferentes períodos (1D, 7D, 1M, 1Y, ALL)
- * Suporta exibição em USD ou BRL conforme a preferência do usuário
+ * Componente PriceChart
+ * 
+ * Exibe um gráfico da evolução do preço do Bitcoin ao longo do tempo
+ * com opções para filtrar por períodos (1D, 1S, 1M, 3M, 1A, Tudo)
  */
-import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { fetchBitcoinPriceHistory, PriceHistoryPoint } from '@/services/bitcoin';
-import { Loader2 } from 'lucide-react';
-import { CurrentRate } from '@/types';
+import React, { useState, useEffect } from 'react';
 import {
-  Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, ReferenceLine
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer
 } from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useQuery } from '@tanstack/react-query';
+import { fetchPriceHistory, timeRanges } from '@/services/bitcoin/priceHistory';
 
-
-
-// Define os períodos de tempo disponíveis
-type TimeRange = '1D' | '7D' | '1M' | '3M' | 'YTD' | '1Y' | 'ALL';
-
-// Props do componente para receber a moeda selecionada e taxa de câmbio
+// Tipos para as props do componente
 interface PriceChartProps {
-  selectedCurrency?: 'BRL' | 'USD';
-  currentRate?: CurrentRate;
+  selectedCurrency: 'BRL' | 'USD';
+  currentRate: {
+    BRL: number;
+    USD: number;
+  };
 }
 
-export const PriceChart = ({ 
-  selectedCurrency = 'USD',
-  currentRate = { usd: 0, brl: 0, timestamp: new Date() }
-}: PriceChartProps) => {
-  const [selectedRange, setSelectedRange] = useState<TimeRange>('1M');
-  const [data, setData] = useState<PriceHistoryPoint[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [hoveredPrice, setHoveredPrice] = useState<number | null>(null); // ← aqui está certo agora
+// Opções de período para o gráfico
+const periods = [
+  { value: '1d', label: '1D' },
+  { value: '7d', label: '1S' },
+  { value: '30d', label: '1M' },
+  { value: '90d', label: '3M' },
+  { value: '365d', label: '1A' },
+  { value: 'max', label: 'Tudo' }
+];
 
-  /**
-   * Função para carregar os dados baseado no período selecionado
-   * Agora passando a moeda selecionada como segundo parâmetro
-   */
-  const loadData = async (range: TimeRange) => {
-    try {
-      setLoading(true); // Inicia o carregamento
-      setError(null);   // Limpa erros anteriores
+// Função para formatar valores monetários
+const formatCurrency = (value: number, currency: 'BRL' | 'USD'): string => {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: currency === 'BRL' ? 0 : 2
+  }).format(value);
+};
+
+// Função para formatar datas
+const formatDate = (timestamp: string, period: string): string => {
+  const date = new Date(timestamp);
   
-      // --- MODO REAL ---
-      // Passamos a moeda selecionada para a função de busca
-      const history = await fetchBitcoinPriceHistory(range, selectedCurrency);
-      console.log(`Dados carregados: ${history.length} pontos em ${selectedCurrency}`);
-      setData(history);
+  // Formatos diferentes dependendo do período
+  if (period === '1d') {
+    return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  } else if (period === '7d' || period === '30d') {
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+  } else {
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+  }
+};
+
+// Formata porcentagem de variação
+const formatPercentage = (value: number): string => {
+  return `${value > 0 ? '+' : ''}${value.toFixed(2)}%`;
+};
+
+// Componente principal
+export const PriceChart = ({ selectedCurrency, currentRate }: PriceChartProps) => {
+  // Estado para o período selecionado
+  const [period, setPeriod] = useState<string>('30d');
   
-      // --- MODO MOCK (descomente abaixo para simular) ---
-      /*
-      const mockUsdPrices: PriceHistoryPoint[] = Array.from({ length: 10 }).map((_, i) => {
-        const date = new Date();
-        date.setDate(date.getDate() - (10 - i));
-        return {
-          time: date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-          price: 10000 + i * 1000, // Mock em USD
-        };
-      });
-      await new Promise((res) => setTimeout(res, 300)); // Simula carregamento
-      setData(mockUsdPrices);
-      console.log('Mock carregado:', mockUsdPrices.length, 'pontos');
-   */
-    } catch (error) {
-      console.error('Erro ao carregar dados do histórico:', error);
-      setError('Não foi possível carregar os dados. Tente novamente mais tarde.');
-    } finally {
-      setLoading(false); // Finaliza carregamento
-    }
-  };
+  // Estado para dados do gráfico
+  const [chartData, setChartData] = useState<any[]>([]);
+  
+  // Estatísticas calculadas
+  const [highestPrice, setHighestPrice] = useState<number>(0);
+  const [lowestPrice, setLowestPrice] = useState<number>(0);
+  const [percentChange, setPercentChange] = useState<number>(0);
 
-  /**
-   * Manipulador para troca de período
-   * Separado para melhorar a legibilidade e permitir extensões futuras
-   */
-  const handleRangeChange = (range: TimeRange) => {
-    console.log(`Alterando período para: ${range}`);
-    setSelectedRange(range);
-  };
+  // Busca dados do gráfico usando React Query
+  const { data, isLoading } = useQuery({
+    queryKey: ['priceHistory', period, selectedCurrency],
+    queryFn: () => fetchPriceHistory(period as timeRanges, selectedCurrency)
+  });
 
-  // Carrega dados iniciais e sempre que mudar o período selecionado ou a moeda
+  // Atualiza os dados do gráfico quando a resposta da API chega
   useEffect(() => {
-    loadData(selectedRange);
-  }, [selectedRange, selectedCurrency]); // Adicionado selectedCurrency como dependência
+    if (!data || !data.prices) return;
 
-  /**
-   * Retorna o símbolo da moeda atual para exibição no gráfico
-   */
-  const getCurrencySymbol = (): string => {
-    return selectedCurrency === 'BRL' ? 'R$' : '$';
+    const formattedData = data.prices.map((item: [number, number]) => ({
+      timestamp: new Date(item[0]).toISOString(),
+      price: item[1],
+    }));
+
+    setChartData(formattedData);
+
+    // Calcula valores mínimo e máximo
+    if (formattedData.length > 0) {
+      const prices = formattedData.map((item: any) => item.price);
+      const max = Math.max(...prices);
+      const min = Math.min(...prices);
+      
+      setHighestPrice(max);
+      setLowestPrice(min);
+      
+      // Calcula variação percentual do período
+      const firstPrice = formattedData[0].price;
+      const lastPrice = formattedData[formattedData.length - 1].price;
+      const change = ((lastPrice - firstPrice) / firstPrice) * 100;
+      setPercentChange(change);
+    }
+  }, [data]);
+
+  // Customização do tooltip do gráfico
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      const price = payload[0].value;
+      const formattedDate = formatDate(label, period);
+      
+      return (
+        <div className="bg-white p-3 border rounded shadow-lg">
+          <p className="text-sm text-gray-500">{formattedDate}</p>
+          <p className="text-sm font-medium">{formatCurrency(price, selectedCurrency)}</p>
+        </div>
+      );
+    }
+    
+    return null;
   };
 
-  /**
-   * Formata o valor para exibição no tooltip com símbolo correto
-   */
-  const formatCurrencyValue = (value: number): string => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: selectedCurrency,
-      minimumFractionDigits: 2
-    }).format(value);
+  // Handler para mudança de período
+  const handlePeriodChange = (newPeriod: string) => {
+    setPeriod(newPeriod);
   };
 
-  /**
-   * Renderiza o gráfico dentro de um Card
-   * Com estados de carregamento e erro
-   */
   return (
     <Card>
-      <CardHeader className="flex flex-col items-start space-y-2">
-        <CardTitle className="text-base text-muted-foreground">
-          Preço do Bitcoin
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm text-gray-500 flex justify-between items-center">
+          <span>Preço do Bitcoin</span>
+          <span className="text-base font-semibold text-gray-700">
+            {formatCurrency(currentRate[selectedCurrency], selectedCurrency)}
+          </span>
         </CardTitle>
-      
-        {/* Preço e variação */}
-        <div className="flex items-center justify-between w-full">
-          <div className="text-3xl font-bold text-black">
-            {formatCurrencyValue(data?.[data.length - 1]?.price || 0)}
-          </div>
-      
-          {/* Cálculo da variação percentual */}
-          {data.length > 1 && (
-            <div className={`ml-3 px-2 py-1 rounded-md text-sm font-medium flex items-center gap-1
-              ${data[0].price > 0 && data[data.length - 1].price >= data[0].price
-                ? 'bg-green-100 text-green-700'
-                : 'bg-red-100 text-red-700'
-              }`}>
-              <span>
-                {data[data.length - 1].price >= data[0].price ? '▲' : '▼'}
-                {' '}
-                {Math.abs(
-                  ((data[data.length - 1].price - data[0].price) / data[0].price) * 100
-                ).toFixed(2)}%
-              </span>
-            </div>
-          )}
-        </div>
-      
-        {/* Seletor de períodos */}
-        <div className="w-full flex justify-center sm:justify-start">
-          <div className="flex flex-wrap justify-center gap-2 bg-gray-100 rounded-xl px-3 py-1">
-            {(['1D', '7D', '1M', '3M', 'YTD', '1Y', 'ALL'] as TimeRange[]).map((period) => (
-
-              <button
-                key={period}
-                onClick={() => setSelectedRange(period)}
-                className={`px-3 py-1 rounded-md text-sm font-medium transition
-                  ${selectedRange === period
-                    ? 'bg-white text-black shadow'
-                    : 'text-gray-600 hover:bg-white hover:text-black'}`}
-              >
-                {period}
-              </button>
-            ))}
-          </div>
-        </div>
       </CardHeader>
-
-      <CardContent>
-        {/* Container do gráfico com estados de carregamento e erro */}
-        <div className="h-[400px] w-full relative">
-          {/* Overlay de carregamento */}
-          {loading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/60 dark:bg-gray-950/60 z-10">
-              <div className="flex flex-col items-center gap-2">
-                <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
-                <span className="text-sm text-gray-500">Carregando dados...</span>
-              </div>
+      
+      <CardContent className="pt-1 pb-4">
+        {isLoading ? (
+          <div className="space-y-4">
+            <Skeleton className="h-[250px] w-full" />
+            <div className="flex justify-between">
+              <Skeleton className="h-8 w-20" />
+              <Skeleton className="h-8 w-32" />
+              <Skeleton className="h-8 w-20" />
             </div>
-          )}
-
-          {/* Mensagem de erro */}
-          {error && !loading && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-md text-center">
-                <p className="text-red-600 dark:text-red-400">{error}</p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="mt-2"
-                  onClick={() => loadData(selectedRange)}
+          </div>
+        ) : (
+          <>
+            {/* Gráfico */}
+            <div className="h-[250px] mt-2 mb-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart
+                  data={chartData}
+                  margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
                 >
-                  Tentar novamente
-                </Button>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis 
+                    dataKey="timestamp" 
+                    tick={{ fontSize: 12 }}
+                    tickFormatter={(value) => formatDate(value, period)}
+                    tickLine={false}
+                    axisLine={{ stroke: '#E5E7EB' }}
+                    minTickGap={15}
+                  />
+                  <YAxis 
+                    tickFormatter={(value) => formatCurrency(value, selectedCurrency).replace(/[^0-9KM]/g, '')}
+                    tick={{ fontSize: 12 }}
+                    tickLine={false}
+                    axisLine={{ stroke: '#E5E7EB' }}
+                    orientation="right"
+                    domain={['dataMin', 'dataMax']}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <defs>
+                    <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#F7931A" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#F7931A" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <Area 
+                    type="monotone" 
+                    dataKey="price" 
+                    stroke="#F7931A" 
+                    strokeWidth={2}
+                    fillOpacity={1}
+                    fill="url(#colorPrice)" 
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+            
+            {/* Estatísticas do período */}
+            <div className="flex justify-between items-center flex-wrap gap-y-2 text-sm">
+              <div>
+                <div className="text-gray-500">Mínimo</div>
+                <div className="font-medium">{formatCurrency(lowestPrice, selectedCurrency)}</div>
+              </div>
+              
+              <div className="flex flex-col items-center">
+                <div className={`font-semibold ${percentChange >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                  {formatPercentage(percentChange)}
+                </div>
+                <div className="text-gray-500 text-xs">{periods.find(p => p.value === period)?.label || period}</div>
+              </div>
+              
+              <div className="text-right">
+                <div className="text-gray-500">Máximo</div>
+                <div className="font-medium">{formatCurrency(highestPrice, selectedCurrency)}</div>
               </div>
             </div>
-          )}
-
-          {/* Gráfico */}
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart
-              data={data}
-              margin={{ top: 20, right: 0, left: 0, bottom: 0 }}
-            >
-              {/* Gradiente de fundo */}
-              <defs>
-                <linearGradient id="price" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#F7931A" stopOpacity={0.5} />
-                  <stop offset="100%" stopColor="#F7931A" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-          
-              {/* Eixo X */}
-              <XAxis
-                dataKey="time"
-                tickLine={false}
-                axisLine={false}
-                fontSize={12}
-                minTickGap={15}
-                tickFormatter={(value) => {
-                  if (selectedRange === 'ALL') {
-                    return new Date(value).getFullYear();
-                  }
-                  return value;
-                }}
-              />
-
-              {/* Eixo Y */}
-              <YAxis
-                tickLine={false}
-                axisLine={false}
-                fontSize={12}
-                mirror
-                dx={1} // move o texto para dentro do gráfico
-                tickFormatter={(value) => `${getCurrencySymbol()}${value.toLocaleString()}`}
-                domain={['auto', 'auto']}
-              />
-
-              {/* Linha horizontal quando o mouse passa por um ponto */}
-              {hoveredPrice && (
-                <ReferenceLine
-                  y={hoveredPrice}
-                  stroke="#F7931A"
-                  strokeDasharray="4 4"
-                  strokeWidth={1}
-                />
-              )}
-          
-              {/* Tooltip com captura do valor */}
-              <Tooltip
-                content={({ payload, label }) => {
-                  if (payload?.[0]) setHoveredPrice(payload[0].value);
-                  return (
-                    <div
-                      style={{
-                        backgroundColor: "#fff",
-                        border: "1px solid #ccc",
-                        borderRadius: "6px",
-                        padding: "10px",
-                        fontSize: "12px",
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                      }}
-                    >
-                      <div>
-                        <strong>
-                          {selectedRange === "1D" && `Horário: ${label}`}
-                          {["7D", "1M", "3M", "YTD"].includes(selectedRange) && `Data: ${label}`}
-                          {["1Y", "ALL"].includes(selectedRange) && `Data: ${label}`}
-                        </strong>
-                      </div>
-                      <div>Preço: {formatCurrencyValue(payload?.[0]?.value)}</div>
-                    </div>
-                  );
-                }}
-              />
-
-              {/* Linha de dados */}
-              <Area
-                type="monotone"
-                dataKey="price"
-                stroke="#F7931A"
-                fill="url(#price)"
-                strokeWidth={2}
-                isAnimationActive={!loading}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-        
-        {/* Indicador da fonte de dados com moeda atual */}
-        <div className="text-xs text-gray-400 text-right mt-2">
-          Dados via CoinStats em {selectedCurrency}
-          {selectedRange === '1D' && ' (últimas 24h)'}
-          {selectedRange === '7D' && ' (últimos 7 dias)'}
-          {selectedRange === '1M' && ' (último mês)'}
-          {selectedRange === '3M' && ' (últimos 90 dias)'}
-          {selectedRange === 'YTD' && ' (ano até hoje)'}
-          {selectedRange === '1Y' && ' (último ano)'}
-          {selectedRange === 'ALL' && ' (histórico completo)'}
-        </div>
+            
+            {/* Seletores de período */}
+            <Tabs value={period} onValueChange={handlePeriodChange} className="mt-4">
+              <TabsList className="grid grid-cols-6 h-9">
+                {periods.map((p) => (
+                  <TabsTrigger 
+                    key={p.value} 
+                    value={p.value}
+                    className="text-xs"
+                  >
+                    {p.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          </>
+        )}
       </CardContent>
     </Card>
   );
