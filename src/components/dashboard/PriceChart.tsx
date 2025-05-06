@@ -19,7 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery } from '@tanstack/react-query';
-import { fetchPriceHistory, timeRanges } from '@/services/bitcoin/priceHistory';
+import { fetchBitcoinPriceHistory } from '@/services/bitcoin/priceHistory';
 
 // Tipos para as props do componente
 interface PriceChartProps {
@@ -30,15 +30,28 @@ interface PriceChartProps {
   };
 }
 
+// Definição do tipo para os períodos do gráfico
+type TimeRange = '1D' | '7D' | '1M' | '3M' | 'YTD' | '1Y' | 'ALL';
+
 // Opções de período para o gráfico
 const periods = [
-  { value: '1d', label: '1D' },
-  { value: '7d', label: '1S' },
-  { value: '30d', label: '1M' },
-  { value: '90d', label: '3M' },
-  { value: '365d', label: '1A' },
-  { value: 'max', label: 'Tudo' }
+  { value: '1d' as TimeRange, label: '1D' },
+  { value: '7d' as TimeRange, label: '1S' },
+  { value: '30d' as TimeRange, label: '1M' },
+  { value: '90d' as TimeRange, label: '3M' },
+  { value: '365d' as TimeRange, label: '1A' },
+  { value: 'max' as TimeRange, label: 'Tudo' }
 ];
+
+// Mapeamento dos valores de período para os valores aceitos pela API
+const periodMapping: Record<string, TimeRange> = {
+  '1d': '1D',
+  '7d': '7D',
+  '30d': '1M',
+  '90d': '3M',
+  '365d': '1Y',
+  'max': 'ALL'
+};
 
 // Função para formatar valores monetários
 const formatCurrency = (value: number, currency: 'BRL' | 'USD'): string => {
@@ -85,16 +98,17 @@ export const PriceChart = ({ selectedCurrency, currentRate }: PriceChartProps) =
   // Busca dados do gráfico usando React Query
   const { data, isLoading } = useQuery({
     queryKey: ['priceHistory', period, selectedCurrency],
-    queryFn: () => fetchPriceHistory(period as timeRanges, selectedCurrency)
+    queryFn: () => fetchBitcoinPriceHistory(periodMapping[period] as TimeRange, selectedCurrency)
   });
 
   // Atualiza os dados do gráfico quando a resposta da API chega
   useEffect(() => {
-    if (!data || !data.prices) return;
+    if (!data || data.length === 0) return;
 
-    const formattedData = data.prices.map((item: [number, number]) => ({
-      timestamp: new Date(item[0]).toISOString(),
-      price: item[1],
+    // Formata os dados para o gráfico
+    const formattedData = data.map((item) => ({
+      timestamp: new Date(item.time).toISOString(),
+      price: item.price,
     }));
 
     setChartData(formattedData);

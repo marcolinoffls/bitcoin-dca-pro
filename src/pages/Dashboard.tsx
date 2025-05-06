@@ -48,7 +48,10 @@ const Dashboard = () => {
         <div className="md:col-span-2">
           <PriceChart 
             selectedCurrency={selectedCurrency}
-            currentRate={currentRate}
+            currentRate={{
+              BRL: currentRate?.BRL || 0,
+              USD: currentRate?.USD || 0
+            }}
           />
         </div>
         
