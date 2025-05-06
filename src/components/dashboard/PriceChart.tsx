@@ -82,6 +82,13 @@ const formatPercentage = (value: number): string => {
   return `${value > 0 ? '+' : ''}${value.toFixed(2)}%`;
 };
 
+// Função para verificar se o timestamp é válido
+const isValidDate = (dateStr: string): boolean => {
+  // Verifica se a string é um formato válido (timestamp ou string de data)
+  const date = new Date(dateStr);
+  return !isNaN(date.getTime());
+};
+
 // Componente principal
 export const PriceChart = ({ selectedCurrency, currentRate }: PriceChartProps) => {
   // Estado para o período selecionado
@@ -105,11 +112,23 @@ export const PriceChart = ({ selectedCurrency, currentRate }: PriceChartProps) =
   useEffect(() => {
     if (!data || data.length === 0) return;
 
-    // Formata os dados para o gráfico
-    const formattedData = data.map((item) => ({
-      timestamp: new Date(item.time).toISOString(),
-      price: item.price,
-    }));
+    // Formata os dados para o gráfico, com validação para evitar datas inválidas
+    const formattedData = data.map((item) => {
+      // Verifica se o item.time é uma data válida antes de criar o objeto Date
+      if (isValidDate(item.time)) {
+        return {
+          timestamp: new Date(item.time).toISOString(),
+          price: item.price,
+        };
+      } else {
+        // Se a data não for válida, use apenas o valor sem converter para Date
+        console.warn("Data inválida recebida da API:", item.time);
+        return {
+          timestamp: item.time, // Usa a string original sem conversão
+          price: item.price,
+        };
+      }
+    });
 
     setChartData(formattedData);
 
@@ -134,7 +153,10 @@ export const PriceChart = ({ selectedCurrency, currentRate }: PriceChartProps) =
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const price = payload[0].value;
-      const formattedDate = formatDate(label, period);
+      // Verifica se o label é uma data ISO antes de tentar formatar
+      const formattedDate = isValidDate(label) 
+        ? formatDate(label, period)
+        : String(label); // Fallback para quando o label não é uma data válida
       
       return (
         <div className="bg-white p-3 border rounded shadow-lg">
@@ -186,7 +208,7 @@ export const PriceChart = ({ selectedCurrency, currentRate }: PriceChartProps) =
                   <XAxis 
                     dataKey="timestamp" 
                     tick={{ fontSize: 12 }}
-                    tickFormatter={(value) => formatDate(value, period)}
+                    tickFormatter={(value) => isValidDate(value) ? formatDate(value, period) : value}
                     tickLine={false}
                     axisLine={{ stroke: '#E5E7EB' }}
                     minTickGap={15}
