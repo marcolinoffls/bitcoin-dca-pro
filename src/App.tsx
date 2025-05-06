@@ -1,4 +1,3 @@
-
 // src/App.tsx
 
 import { useState } from "react";
@@ -21,7 +20,6 @@ import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
 import AdminPage from "./pages/AdminPage";
 import SatsflowAI from "./pages/SatsflowAI";
-import LandingPage from "./pages/LandingPage";
 
 import "./styles/globals.css";  // estilos globais da aplicação
 
@@ -54,9 +52,6 @@ const App = () => {
           {/* Configuração de rotas */}
           <BrowserRouter>
             <Routes>
-              {/* Nova rota da landing page - acessível sem autenticação */}
-              <Route path="/landing" element={<LandingPage />} />
-              
               {/*
                 Rota para todos os fluxos de autenticação:
                 - /auth           → página de login / cadastro
