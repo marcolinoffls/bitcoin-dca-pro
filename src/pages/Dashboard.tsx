@@ -16,6 +16,8 @@ import { MarketCapCard } from '@/components/dashboard/MarketCapCard';
 import ToggleCurrency from '@/components/ToggleCurrency';
 import { useBitcoinRate } from '@/hooks/useBitcoinRate';
 import BottomNavBar from '@/components/navigation/BottomNavBar';
+import AveragePriceCard from '@/components/AveragePriceCard';
+import { useBitcoinEntries } from '@/hooks/useBitcoinEntries';
 
 const Dashboard = () => {
   // Estado para controlar a moeda selecionada (USD ou BRL)
@@ -23,6 +25,9 @@ const Dashboard = () => {
   
   // Obtém a cotação atual do Bitcoin e taxa de câmbio
   const { currentRate } = useBitcoinRate();
+  
+  // Obtém os aportes do usuário
+  const { entries, isLoading } = useBitcoinEntries();
 
   // Função para alternar entre USD e BRL
   const toggleCurrency = (value: 'BRL' | 'USD') => {
@@ -55,6 +60,14 @@ const Dashboard = () => {
         {/* Fear & Greed e Market Cap - lado a lado em telas maiores */}
         <FearGreedCard />
         <MarketCapCard />
+
+        {/* Nova linha de cards - lado a lado em telas maiores */}
+        <AveragePriceCard 
+          entries={entries}
+          currentRate={currentRate}
+          selectedCurrency={selectedCurrency} 
+          isLoading={isLoading}
+        />
         
         {/* Gráfico de distribuição por origem - ocupa 2 colunas */}
         <div className="md:col-span-2">

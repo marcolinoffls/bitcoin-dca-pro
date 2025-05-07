@@ -67,7 +67,20 @@ export const calculatePercentageChange = (buyRate: number, currentRate: number):
 };
 
 /**
+ * Filtra os aportes para excluir entradas do tipo "ajuste"
+ * 
+ * Os ajustes não devem ser considerados no cálculo do preço médio
+ * 
+ * @param entries Lista completa de aportes
+ * @returns Lista filtrada sem os ajustes
+ */
+const filterOutAdjustments = (entries: BitcoinEntry[]): BitcoinEntry[] => {
+  return entries.filter(entry => entry.origin !== 'ajuste');
+};
+
+/**
  * Calcula o preço médio ponderado de compra por valor investido
+ * IMPORTANTE: Esta função agora exclui os aportes do tipo "ajuste" no cálculo
  * 
  * Fórmula aplicada:
  * (cotacao₁ × valorInvestido₁ + cotacao₂ × valorInvestido₂ + ...) / (valorInvestido₁ + valorInvestido₂ + ...)
@@ -82,18 +95,22 @@ export const calculateAverageByPeriod = (
 ): number => {
   if (entries.length === 0) return 0;
 
+  // Filtragem inicial por período
   const now = new Date();
-  let filteredEntries = entries;
+  let periodFilteredEntries = entries;
 
   if (period === 'month') {
-    filteredEntries = entries.filter(
+    periodFilteredEntries = entries.filter(
       (entry) => entry.date.getMonth() === now.getMonth() && entry.date.getFullYear() === now.getFullYear()
     );
   } else if (period === 'year') {
-    filteredEntries = entries.filter(
+    periodFilteredEntries = entries.filter(
       (entry) => entry.date.getFullYear() === now.getFullYear()
     );
   }
+
+  // Filtra para excluir "ajustes" do cálculo do preço médio
+  const filteredEntries = filterOutAdjustments(periodFilteredEntries);
 
   if (filteredEntries.length === 0) return 0;
 

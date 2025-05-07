@@ -6,9 +6,10 @@
  * Este componente mostra:
  * - Preço médio ponderado de Bitcoin por período (mensal, anual, total)
  * - Seletor para alternar entre períodos diferentes
+ * - Nota: Os ajustes não são considerados neste cálculo
  * 
  * O preço médio é calculado usando a função calculateAverageByPeriod do bitcoinService,
- * que aplica uma média ponderada pelo valor investido.
+ * que aplica uma média ponderada pelo valor investido, excluindo entradas do tipo "ajuste".
  */
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,7 +17,8 @@ import { BitcoinEntry, CurrentRate } from '@/types';
 import { calculateAverageByPeriod } from '@/services/bitcoin';
 import { formatNumber } from '@/lib/utils';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Info } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface AveragePriceCardProps {
   entries: BitcoinEntry[];
@@ -93,6 +95,16 @@ const AveragePriceCard: React.FC<AveragePriceCardProps> = ({
           </div>
           <CardTitle className="text-base font-semibold text-gray-500">
             PREÇO MÉDIO
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-block ml-1">
+                  <Info size={14} className="text-gray-400" />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p>Registros do tipo "ajuste" não são considerados no cálculo do preço médio.</p>
+              </TooltipContent>
+            </Tooltip>
           </CardTitle>
         </div>
       </CardHeader>
