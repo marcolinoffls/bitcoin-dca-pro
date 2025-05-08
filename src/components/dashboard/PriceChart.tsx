@@ -1,3 +1,4 @@
+
 /**
  * Gráfico de preço do Bitcoin
  * Exibe a variação de preço em diferentes períodos (1D, 7D, 1M, 1Y, ALL)
@@ -32,7 +33,7 @@ export const PriceChart = ({
   const [data, setData] = useState<PriceHistoryPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [hoveredPrice, setHoveredPrice] = useState<number | null>(null); // ← aqui está certo agora
+  const [hoveredPrice, setHoveredPrice] = useState<number | null>(null);
 
   /**
    * Função para carregar os dados baseado no período selecionado
@@ -104,6 +105,14 @@ export const PriceChart = ({
   };
 
   /**
+   * Obtém o valor atual da cotação baseado na moeda selecionada
+   */
+  const getCurrentPriceValue = (): number => {
+    if (!currentRate) return 0;
+    return selectedCurrency === 'BRL' ? currentRate.brl : currentRate.usd;
+  };
+
+  /**
    * Renderiza o gráfico dentro de um Card
    * Com estados de carregamento e erro
    */
@@ -114,10 +123,10 @@ export const PriceChart = ({
           Preço do Bitcoin
         </CardTitle>
       
-        {/* Preço e variação */}
+        {/* Preço e variação - NOVO DESTAQUE PARA O PREÇO ATUAL */}
         <div className="flex items-center justify-between w-full">
           <div className="text-3xl font-bold text-black">
-            {formatCurrencyValue(data?.[data.length - 1]?.price || 0)}
+            {formatCurrencyValue(getCurrentPriceValue())}
           </div>
       
           {/* Cálculo da variação percentual */}
@@ -241,7 +250,9 @@ export const PriceChart = ({
               {/* Tooltip com captura do valor */}
               <Tooltip
                 content={({ payload, label }) => {
-                  if (payload?.[0]) setHoveredPrice(payload[0].value);
+                  if (payload?.[0]?.value !== undefined) {
+                    setHoveredPrice(Number(payload[0].value));
+                  }
                   return (
                     <div
                       style={{
@@ -260,7 +271,9 @@ export const PriceChart = ({
                           {["1Y", "ALL"].includes(selectedRange) && `Data: ${label}`}
                         </strong>
                       </div>
-                      <div>Preço: {formatCurrencyValue(payload?.[0]?.value)}</div>
+                      <div>
+                        Preço: {payload?.[0]?.value !== undefined ? formatCurrencyValue(Number(payload[0].value)) : ""}
+                      </div>
                     </div>
                   );
                 }}
@@ -294,3 +307,4 @@ export const PriceChart = ({
     </Card>
   );
 };
+
