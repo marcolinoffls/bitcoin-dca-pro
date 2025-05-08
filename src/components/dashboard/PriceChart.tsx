@@ -3,21 +3,21 @@
  * Gráfico de preço do Bitcoin
  * Exibe a variação de preço em diferentes períodos (1D, 7D, 1M, 1Y, ALL)
  * Suporta exibição em USD ou BRL conforme a preferência do usuário
+ * Agora permite seleção de período personalizado
  */
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { fetchBitcoinPriceHistory, PriceHistoryPoint } from '@/services/bitcoin';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CalendarRange } from 'lucide-react';
 import { CurrentRate } from '@/types';
 import {
   Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, ReferenceLine
 } from 'recharts';
-
-
+import DateRangePicker from './DateRangePicker';
 
 // Define os períodos de tempo disponíveis
-type TimeRange = '1D' | '7D' | '1M' | '3M' | 'YTD' | '1Y' | 'ALL';
+type TimeRange = '1D' | '7D' | '1M' | '3M' | 'YTD' | '1Y' | 'ALL' | 'CUSTOM';
 
 // Props do componente para receber a moeda selecionada e taxa de câmbio
 interface PriceChartProps {
@@ -34,36 +34,31 @@ export const PriceChart = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hoveredPrice, setHoveredPrice] = useState<number | null>(null);
+  
+  // Estados para o período personalizado
+  const [showCustomRange, setShowCustomRange] = useState(false);
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
 
   /**
    * Função para carregar os dados baseado no período selecionado
-   * Agora passando a moeda selecionada como segundo parâmetro
+   * Agora suporta período customizado com datas de início e fim
    */
   const loadData = async (range: TimeRange) => {
     try {
       setLoading(true); // Inicia o carregamento
       setError(null);   // Limpa erros anteriores
   
-      // --- MODO REAL ---
-      // Passamos a moeda selecionada para a função de busca
-      const history = await fetchBitcoinPriceHistory(range, selectedCurrency);
+      // Busca dados com base no período selecionado
+      const history = await fetchBitcoinPriceHistory(
+        range, 
+        selectedCurrency,
+        range === 'CUSTOM' ? startDate : undefined,
+        range === 'CUSTOM' ? endDate : undefined
+      );
+      
       console.log(`Dados carregados: ${history.length} pontos em ${selectedCurrency}`);
       setData(history);
-  
-      // --- MODO MOCK (descomente abaixo para simular) ---
-      /*
-      const mockUsdPrices: PriceHistoryPoint[] = Array.from({ length: 10 }).map((_, i) => {
-        const date = new Date();
-        date.setDate(date.getDate() - (10 - i));
-        return {
-          time: date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-          price: 10000 + i * 1000, // Mock em USD
-        };
-      });
-      await new Promise((res) => setTimeout(res, 300)); // Simula carregamento
-      setData(mockUsdPrices);
-      console.log('Mock carregado:', mockUsdPrices.length, 'pontos');
-   */
     } catch (error) {
       console.error('Erro ao carregar dados do histórico:', error);
       setError('Não foi possível carregar os dados. Tente novamente mais tarde.');
@@ -77,14 +72,63 @@ export const PriceChart = ({
    * Separado para melhorar a legibilidade e permitir extensões futuras
    */
   const handleRangeChange = (range: TimeRange) => {
+    // Se estiver trocando para o modo personalizado, não carrega os dados ainda
+    if (range === 'CUSTOM') {
+      setSelectedRange(range);
+      setShowCustomRange(true);
+      
+      // Configura datas padrão se não estiverem definidas
+      if (!startDate || !endDate) {
+        const end = new Date();
+        const start = new Date();
+        start.setDate(start.getDate() - 30); // 30 dias atrás por padrão
+        setStartDate(start);
+        setEndDate(end);
+      }
+      return;
+    }
+    
     console.log(`Alterando período para: ${range}`);
     setSelectedRange(range);
+    setShowCustomRange(false);
+  };
+
+  /**
+   * Manipulador para alterações nas datas selecionadas no DateRangePicker
+   */
+  const handleDateRangeChange = (start: Date | undefined, end: Date | undefined) => {
+    setStartDate(start);
+    setEndDate(end);
+  };
+
+  /**
+   * Manipulador para aplicar o período personalizado
+   */
+  const handleApplyCustomRange = () => {
+    if (startDate && endDate) {
+      console.log(`Aplicando período personalizado: ${startDate.toLocaleDateString()} até ${endDate.toLocaleDateString()}`);
+      loadData('CUSTOM');
+      setShowCustomRange(false);
+    }
+  };
+
+  /**
+   * Manipulador para cancelar a seleção de período personalizado
+   */
+  const handleCancelCustomRange = () => {
+    setShowCustomRange(false);
+    if (selectedRange === 'CUSTOM') {
+      setSelectedRange('1M'); // Volta para o período padrão
+      loadData('1M');
+    }
   };
 
   // Carrega dados iniciais e sempre que mudar o período selecionado ou a moeda
   useEffect(() => {
-    loadData(selectedRange);
-  }, [selectedRange, selectedCurrency]); // Adicionado selectedCurrency como dependência
+    if (selectedRange !== 'CUSTOM' || !showCustomRange) {
+      loadData(selectedRange);
+    }
+  }, [selectedRange, selectedCurrency, showCustomRange]); 
 
   /**
    * Retorna o símbolo da moeda atual para exibição no gráfico
@@ -151,10 +195,9 @@ export const PriceChart = ({
         <div className="w-full flex justify-center sm:justify-start">
           <div className="flex flex-wrap justify-center gap-2 bg-gray-100 rounded-xl px-3 py-1">
             {(['1D', '7D', '1M', '3M', 'YTD', '1Y', 'ALL'] as TimeRange[]).map((period) => (
-
               <button
                 key={period}
-                onClick={() => setSelectedRange(period)}
+                onClick={() => handleRangeChange(period)}
                 className={`px-3 py-1 rounded-md text-sm font-medium transition
                   ${selectedRange === period
                     ? 'bg-white text-black shadow'
@@ -163,8 +206,33 @@ export const PriceChart = ({
                 {period}
               </button>
             ))}
+            
+            {/* Botão de período personalizado */}
+            <button
+              onClick={() => handleRangeChange('CUSTOM')}
+              className={`px-3 py-1 rounded-md text-sm font-medium transition flex items-center
+                ${selectedRange === 'CUSTOM'
+                  ? 'bg-white text-black shadow'
+                  : 'text-gray-600 hover:bg-white hover:text-black'}`}
+            >
+              <CalendarRange className="h-3 w-3 mr-1" />
+              Personalizado
+            </button>
           </div>
         </div>
+        
+        {/* Seletor de período personalizado */}
+        {showCustomRange && (
+          <div className="w-full mt-2 p-3 bg-white border rounded-lg shadow-sm">
+            <DateRangePicker
+              startDate={startDate}
+              endDate={endDate}
+              onRangeChange={handleDateRangeChange}
+              onConfirm={handleApplyCustomRange}
+              onCancel={handleCancelCustomRange}
+            />
+          </div>
+        )}
       </CardHeader>
 
       <CardContent>
@@ -219,8 +287,12 @@ export const PriceChart = ({
                 fontSize={12}
                 minTickGap={15}
                 tickFormatter={(value) => {
-                  if (selectedRange === 'ALL') {
-                    return new Date(value).getFullYear();
+                  if (selectedRange === 'ALL' || 
+                     (selectedRange === 'CUSTOM' && startDate && endDate && 
+                      (endDate.getTime() - startDate.getTime()) > 365 * 24 * 60 * 60 * 1000)) {
+                    if (typeof value === 'string' && value.includes('/')) {
+                      return value.split('/')[1]; // Retorna apenas o ano
+                    }
                   }
                   return value;
                 }}
@@ -268,7 +340,7 @@ export const PriceChart = ({
                         <strong>
                           {selectedRange === "1D" && `Horário: ${label}`}
                           {["7D", "1M", "3M", "YTD"].includes(selectedRange) && `Data: ${label}`}
-                          {["1Y", "ALL"].includes(selectedRange) && `Data: ${label}`}
+                          {["1Y", "ALL", "CUSTOM"].includes(selectedRange) && `Data: ${label}`}
                         </strong>
                       </div>
                       <div>
@@ -302,9 +374,10 @@ export const PriceChart = ({
           {selectedRange === 'YTD' && ' (ano até hoje)'}
           {selectedRange === '1Y' && ' (último ano)'}
           {selectedRange === 'ALL' && ' (histórico completo)'}
+          {selectedRange === 'CUSTOM' && startDate && endDate && 
+            ` (${startDate.toLocaleDateString('pt-BR')} a ${endDate.toLocaleDateString('pt-BR')})`}
         </div>
       </CardContent>
     </Card>
   );
 };
-

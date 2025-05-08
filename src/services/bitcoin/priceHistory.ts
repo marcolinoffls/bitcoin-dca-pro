@@ -1,3 +1,4 @@
+
 /**
  * Serviço para buscar histórico de preços do Bitcoin
  *
@@ -55,7 +56,7 @@ function formatLabelFromTimestamp(timestamp: string, range: string): string {
     });
   }
 
-  // Exibe data completa (ex: "05/05/2021") no gráfico ALL
+  // Exibe data completa (ex: "05/05/2021") no gráfico ALL e CUSTOM
   return date.toLocaleDateString('pt-BR', {
     month: '2-digit',
     year: 'numeric',
@@ -66,26 +67,44 @@ function formatLabelFromTimestamp(timestamp: string, range: string): string {
  * Busca dados históricos de preço do Bitcoin com base no range e moeda
  */
 export const fetchBitcoinPriceHistory = async (
-  range: '1D' | '7D' | '1M' | '3M' | 'YTD' | '1Y' | 'ALL',
-  currency: 'USD' | 'BRL' = 'USD'
+  range: '1D' | '7D' | '1M' | '3M' | 'YTD' | '1Y' | 'ALL' | 'CUSTOM',
+  currency: 'USD' | 'BRL' = 'USD',
+  startDate?: Date,
+  endDate?: Date
 ): Promise<PriceHistoryPoint[]> => {
   try {
-    const startDate = new Date();
+    const startDateCalc = new Date();
   
-    if (range === '1D') startDate.setDate(startDate.getDate() - 1);
-    else if (range === '7D') startDate.setDate(startDate.getDate() - 7);
-    else if (range === '1M') startDate.setDate(startDate.getDate() - 30);
-    else if (range === '3M') startDate.setDate(startDate.getDate() - 90);
+    if (range === '1D') startDateCalc.setDate(startDateCalc.getDate() - 1);
+    else if (range === '7D') startDateCalc.setDate(startDateCalc.getDate() - 7);
+    else if (range === '1M') startDateCalc.setDate(startDateCalc.getDate() - 30);
+    else if (range === '3M') startDateCalc.setDate(startDateCalc.getDate() - 90);
     else if (range === 'YTD') {
-      startDate.setMonth(0); // Janeiro
-      startDate.setDate(1);  // Dia 1
+      startDateCalc.setMonth(0); // Janeiro
+      startDateCalc.setDate(1);  // Dia 1
     }
-    else if (range === '1Y') startDate.setFullYear(startDate.getFullYear() - 1);
+    else if (range === '1Y') startDateCalc.setFullYear(startDateCalc.getFullYear() - 1);
   
-    const startDateISO = startDate.toISOString(); // Formato usado pelo Supabase
+    // Use as datas personalizadas se o range for CUSTOM
+    const useStartDate = range === 'CUSTOM' && startDate ? startDate : startDateCalc;
+    const useEndDate = range === 'CUSTOM' && endDate ? endDate : new Date();
+    
+    // Certifica-se de que as datas estão em ordem cronológica correta
+    const finalStartDate = useStartDate > useEndDate ? useEndDate : useStartDate;
+    const finalEndDate = useEndDate;
+    
+    const startDateISO = finalStartDate.toISOString(); // Formato usado pelo Supabase
+    const endDateISO = finalEndDate.toISOString();
 
-    // Longo prazo: tabela `btc_prices`
-    if (['1Y', 'YTD', 'ALL'].includes(range)) {
+    // Calcula a diferença em dias entre as datas
+    const diffTime = Math.abs(finalEndDate.getTime() - finalStartDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    // Decide qual tabela usar com base no período
+    // Para períodos longos ou busca de mais de 120 dias, usa btc_prices
+    const useLongTermTable = ['1Y', 'YTD', 'ALL'].includes(range) || diffDays > 120;
+
+    if (useLongTermTable) {
       let query = supabase
         .from('btc_prices')
         .select('timestamp, price, price_brl')
@@ -93,7 +112,9 @@ export const fetchBitcoinPriceHistory = async (
   
       // Aplica filtro de data exceto para "ALL"
       if (range !== 'ALL') {
-        query = query.gte('timestamp', startDateISO);
+        query = query
+          .gte('timestamp', startDateISO)
+          .lte('timestamp', endDateISO);
       }
   
       const { data, error } = await query;
@@ -101,39 +122,41 @@ export const fetchBitcoinPriceHistory = async (
       if (!data) return [];
   
       // Mapeia os dados com labels formatados
-      return data.map(row => {
+      const formattedData = data.map(row => {
         const price = currency === 'BRL' && row.price_brl != null ? row.price_brl : row.price;
         return {
-          time: formatLabelFromTimestamp(row.timestamp, range),
+          time: formatLabelFromTimestamp(row.timestamp, range === 'CUSTOM' ? (diffDays > 365 ? 'ALL' : '1Y') : range),
           price: parseFloat(price.toFixed(2)),
         };
       });
+      
+      return formattedData;
     }
 
-    // Curto prazo: tabela `btc_intraday_prices`
+    // Para períodos curtos, usa a tabela de preços intradiários
     const { data, error } = await supabase
       .from('btc_intraday_prices')
       .select('timestamp, price, price_brl')
       .gte('timestamp', startDateISO)
+      .lte('timestamp', endDateISO)
       .order('timestamp', { ascending: true });
   
     if (error) throw new Error(`Erro Supabase (btc_intraday_prices): ${error.message}`);
     if (!data) return [];
   
-
-    // Filtra os dados por granularidade:
+    // Filtra os dados por granularidade com base no período
     let filteredData = data;
-  
-    if (range === '1D') {
-      // Um ponto a cada 15 minutos
+    
+    // Determina a granularidade com base no tamanho do período
+    if (diffDays <= 1) {
+      // Um ponto a cada 15 minutos para períodos de até 1 dia
       filteredData = data.filter(row => {
         const date = new Date(row.timestamp);
         return date.getMinutes() % 15 === 0;
       });
     }
-  
-    else if (range === '7D') {
-      // Um ponto por hora (remove duplicatas)
+    else if (diffDays <= 7) {
+      // Um ponto por hora para períodos de até 7 dias
       const seenHours = new Set<string>();
       filteredData = data.filter(row => {
         const date = new Date(row.timestamp);
@@ -143,9 +166,8 @@ export const fetchBitcoinPriceHistory = async (
         return true;
       });
     }
-  
-    else if (range === '1M') {
-      // Apenas dados diários às 05:55 (ajustado para base de dados CoinStats)
+    else {
+      // Um ponto por dia para períodos maiores
       const seenDays = new Set<string>();
       filteredData = data.filter(row => {
         const date = new Date(row.timestamp);
@@ -155,20 +177,16 @@ export const fetchBitcoinPriceHistory = async (
         return date.getHours() === 5 && date.getMinutes() === 55;
       });
     }
-    else if (range === '3M') {
-      const seenDays = new Set<string>();
-      filteredData = data.filter(row => {
-        const date = new Date(row.timestamp);
-        const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-        if (seenDays.has(key)) return false;
-        seenDays.add(key);
-        return date.getHours() === 5 && date.getMinutes() === 55;
-      });
-    }
+
+    // Formata os dados finais
+    const formatRangeType = range === 'CUSTOM' 
+      ? (diffDays > 30 ? '1Y' : diffDays > 7 ? '1M' : diffDays > 1 ? '7D' : '1D') 
+      : range;
+
     return filteredData.map(row => {
       const price = currency === 'BRL' && row.price_brl != null ? row.price_brl : row.price;
       return {
-        time: formatLabelFromTimestamp(row.timestamp, range),
+        time: formatLabelFromTimestamp(row.timestamp, formatRangeType),
         price: parseFloat(price.toFixed(2)),
       };
     });
