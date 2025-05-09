@@ -1,4 +1,3 @@
-
 /**
  * Gráfico de preço do Bitcoin
  * Exibe a variação de preço em diferentes períodos (1D, 7D, 1M, 1Y, ALL)
@@ -279,23 +278,13 @@ export const PriceChart = ({
                 </linearGradient>
               </defs>
           
-              {/* Eixo X */}
+              {/* Eixo X - Atualizado para usar o formato correto */}
               <XAxis
                 dataKey="time"
                 tickLine={false}
                 axisLine={false}
                 fontSize={12}
                 minTickGap={15}
-                tickFormatter={(value) => {
-                  if (selectedRange === 'ALL' || 
-                     (selectedRange === 'CUSTOM' && startDate && endDate && 
-                      (endDate.getTime() - startDate.getTime()) > 365 * 24 * 60 * 60 * 1000)) {
-                    if (typeof value === 'string' && value.includes('/')) {
-                      return value.split('/')[1]; // Retorna apenas o ano
-                    }
-                  }
-                  return value;
-                }}
               />
 
               {/* Eixo Y */}

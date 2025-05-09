@@ -1,4 +1,3 @@
-
 /**
  * Serviço para buscar histórico de preços do Bitcoin
  *
@@ -22,45 +21,24 @@ export interface PriceHistoryPoint {
 function formatLabelFromTimestamp(timestamp: string, range: string): string {
   const date = new Date(timestamp);
 
-  // Exibe hora e minuto (ex: "14:30")
-  if (range === '1D') {
-    return date.toLocaleTimeString('pt-BR', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  }
-
-  // Exibe data + hora (ex: "03/05 18:00")
-  if (range === '7D') {
-    return date.toLocaleString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  }
-
-  // Exibe data (ex: "05/05") para períodos de 1 mês, 3 meses e YTD
-  if (range === '1M' || range === '3M' || range === 'YTD') {
-    return date.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-    });
-  }
-
-  // Exibe mês/ano (ex: "05/24") no gráfico de 1 ano
-  if (range === '1Y') {
-    return date.toLocaleDateString('pt-BR', {
-      month: '2-digit',
-      year: '2-digit',
-    });
-  }
-
-  // Exibe data completa (ex: "05/05/2021") no gráfico ALL e CUSTOM
-  return date.toLocaleDateString('pt-BR', {
+  // Para todos os períodos, usamos o mesmo formato base dd/MM/yy
+  const dateFormatBase = date.toLocaleDateString('pt-BR', {
+    day: '2-digit',
     month: '2-digit',
-    year: 'numeric',
+    year: '2-digit'
   });
+
+  // Para períodos de 1D e 7D, incluímos também a hora e minuto
+  if (range === '1D' || range === '7D') {
+    const timeFormat = date.toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+    return `${dateFormatBase} ${timeFormat}`;
+  }
+
+  // Para todos os outros períodos (1M, 3M, YTD, 1Y, ALL, CUSTOM), retornamos apenas a data
+  return dateFormatBase;
 }
 
 /**
