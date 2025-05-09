@@ -340,7 +340,9 @@ export const PriceChart = ({
                         <strong>
                           {selectedRange === "1D" && `Horário: ${label}`}
                           {["7D", "1M", "3M", "YTD"].includes(selectedRange) && `Data: ${label}`}
-                          {["1Y", "ALL", "CUSTOM"].includes(selectedRange) && `Data: ${label}`}
+                          {selectedRange === "CUSTOM"
+                            ? `Data: ${new Date(label).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}`
+                            : `Data: ${label}`}
                         </strong>
                       </div>
                       <div>
