@@ -21,24 +21,24 @@ export interface PriceHistoryPoint {
 function formatLabelFromTimestamp(timestamp: string, range: string): string {
   const date = new Date(timestamp);
 
-  // Para todos os períodos, usamos o mesmo formato base dd/MM/yy
-  const dateFormatBase = date.toLocaleDateString('pt-BR', {
+  // Para períodos de 1D e 7D, incluímos hora e minuto
+  if (range === '1D' || range === '7D') {
+    return date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: '2-digit'
+    }) + ' ' + date.toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  // Para todos os outros períodos (1M, 3M, YTD, 1Y, ALL, CUSTOM), retornamos apenas a data
+  return date.toLocaleDateString('pt-BR', {
     day: '2-digit',
     month: '2-digit',
     year: '2-digit'
   });
-
-  // Para períodos de 1D e 7D, incluímos também a hora e minuto
-  if (range === '1D' || range === '7D') {
-    const timeFormat = date.toLocaleTimeString('pt-BR', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-    return `${dateFormatBase} ${timeFormat}`;
-  }
-
-  // Para todos os outros períodos (1M, 3M, YTD, 1Y, ALL, CUSTOM), retornamos apenas a data
-  return dateFormatBase;
 }
 
 /**
