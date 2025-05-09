@@ -70,6 +70,8 @@ export const fetchBitcoinPriceHistory = async (
     // Certifica-se de que as datas estão em ordem cronológica correta
     const finalStartDate = useStartDate > useEndDate ? useEndDate : useStartDate;
     const finalEndDate = useEndDate;
+    finalEndDate.setHours(23, 59, 59, 999); // ← Esta linha é a correção
+
     
     const startDateISO = finalStartDate.toISOString(); // Formato usado pelo Supabase
     const endDateISO = finalEndDate.toISOString();
