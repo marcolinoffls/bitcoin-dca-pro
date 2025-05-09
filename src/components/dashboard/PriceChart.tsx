@@ -339,8 +339,8 @@ export const PriceChart = ({
                       <div>
                         <strong>
                           {selectedRange === "1D" && `Horário: ${label}`}
-                          {["7D", "1M", "3M", "CUSTOM", "YTD"].includes(selectedRange) && `Data: ${label}`}
-                          {["1Y", "ALL"].includes(selectedRange) && `Data: ${label}`}
+                          {["7D", "1M", "3M", "YTD"].includes(selectedRange) && `Data: ${label}`}
+                          {["1Y", "ALL", "CUSTOM"].includes(selectedRange) && `Data: ${label}`}
                         </strong>
                       </div>
                       <div>
