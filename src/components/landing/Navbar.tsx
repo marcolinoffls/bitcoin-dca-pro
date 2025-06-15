@@ -31,7 +31,7 @@ export function Navbar() {
           </Link>
         </div>
         <div className="flex items-center gap-4">
-          <Button asChild>
+          <Button asChild className="bg-bitcoin text-primary-foreground hover:bg-bitcoin/90">
             <Link to="/auth">Acessar App</Link>
           </Button>
         </div>

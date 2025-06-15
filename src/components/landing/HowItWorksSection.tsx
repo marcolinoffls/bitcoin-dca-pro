@@ -16,7 +16,7 @@ export function HowItWorksSection() {
     <section className="py-20">
       <div className="container max-w-5xl">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold tracking-tight">Comece em Minutos</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-btcblue dark:text-white">Comece em Minutos</h2>
           <p className="mt-2 text-muted-foreground">Siga estes 3 passos simples para assumir o controle dos seus aportes.</p>
         </div>
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">

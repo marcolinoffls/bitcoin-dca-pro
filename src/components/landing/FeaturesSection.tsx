@@ -53,7 +53,7 @@ export function FeaturesSection() {
     <section id="features" className="py-20 bg-muted/40 dark:bg-card">
       <div className="container max-w-5xl">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold tracking-tight">Recursos Poderosos para sua Estratégia</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-btcblue dark:text-white">Recursos Poderosos para sua Estratégia</h2>
           <p className="mt-2 text-muted-foreground">Tudo o que você precisa para gerenciar seus investimentos em Bitcoin.</p>
         </div>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">

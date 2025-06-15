@@ -24,7 +24,7 @@ export function FaqSection() {
     <section className="py-20 bg-muted/40 dark:bg-card">
       <div className="container max-w-3xl">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold tracking-tight">Perguntas Frequentes</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-btcblue dark:text-white">Perguntas Frequentes</h2>
           <p className="mt-2 text-muted-foreground">Tirando suas principais dúvidas sobre o Bitcoin DCA Pro.</p>
         </div>
         <Accordion type="single" collapsible className="w-full">
