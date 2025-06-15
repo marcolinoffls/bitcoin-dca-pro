@@ -2,6 +2,7 @@
 // Opções para o filtro de origem do aporte
 export const ORIGIN_FILTER_OPTIONS = [
   { value: 'all', label: 'Todas as origens' },
+  { value: 'all-without-adjustments', label: 'Todas as origens sem ajustes' },
   { value: 'corretora', label: 'Corretora' },
   { value: 'p2p', label: 'P2P' },
   { value: 'ajuste', label: 'Ajuste' }

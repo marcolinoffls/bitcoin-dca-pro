@@ -49,12 +49,12 @@ const EntriesList: React.FC<EntriesListProps> = ({
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
   const [viewCurrency, setViewCurrency] = useState<'BRL' | 'USD'>(selectedCurrency);
   const [monthFilter, setMonthFilter] = useState<string | null>(null);
-  const [originFilter, setOriginFilter] = useState<Origin | null>(null);
+  const [originFilter, setOriginFilter] = useState<Origin | 'all-without-adjustments' | null>(null);
   const [registrationSourceFilter, setRegistrationSourceFilter] = useState<'manual' | 'planilha' | null>(null);
   const [yearFilter, setYearFilter] = useState<string | null>(null);
   const [tempMonthFilter, setTempMonthFilter] = useState<string | null>(null);
   const [tempYearFilter, setTempYearFilter] = useState<string | null>(null);
-  const [tempOriginFilter, setTempOriginFilter] = useState<Origin | null>(null);
+  const [tempOriginFilter, setTempOriginFilter] = useState<Origin | 'all-without-adjustments' | null>(null);
   const [tempRegistrationSourceFilter, setTempRegistrationSourceFilter] = useState<'manual' | 'planilha' | null>(null);
   const [rowsToShow, setRowsToShow] = useState<number>(30);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -194,7 +194,14 @@ const EntriesList: React.FC<EntriesListProps> = ({
         const entryMonth = format(entry.date, 'yyyy-MM');
         if (entryMonth !== monthFilter) return false;
       }
-      if (originFilter && entry.origin !== originFilter) return false;
+      
+      // Lógica especial para filtro "sem ajustes"
+      if (originFilter === 'all-without-adjustments') {
+        if (entry.origin === 'ajuste') return false;
+      } else if (originFilter && entry.origin !== originFilter) {
+        return false;
+      }
+      
       if (registrationSourceFilter && entry.registrationSource !== registrationSourceFilter) return false;
       return true;
     });
@@ -245,6 +252,11 @@ const EntriesList: React.FC<EntriesListProps> = ({
     return result.slice(0, rowsToShow);
   }, [filteredEntries, rowsToShow, sortState, viewCurrency, currentRate]);
 
+  /**
+   * Calcula os totais corrigindo o tratamento de ajustes
+   * - Ajustes subtraem dos totais em vez de somar
+   * - Preço médio calculado apenas com aportes reais (sem ajustes)
+   */
   const calculateTotals = (currencyView: 'BRL' | 'USD') => {
     const totals = {
       totalInvested: 0,
@@ -256,6 +268,10 @@ const EntriesList: React.FC<EntriesListProps> = ({
     
     if (filteredEntries.length === 0) return totals;
     
+    // Separar aportes reais de ajustes para cálculos diferentes
+    let totalInvestedForAverage = 0;
+    let totalBtcForAverage = 0;
+    
     filteredEntries.forEach(entry => {
       let investedValue = entry.amountInvested;
       if (entry.currency !== currencyView) {
@@ -265,14 +281,26 @@ const EntriesList: React.FC<EntriesListProps> = ({
           investedValue = entry.amountInvested * currentRate.usd / currentRate.brl;
         }
       }
-      totals.totalInvested += investedValue;
-      totals.totalBtc += entry.btcAmount;
+      
+      // Se é um ajuste, subtrai dos totais
+      if (entry.origin === 'ajuste') {
+        totals.totalInvested -= investedValue;
+        totals.totalBtc -= entry.btcAmount;
+      } else {
+        // Se é um aporte real, soma aos totais e usa para cálculo de preço médio
+        totals.totalInvested += investedValue;
+        totals.totalBtc += entry.btcAmount;
+        totalInvestedForAverage += investedValue;
+        totalBtcForAverage += entry.btcAmount;
+      }
     });
     
     const currentRateValue = currencyView === 'USD' ? currentRate.usd : currentRate.brl;
-    totals.avgPrice = totals.totalBtc !== 0 ? totals.totalInvested / totals.totalBtc : 0;
+    
+    // Preço médio calculado apenas com aportes reais (sem ajustes)
+    totals.avgPrice = totalBtcForAverage !== 0 ? totalInvestedForAverage / totalBtcForAverage : 0;
     totals.currentValue = totals.totalBtc * currentRateValue;
-    totals.percentChange = ((currentRateValue - totals.avgPrice) / totals.avgPrice) * 100;
+    totals.percentChange = totals.avgPrice !== 0 ? ((currentRateValue - totals.avgPrice) / totals.avgPrice) * 100 : 0;
     
     return totals;
   };
@@ -296,7 +324,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
             tempRegistrationSourceFilter={tempRegistrationSourceFilter}
             setTempMonthFilter={setTempMonthFilter}
             setTempYearFilter={setTempYearFilter}
-            setTempOriginFilter={(value: Origin | null) => setTempOriginFilter(value)}
+            setTempOriginFilter={(value: Origin | 'all-without-adjustments' | null) => setTempOriginFilter(value)}
             setTempRegistrationSourceFilter={setTempRegistrationSourceFilter}
             applyFilters={applyFilters}
             clearFilters={clearFilters}
@@ -336,7 +364,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
             tempRegistrationSourceFilter={tempRegistrationSourceFilter}
             setTempMonthFilter={setTempMonthFilter}
             setTempYearFilter={setTempYearFilter}
-            setTempOriginFilter={(value: Origin | null) => setTempOriginFilter(value)}
+            setTempOriginFilter={(value: Origin | 'all-without-adjustments' | null) => setTempOriginFilter(value)}
             setTempRegistrationSourceFilter={setTempRegistrationSourceFilter}
             applyFilters={applyFilters}
             clearFilters={clearFilters}
@@ -376,7 +404,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
             tempRegistrationSourceFilter={tempRegistrationSourceFilter}
             setTempMonthFilter={setTempMonthFilter}
             setTempYearFilter={setTempYearFilter}
-            setTempOriginFilter={(value: Origin | null) => setTempOriginFilter(value)}
+            setTempOriginFilter={(value: Origin | 'all-without-adjustments' | null) => setTempOriginFilter(value)}
             setTempRegistrationSourceFilter={setTempRegistrationSourceFilter}
             applyFilters={applyFilters}
             clearFilters={clearFilters}

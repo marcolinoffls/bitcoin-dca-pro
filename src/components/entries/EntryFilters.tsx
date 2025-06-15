@@ -10,11 +10,11 @@ interface EntryFiltersProps {
   availableYears?: { value: string; label: string }[];
   tempMonthFilter: string | null;
   tempYearFilter: string | null;
-  tempOriginFilter: Origin | null;
+  tempOriginFilter: Origin | 'all-without-adjustments' | null;
   tempRegistrationSourceFilter: 'manual' | 'planilha' | null;
   setTempMonthFilter: (value: string | null) => void;
   setTempYearFilter: (value: string | null) => void;
-  setTempOriginFilter: (value: Origin | null) => void;
+  setTempOriginFilter: (value: Origin | 'all-without-adjustments' | null) => void;
   setTempRegistrationSourceFilter: (value: 'manual' | 'planilha' | null) => void;
   applyFilters: () => void;
   clearFilters: () => void;
@@ -81,7 +81,7 @@ export const EntryFilters: React.FC<EntryFiltersProps> = ({
         <label className="text-sm font-medium">Por origem</label>
         <Select 
           value={tempOriginFilter || 'all'} 
-          onValueChange={(value) => setTempOriginFilter(value === 'all' ? null : value as Origin)}
+          onValueChange={(value) => setTempOriginFilter(value === 'all' ? null : value as Origin | 'all-without-adjustments')}
         >
           <SelectTrigger>
             <SelectValue placeholder="Todas as origens" />
