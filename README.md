@@ -1,73 +1,77 @@
-# Welcome to your Lovable project
 
-## Project info
+# Bitcoin DCA Pro
 
-**URL**: https://lovable.dev/projects/d9061aba-170c-43d1-8fd4-d765bd7747db
+## Bem-vindo ao Bitcoin DCA Pro (Versão em Português)
 
-## How can I edit this code?
+Esta é a plataforma completa para acompanhar seus aportes em Bitcoin utilizando a estratégia DCA (Dollar Cost Averaging). "Stay humble and stack Sats".
 
-There are several ways of editing your application.
+### Como executar o projeto localmente
 
-**Use Lovable**
+Para executar este projeto em seu ambiente local, você precisará ter [Node.js](https://nodejs.org/) e npm instalados.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/d9061aba-170c-43d1-8fd4-d765bd7747db) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+Siga os passos abaixo:
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# 1. Clone o repositório
+# Substitua <URL_DO_SEU_REPOSITORIO_GIT> pela URL do seu repositório Git.
+git clone <URL_DO_SEU_REPOSITORIO_GIT>
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# 2. Navegue até o diretório do projeto
+cd <NOME_DO_SEU_PROJETO>
 
-# Step 3: Install the necessary dependencies.
-npm i
+# 3. Instale as dependências
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# 4. Inicie o servidor de desenvolvimento
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Seu aplicativo estará disponível em `http://localhost:5173`.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Tecnologias Utilizadas
 
-**Use GitHub Codespaces**
+*   **Vite**: Build tool rápido para desenvolvimento web moderno.
+*   **React**: Biblioteca para construir interfaces de usuário.
+*   **TypeScript**: Superset de JavaScript que adiciona tipagem estática.
+*   **Tailwind CSS**: Framework CSS utility-first para design rápido.
+*   **shadcn/ui**: Componentes de UI lindamente projetados.
+*   **Supabase**: Backend como serviço para banco de dados, autenticação e mais.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+---
 
-## What technologies are used for this project?
+## Welcome to Bitcoin DCA Pro (English Version)
 
-This project is built with:
+This is the complete platform to track your Bitcoin contributions using the DCA (Dollar Cost Averaging) strategy. "Stay humble and stack Sats".
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### How to Run the Project Locally
 
-## How can I deploy this project?
+To run this project in your local environment, you will need to have [Node.js](https://nodejs.org/) and npm installed.
 
-Simply open [Lovable](https://lovable.dev/projects/d9061aba-170c-43d1-8fd4-d765bd7747db) and click on Share -> Publish.
+Follow the steps below:
 
-## Can I connect a custom domain to my Lovable project?
+```sh
+# 1. Clone the repository
+# Replace <YOUR_GIT_REPO_URL> with your Git repository URL.
+git clone <YOUR_GIT_REPO_URL>
 
-Yes it is!
+# 2. Navigate to the project directory
+cd <YOUR_PROJECT_NAME>
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+# 3. Install dependencies
+npm install
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+# 4. Start the development server
+npm run dev
+```
+
+Your application will be available at `http://localhost:5173`.
+
+### Technologies Used
+
+*   **Vite**: Fast build tool for modern web development.
+*   **React**: A library for building user interfaces.
+*   **TypeScript**: A superset of JavaScript that adds static typing.
+*   **Tailwind CSS**: A utility-first CSS framework for rapid design.
+*   **shadcn/ui**: Beautifully designed UI components.
+*   **Supabase**: Backend-as-a-Service for database, authentication, and more.
+
