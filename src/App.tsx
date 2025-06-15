@@ -20,6 +20,7 @@ import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
 import AdminPage from "./pages/AdminPage";
 import SatsflowAI from "./pages/SatsflowAI";
+import LandingPage from "./pages/LandingPage";
 
 import "./styles/globals.css";  // estilos globais da aplicação
 
@@ -53,6 +54,11 @@ const App = () => {
           <BrowserRouter>
             <Routes>
               {/*
+                Nova rota pública para a landing page.
+              */}
+              <Route path="/" element={<LandingPage />} />
+
+              {/*
                 Rota para todos os fluxos de autenticação:
                 - /auth           → página de login / cadastro
                 - /auth/callback  → callback OAuth (Google, etc.)
@@ -67,12 +73,12 @@ const App = () => {
               <Route path="/set-password" element={<SetPassword />} />
 
               {/*
-                Rota protegida:
-                - "/" somente acessível quando o usuário estiver autenticado.
+                Rota protegida movida para /app:
+                - "/app" somente acessível quando o usuário estiver autenticado.
                 - RequireAuth faz o redirect para /auth se não houver sessão.
               */}
               <Route
-                path="/"
+                path="/app"
                 element={
                   <RequireAuth>
                     <Index />
