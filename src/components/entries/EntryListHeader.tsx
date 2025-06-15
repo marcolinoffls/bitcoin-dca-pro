@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import ColumnVisibilityControl from './ColumnVisibilityControl';
 import { EntryFilters } from './EntryFilters';
 import { ColumnConfig } from '@/types/table';
-import { Origin } from '@/types';
+import { OriginFilter } from '@/types';
 
 interface EntryListHeaderProps {
   isMobile: boolean;
@@ -23,11 +23,11 @@ interface EntryListHeaderProps {
   availableYears?: { value: string; label: string }[];
   tempMonthFilter: string | null;
   tempYearFilter: string | null;
-  tempOriginFilter: Origin | null;
+  tempOriginFilter: OriginFilter | null;
   tempRegistrationSourceFilter: "manual" | "planilha" | null;
   setTempMonthFilter: (value: string | null) => void;
   setTempYearFilter: (value: string | null) => void;
-  setTempOriginFilter: (value: Origin | null) => void;
+  setTempOriginFilter: (value: OriginFilter | null) => void;
   setTempRegistrationSourceFilter: (value: "manual" | "planilha" | null) => void;
   applyFilters: () => void;
   clearFilters: () => void;

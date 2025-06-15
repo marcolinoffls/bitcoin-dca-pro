@@ -1,4 +1,3 @@
-
 /**
  * Interface para cotação atual do Bitcoin
  */
@@ -16,6 +15,12 @@ export interface CurrentRate {
  * - "ajuste": Ajustes de saldo (saques, taxas, etc)
  */
 export type Origin = "corretora" | "p2p" | "planilha" | "ajuste";
+
+/**
+ * Tipos permitidos para filtros de origem
+ * Inclui todas as origens padrão mais opções especiais de filtro
+ */
+export type OriginFilter = Origin | "all-without-adjustments";
 
 /**
  * Interface principal para os registros de aportes no aplicativo

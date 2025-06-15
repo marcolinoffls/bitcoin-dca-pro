@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Origin } from '@/types';
+import { OriginFilter } from '@/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { ORIGIN_FILTER_OPTIONS, REGISTRATION_SOURCE_OPTIONS } from './constants';
@@ -10,11 +10,11 @@ interface EntryFiltersProps {
   availableYears?: { value: string; label: string }[];
   tempMonthFilter: string | null;
   tempYearFilter: string | null;
-  tempOriginFilter: Origin | 'all-without-adjustments' | null;
+  tempOriginFilter: OriginFilter | null;
   tempRegistrationSourceFilter: 'manual' | 'planilha' | null;
   setTempMonthFilter: (value: string | null) => void;
   setTempYearFilter: (value: string | null) => void;
-  setTempOriginFilter: (value: Origin | 'all-without-adjustments' | null) => void;
+  setTempOriginFilter: (value: OriginFilter | null) => void;
   setTempRegistrationSourceFilter: (value: 'manual' | 'planilha' | null) => void;
   applyFilters: () => void;
   clearFilters: () => void;
@@ -81,7 +81,7 @@ export const EntryFilters: React.FC<EntryFiltersProps> = ({
         <label className="text-sm font-medium">Por origem</label>
         <Select 
           value={tempOriginFilter || 'all'} 
-          onValueChange={(value) => setTempOriginFilter(value === 'all' ? null : value as Origin | 'all-without-adjustments')}
+          onValueChange={(value) => setTempOriginFilter(value === 'all' ? null : value as OriginFilter)}
         >
           <SelectTrigger>
             <SelectValue placeholder="Todas as origens" />
