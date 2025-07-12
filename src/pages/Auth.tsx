@@ -55,9 +55,8 @@ const Auth = () => {
         }
         
         console.log('Autenticação OAuth bem-sucedida!');
-        // Força um reload completo na home
-        // Assim o AuthProvider (useAuthSession) já encontra o user logado
-        window.location.replace('/');
+        // Redireciona para a aplicação principal após login OAuth bem-sucedido
+        window.location.replace('/app');
       } catch (e) {
         console.error('Exceção ao processar callback OAuth:', e);
         navigate('/auth', { replace: true });
@@ -74,11 +73,12 @@ const Auth = () => {
     );
   }
 
-  // Redireciona usuário logado para a página original ou homepage
+  // Redireciona usuário logado para a aplicação principal ou página original
   if (user) {
-    const from = location.state?.from?.pathname || "/";
+    const from = location.state?.from?.pathname || "/app";
     return <Navigate to={from} replace />;
   }
+
   const validatePassword = () => {
     if (activeTab === 'register') {
       if (password.length < 6) {
